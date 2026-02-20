@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useInRouterContext, useLocation } from 'react-router-dom';
 import { 
   Home as HomeIcon, 
   User as UserIcon, 
@@ -30,19 +30,29 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = "" }) => {
     lg: 'h-14'
   }[size];
 
-  return (
-    <Link to="/" label="Home" >
-    <img 
-      src="assets/logo26.png" 
+  const isInRouterContext = useInRouterContext();
+
+  const logoImage = (
+    <img
+      src="assets/logo26.png"
       alt="eumigrei"
       className={`${heightClass} w-auto object-contain transition-all duration-300 ${className}`}
       onError={(e) => {
-        // Fallback visual caso a imagem não carregue
+        // Fallback visual caso a imagem n�o carregue
         e.currentTarget.src = "https://placehold.co/400x120/004691/white?text=eumigrei";
       }}
     />
-    </Link>
   );
+
+  if (isInRouterContext) {
+    return (
+      <Link to="/" aria-label="Home">
+        {logoImage}
+      </Link>
+    );
+  }
+
+  return logoImage;
 };
 
 interface LayoutWithUserProps {
@@ -55,6 +65,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({ children, user }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
+  const handleMenuItemClick = () => setIsMenuOpen(false);
 
   return (
     <div className="flex flex-col min-h-screen max-w-md mx-auto bg-texture relative overflow-hidden font-sans shadow-2xl">
@@ -96,14 +107,14 @@ const Layout: React.FC<LayoutWithUserProps> = ({ children, user }) => {
           </div>
 
           <div className="bg-white/70 backdrop-blur-md rounded-3xl p-2 shadow-sm border border-white/50 divide-y divide-slate-100">
-            <MenuListItem to="/" label="Home" icon={<HomeIcon size={22} />} active={isActive('/')} />
-            <MenuListItem to="/negocios" label="Negócios" icon={<Store size={18} />} />
-            <MenuListItem to="/noticias" label="Notícias" icon={<LayoutList size={18} />} />
-            <MenuListItem to="/eventos" label="Eventos" icon={<Calendar size={18} />} />
-            <MenuListItem to="/moradia" label="Moradia" icon={<HomeIcon size={18} />} />
-            <MenuListItem to="/profile" label="Favoritos" icon={<Heart size={18} className="text-red-400" />} />
-            <MenuListItem to="/" label="Suporte" icon={<Headphones size={18} />} />
-            <MenuListItem to="/" label="Configurações" icon={<Settings size={18} />} />
+            <MenuListItem to="/" label="Home" icon={<HomeIcon size={22} />} active={isActive('/')} onClick={handleMenuItemClick} />
+            <MenuListItem to="/negocios" label="Negócios" icon={<Store size={18} />} onClick={handleMenuItemClick} />
+            <MenuListItem to="/noticias" label="Notícias" icon={<LayoutList size={18} />} onClick={handleMenuItemClick} />
+            <MenuListItem to="/eventos" label="Eventos" icon={<Calendar size={18} />} onClick={handleMenuItemClick} />
+            <MenuListItem to="/moradia" label="Moradia" icon={<HomeIcon size={18} />} onClick={handleMenuItemClick} />
+            <MenuListItem to="/profile" label="Favoritos" icon={<Heart size={18} className="text-red-400" />} onClick={handleMenuItemClick} />
+            <MenuListItem to="/" label="Suporte" icon={<Headphones size={18} />} onClick={handleMenuItemClick} />
+            <MenuListItem to="/" label="Configurações" icon={<Settings size={18} />} onClick={handleMenuItemClick} />
           </div>
         </div>
       </div>
@@ -142,8 +153,12 @@ const QuickAction: React.FC<{ icon: string; label: string }> = ({ icon, label })
   </div>
 );
 
-const MenuListItem: React.FC<{ to: string; label: string; icon: React.ReactNode }> = ({ to, label, icon }) => (
-  <Link to={to} className="flex items-center gap-3 py-3.5 px-4 hover:bg-white/50 transition-colors first:rounded-t-2xl last:rounded-b-2xl">
+const MenuListItem: React.FC<{ to: string; label: string; icon: React.ReactNode; active?: boolean; onClick?: () => void }> = ({ to, label, icon, active = false, onClick }) => (
+  <Link
+    to={to}
+    onClick={onClick}
+    className={`flex items-center gap-3 py-3.5 px-4 hover:bg-white/50 transition-colors first:rounded-t-2xl last:rounded-b-2xl ${active ? 'bg-white/40' : ''}`}
+  >
     <div className="text-[#004691]">{icon}</div>
     <span className="text-slate-700 font-bold text-sm">{label}</span>
   </Link>
@@ -163,3 +178,4 @@ const NavItem: React.FC<{ to: string; icon: React.ReactNode; active: boolean }> 
 );
 
 export default Layout;
+
