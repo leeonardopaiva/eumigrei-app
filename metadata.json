@@ -1,0 +1,9 @@
+{
+  "name": "Eumigrei - Comunidade Brasileira",
+  "description": "Uma plataforma completa para a comunidade brasileira no exterior, oferecendo serviços de moradia, empregos, negócios locais, notícias e rede social.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
