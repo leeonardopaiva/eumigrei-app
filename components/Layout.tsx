@@ -27,19 +27,21 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = "" }) => {
   const heightClass = {
     sm: 'h-8',
     md: 'h-12',
-    lg: 'h-24'
+    lg: 'h-14'
   }[size];
 
   return (
+    <Link to="/" label="Home" >
     <img 
-      src="logo26.png" 
-      alt="eumigrei" 
+      src="assets/logo26.png" 
+      alt="eumigrei"
       className={`${heightClass} w-auto object-contain transition-all duration-300 ${className}`}
       onError={(e) => {
         // Fallback visual caso a imagem não carregue
         e.currentTarget.src = "https://placehold.co/400x120/004691/white?text=eumigrei";
       }}
     />
+    </Link>
   );
 };
 
@@ -94,6 +96,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({ children, user }) => {
           </div>
 
           <div className="bg-white/70 backdrop-blur-md rounded-3xl p-2 shadow-sm border border-white/50 divide-y divide-slate-100">
+            <MenuListItem to="/" label="Home" icon={<HomeIcon size={22} />} active={isActive('/')} />
             <MenuListItem to="/negocios" label="Negócios" icon={<Store size={18} />} />
             <MenuListItem to="/noticias" label="Notícias" icon={<LayoutList size={18} />} />
             <MenuListItem to="/eventos" label="Eventos" icon={<Calendar size={18} />} />

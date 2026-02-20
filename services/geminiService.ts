@@ -1,10 +1,43 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// Initialize AI client using process.env.API_KEY directly
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+let aiClient: GoogleGenAI | null = null;
+
+const getApiKey = (): string | undefined => {
+  const viteKey = (import.meta as any)?.env?.VITE_GEMINI_API_KEY as string | undefined;
+  const processKey =
+    typeof process !== "undefined"
+      ? (process.env?.GEMINI_API_KEY || process.env?.API_KEY)
+      : undefined;
+
+  return viteKey || processKey;
+};
+
+const getClient = (): GoogleGenAI | null => {
+  if (aiClient) {
+    return aiClient;
+  }
+
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    return null;
+  }
+
+  try {
+    aiClient = new GoogleGenAI({ apiKey });
+    return aiClient;
+  } catch (error) {
+    console.error("Gemini client initialization error:", error);
+    return null;
+  }
+};
 
 export const getImmigrationHelp = async (query: string) => {
+  const ai = getClient();
+  if (!ai) {
+    return "Assistente IA indisponível no momento. Configure a chave GEMINI_API_KEY para ativar esta função.";
+  }
+
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
