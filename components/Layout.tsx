@@ -38,8 +38,8 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = "" }) => {
       alt="eumigrei"
       className={`${heightClass} w-auto object-contain transition-all duration-300 ${className}`}
       onError={(e) => {
-        // Fallback visual caso a imagem não carregue
-        e.currentTarget.src = "https://placehold.co/400x120/004691/white?text=eumigrei";
+        // Fallback visual caso a imagem nï¿½o carregue
+        e.currentTarget.src = "/assets/logo26.svg";
       }}
     />
   );
