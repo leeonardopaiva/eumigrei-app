@@ -34,7 +34,7 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = "" }) => {
 
   const logoImage = (
     <img
-      src="assets/logo26.png"
+      src="/assets/logo26.png"
       alt="eumigrei"
       className={`${heightClass} w-auto object-contain transition-all duration-300 ${className}`}
       onError={(e) => {
