@@ -22,7 +22,7 @@ interface LogoProps {
   className?: string;
 }
 
-// Logo utilizando a imagem logo26.png enviada
+// Logo utilizando a imagem logo26.svg enviada
 export const Logo: React.FC<LogoProps> = ({ size = 'md', className = "" }) => {
   const heightClass = {
     sm: 'h-8',
@@ -34,7 +34,7 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = "" }) => {
 
   const logoImage = (
     <img
-      src="/assets/logo26.png"
+      src="/assets/logo26.svg"
       alt="eumigrei"
       className={`${heightClass} w-auto object-contain transition-all duration-300 ${className}`}
       onError={(e) => {
