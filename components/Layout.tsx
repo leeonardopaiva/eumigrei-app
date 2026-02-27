@@ -17,6 +17,9 @@ import {
 } from 'lucide-react';
 import { User } from '../types';
 
+const logo26Url = new URL('../assets/logo26.svg', import.meta.url).href;
+const logo26FallbackUrl = new URL('../assets/logo26.png', import.meta.url).href;
+
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -34,12 +37,13 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = "" }) => {
 
   const logoImage = (
     <img
-      src="/assets/logo26.svg"
+      src={logo26Url}
       alt="eumigrei"
       className={`${heightClass} w-auto object-contain transition-all duration-300 ${className}`}
       onError={(e) => {
-        // Fallback visual caso a imagem n�o carregue
-        e.currentTarget.src = "/assets/logo26.svg";
+        // Fallback to PNG if SVG cannot be rendered by the browser/CDN.
+        e.currentTarget.onerror = null;
+        e.currentTarget.src = logo26FallbackUrl;
       }}
     />
   );
