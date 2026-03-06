@@ -4,13 +4,15 @@ import { GoogleGenAI } from "@google/genai";
 let aiClient: GoogleGenAI | null = null;
 
 const getApiKey = (): string | undefined => {
-  const viteKey = (import.meta as any)?.env?.VITE_GEMINI_API_KEY as string | undefined;
-  const processKey =
-    typeof process !== "undefined"
-      ? (process.env?.GEMINI_API_KEY || process.env?.API_KEY)
-      : undefined;
+  const processKey = typeof process !== "undefined"
+    ? (
+      process.env?.NEXT_PUBLIC_GEMINI_API_KEY ||
+      process.env?.GEMINI_API_KEY ||
+      process.env?.API_KEY
+    )
+    : undefined;
 
-  return viteKey || processKey;
+  return processKey;
 };
 
 const getClient = (): GoogleGenAI | null => {
@@ -32,7 +34,7 @@ const getClient = (): GoogleGenAI | null => {
   }
 };
 
-export const getImmigrationHelp = async (query: string) => {
+export const getImmigrationHelp = async (query: string): Promise<string> => {
   const ai = getClient();
   if (!ai) {
     return "Assistente IA indisponível no momento. Configure a chave GEMINI_API_KEY para ativar esta função.";
@@ -48,7 +50,7 @@ export const getImmigrationHelp = async (query: string) => {
       },
     });
     // Access response text property directly
-    return response.text;
+    return response.text ?? "Desculpe, não consegui gerar uma resposta agora.";
   } catch (error) {
     console.error("Gemini API Error:", error);
     return "Desculpe, tive um problema ao processar sua dúvida. Tente novamente mais tarde.";

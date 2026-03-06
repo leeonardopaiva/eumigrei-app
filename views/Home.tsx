@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { MapPin, Search, ArrowRight } from 'lucide-react';
 import { User } from '../types';
 
@@ -29,12 +29,12 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
 
       {/* Services Grid */}
       <div className="grid grid-cols-3 gap-3">
-        <ServiceCard to="/negocios" icon="🏛️" label="Negócios" />
-        <ServiceCard to="/community" icon="🗨️" label="Comunidade" />
-        <ServiceCard to="/vagas" icon="💼" label="Vagas de trabalho" />
-        <ServiceCard to="/noticias" icon="📰" label="Notícias" />
-        <ServiceCard to="/moradia" icon="🏠" label="Moradia" />
-        <ServiceCard to="/eventos" icon="📅" label="Eventos" />
+        <ServiceCard href="/negocios" icon="🏛️" label="Negócios" />
+        <ServiceCard href="/community" icon="🗨️" label="Comunidade" />
+        <ServiceCard href="/vagas" icon="💼" label="Vagas de trabalho" />
+        <ServiceCard href="/noticias" icon="📰" label="Notícias" />
+        <ServiceCard href="/moradia" icon="🏠" label="Moradia" />
+        <ServiceCard href="/eventos" icon="📅" label="Eventos" />
       </div>
 
       {/* Banner Principal */}
@@ -59,8 +59,8 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
   );
 };
 
-const ServiceCard: React.FC<{ to: string; icon: string; label: string }> = ({ to, icon, label }) => (
-  <Link to={to} className="flex flex-col items-center justify-center gap-3 p-5 bg-white rounded-3xl shadow-sm hover:shadow-md transition-all active:scale-95 border border-slate-50">
+const ServiceCard: React.FC<{ href: string; icon: string; label: string }> = ({ href, icon, label }) => (
+  <Link href={href} className="flex flex-col items-center justify-center gap-3 p-5 bg-white rounded-3xl shadow-sm hover:shadow-md transition-all active:scale-95 border border-slate-50">
     <div className="text-3xl">{icon}</div>
     <span className="text-[11px] text-[#333] font-bold text-center leading-tight">{label}</span>
   </Link>

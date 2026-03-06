@@ -1,16 +1,12 @@
-# Run and deploy your AI Studio app
+# Eumigrei App (Next.js)
 
-This contains everything you need to run your app locally.
+## Rodar localmente
 
-View your app in AI Studio: https://ai.studio/apps/drive/1pEYsUMuNYWUd4Xhq_m-rAnbspAwlsjWY
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
+1. Instale as dependências:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+2. Configure a chave Gemini no arquivo `.env.local`:
+   `NEXT_PUBLIC_GEMINI_API_KEY=...`
+3. Inicie em modo desenvolvimento:
    `npm run dev`
+4. Abra:
+   `http://localhost:3000`

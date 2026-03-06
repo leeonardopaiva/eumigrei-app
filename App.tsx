@@ -1,59 +1,104 @@
+'use client';
 
-import React, { useState } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Layout from './components/Layout';
-import Home from './pages/Home';
-import Community from './pages/Community';
-import Marketplace from './pages/Marketplace';
-import Profile from './pages/Profile';
-import BusinessList from './pages/BusinessList';
-import BusinessDetail from './pages/BusinessDetail';
-import HousingList from './pages/HousingList';
-import JobList from './pages/JobList';
-import NewsList from './pages/NewsList';
-import EventsList from './pages/EventsList';
-import Registration from './pages/Registration';
+import Home from './views/Home';
+import Community from './views/Community';
+import Marketplace from './views/Marketplace';
+import Profile from './views/Profile';
+import BusinessList from './views/BusinessList';
+import BusinessDetail from './views/BusinessDetail';
+import HousingList from './views/HousingList';
+import JobList from './views/JobList';
+import NewsList from './views/NewsList';
+import EventsList from './views/EventsList';
+import Registration from './views/Registration';
 import { UserRole, User } from './types';
 
-const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+const STORAGE_KEY = 'eumigrei.currentUser';
 
-  // Mock initial login
+const App: React.FC = () => {
+  const pathname = usePathname() || '/';
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    try {
+      const savedUser = localStorage.getItem(STORAGE_KEY);
+      if (savedUser) {
+        setCurrentUser(JSON.parse(savedUser) as User);
+      }
+    } catch (error) {
+      console.error('Error restoring user session:', error);
+    } finally {
+      setReady(true);
+    }
+  }, []);
+
   const login = (role: UserRole) => {
-    setCurrentUser({
+    const user: User = {
       id: '1',
       name: 'Fulano',
-      role: role,
+      role,
       avatar: 'https://picsum.photos/seed/user1/200',
-      location: 'Boston, 02108'
-    });
+      location: 'Boston, 02108',
+    };
+
+    setCurrentUser(user);
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+    } catch (error) {
+      console.error('Error saving user session:', error);
+    }
   };
+
+  if (!ready) {
+    return null;
+  }
 
   if (!currentUser) {
     return <Registration onLogin={() => login(UserRole.CLIENT)} />;
   }
 
-  return (
-    <HashRouter>
-      <Layout user={currentUser}>
-        <Routes>
-          <Route path="/" element={<Home user={currentUser} />} />
-          <Route path="/community" element={<Community user={currentUser} />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/profile" element={<Profile user={currentUser} />} />
-          
-          <Route path="/negocios" element={<BusinessList />} />
-          <Route path="/negocios/:id" element={<BusinessDetail />} />
-          <Route path="/moradia" element={<HousingList />} />
-          <Route path="/vagas" element={<JobList />} />
-          <Route path="/noticias" element={<NewsList />} />
-          <Route path="/eventos" element={<EventsList />} />
-          
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </Layout>
-    </HashRouter>
-  );
+  const segments = pathname.split('/').filter(Boolean);
+  const rootSegment = segments[0];
+
+  const content = (() => {
+    if (segments.length === 0) {
+      return <Home user={currentUser} />;
+    }
+
+    if (rootSegment === 'negocios' && segments.length === 1) {
+      return <BusinessList />;
+    }
+
+    if (rootSegment === 'negocios' && segments.length === 2) {
+      return <BusinessDetail businessId={decodeURIComponent(segments[1])} />;
+    }
+
+    switch (rootSegment) {
+      case 'community':
+        return <Community user={currentUser} />;
+      case 'marketplace':
+        return <Marketplace />;
+      case 'profile':
+        return <Profile user={currentUser} />;
+      case 'moradia':
+        return <HousingList />;
+      case 'vagas':
+        return <JobList />;
+      case 'noticias':
+        return <NewsList />;
+      case 'eventos':
+        return <EventsList />;
+      default:
+        return <Home user={currentUser} />;
+    }
+  })();
+
+  return <Layout user={currentUser}>{content}</Layout>;
 };
 
 export default App;

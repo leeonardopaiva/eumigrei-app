@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Search, Star, MapPin } from 'lucide-react';
 
 const BusinessList: React.FC = () => {
@@ -52,7 +52,7 @@ const BusinessList: React.FC = () => {
                   <MapPin size={10} /> {biz.address}
                 </div>
               </div>
-              <Link to={`/negocios/${biz.id}`} className="self-end bg-blue-900 text-white px-4 py-1.5 rounded-xl text-[10px] font-bold shadow-sm">
+              <Link href={`/negocios/${biz.id}`} className="self-end bg-blue-900 text-white px-4 py-1.5 rounded-xl text-[10px] font-bold shadow-sm">
                 Ver perfil
               </Link>
             </div>

@@ -1,10 +1,12 @@
 
 import React from 'react';
-import { useParams, Link } from 'react-router-dom';
 import { Phone, Heart, Star, MapPin, Share2 } from 'lucide-react';
 
-const BusinessDetail: React.FC = () => {
-  const { id } = useParams();
+interface BusinessDetailProps {
+  businessId?: string;
+}
+
+const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId: _businessId }) => {
 
   return (
     <div className="animate-in slide-in-from-right duration-500">
