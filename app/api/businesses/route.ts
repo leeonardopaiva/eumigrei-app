@@ -1,4 +1,4 @@
-import { BusinessStatus, BusinessMemberRole, UserRole } from '@prisma/client';
+import { BusinessStatus, BusinessMemberRole, Prisma, UserRole } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -12,20 +12,25 @@ export async function GET(request: Request) {
   const search = searchParams.get('search');
   const regionKey = session?.user?.regionKey ?? searchParams.get('region');
 
-  const businesses = await prisma.business.findMany({
+  const baseWhere: Prisma.BusinessWhereInput = {
+    status: BusinessStatus.PUBLISHED,
+    ...(category ? { category } : {}),
+    ...(search
+      ? {
+          OR: [
+            { name: { contains: search, mode: Prisma.QueryMode.insensitive } },
+            { category: { contains: search, mode: Prisma.QueryMode.insensitive } },
+            { address: { contains: search, mode: Prisma.QueryMode.insensitive } },
+          ],
+        }
+      : {}),
+  };
+
+  let scope: 'local' | 'global' = regionKey ? 'local' : 'global';
+  let businesses = await prisma.business.findMany({
     where: {
-      status: BusinessStatus.PUBLISHED,
+      ...baseWhere,
       ...(regionKey ? { regionKey } : {}),
-      ...(category ? { category } : {}),
-      ...(search
-        ? {
-            OR: [
-              { name: { contains: search, mode: 'insensitive' } },
-              { category: { contains: search, mode: 'insensitive' } },
-              { address: { contains: search, mode: 'insensitive' } },
-            ],
-          }
-        : {}),
     },
     orderBy: [{ createdAt: 'desc' }],
     take: 24,
@@ -41,7 +46,26 @@ export async function GET(request: Request) {
     },
   });
 
-  return NextResponse.json({ businesses });
+  if (businesses.length === 0 && regionKey) {
+    businesses = await prisma.business.findMany({
+      where: baseWhere,
+      orderBy: [{ createdAt: 'desc' }],
+      take: 24,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        category: true,
+        address: true,
+        imageUrl: true,
+        locationLabel: true,
+        status: true,
+      },
+    });
+    scope = 'global';
+  }
+
+  return NextResponse.json({ businesses, scope });
 }
 
 export async function POST(request: Request) {

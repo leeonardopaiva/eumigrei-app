@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
 import { findRegionByKey } from '@/lib/region-store';
-import { onboardingSchema } from '@/lib/validators';
+import { prisma } from '@/lib/prisma';
+import { updateRegionSchema } from '@/lib/validators';
 
-export async function POST(request: Request) {
+export async function PUT(request: Request) {
   const session = await getServerAuthSession();
 
   if (!session?.user?.id) {
@@ -12,11 +12,11 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const parsed = onboardingSchema.safeParse(body);
+  const parsed = updateRegionSchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? 'Invalid profile data' },
+      { error: parsed.error.issues[0]?.message ?? 'Invalid region data' },
       { status: 400 },
     );
   }
@@ -30,21 +30,13 @@ export async function POST(request: Request) {
   const user = await prisma.user.update({
     where: { id: session.user.id },
     data: {
-      name: parsed.data.name,
-      phone: parsed.data.phone,
       locationLabel: region.label,
       regionKey: region.key,
-      onboardingCompleted: true,
     },
     select: {
       id: true,
-      name: true,
-      email: true,
-      role: true,
-      phone: true,
       locationLabel: true,
       regionKey: true,
-      onboardingCompleted: true,
     },
   });
 

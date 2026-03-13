@@ -42,6 +42,7 @@ const buildCurrentUser = (sessionUser: {
   image?: string | null;
   phone?: string | null;
   locationLabel?: string | null;
+  regionKey?: string | null;
   role?: string | null;
 }): User => ({
   id: sessionUser.id,
@@ -49,6 +50,7 @@ const buildCurrentUser = (sessionUser: {
   role: mapUserRole(sessionUser.role),
   avatar: sessionUser.image || 'https://picsum.photos/seed/eumigrei-user/200',
   location: sessionUser.locationLabel || 'Defina sua regiao',
+  regionKey: sessionUser.regionKey,
   email: sessionUser.email,
   phone: sessionUser.phone,
 });
@@ -172,7 +174,7 @@ const App: React.FC = () => {
     name: string;
     email: string;
     phone: string;
-    locationLabel: string;
+    regionKey: string;
   }) => {
     setRegistrationError(null);
     setRegistrationNotice(null);
@@ -240,7 +242,7 @@ const App: React.FC = () => {
           name: session.user.name || '',
           email: session.user.email || '',
           phone: session.user.phone || '',
-          locationLabel: session.user.locationLabel || '',
+          regionKey: session.user.regionKey || '',
         }}
       />
     );

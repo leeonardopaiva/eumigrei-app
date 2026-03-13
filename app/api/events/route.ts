@@ -11,13 +11,18 @@ export async function GET(request: Request) {
   const regionKey = session?.user?.regionKey ?? searchParams.get('region');
   const now = new Date();
 
-  const events = await prisma.event.findMany({
+  const baseWhere = {
+    status: EventStatus.PUBLISHED,
+    startsAt: {
+      gte: now,
+    },
+  };
+
+  let scope: 'local' | 'global' = regionKey ? 'local' : 'global';
+  let events = await prisma.event.findMany({
     where: {
-      status: EventStatus.PUBLISHED,
+      ...baseWhere,
       ...(regionKey ? { regionKey } : {}),
-      startsAt: {
-        gte: now,
-      },
     },
     orderBy: [{ startsAt: 'asc' }],
     take: 24,
@@ -33,7 +38,26 @@ export async function GET(request: Request) {
     },
   });
 
-  return NextResponse.json({ events });
+  if (events.length === 0 && regionKey) {
+    events = await prisma.event.findMany({
+      where: baseWhere,
+      orderBy: [{ startsAt: 'asc' }],
+      take: 24,
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        venueName: true,
+        startsAt: true,
+        locationLabel: true,
+        imageUrl: true,
+        status: true,
+      },
+    });
+    scope = 'global';
+  }
+
+  return NextResponse.json({ events, scope });
 }
 
 export async function POST(request: Request) {
@@ -79,7 +103,7 @@ export async function POST(request: Request) {
       startsAt: new Date(parsed.data.startsAt),
       endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
       locationLabel: parsed.data.locationLabel,
-      regionKey: slugify(parsed.data.locationLabel),
+      regionKey: session.user.regionKey || slugify(parsed.data.locationLabel),
       externalUrl: parsed.data.externalUrl,
       imageUrl: parsed.data.imageUrl,
       status: EventStatus.PENDING_REVIEW,

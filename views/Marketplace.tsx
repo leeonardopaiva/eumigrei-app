@@ -35,6 +35,7 @@ const emptyForm = {
 const Marketplace: React.FC = () => {
   const [activeTab, setActiveTab] = useState('Proximos');
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [resultScope, setResultScope] = useState<'local' | 'global'>('local');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -55,12 +56,14 @@ const Marketplace: React.FC = () => {
         if (!ignore) {
           startTransition(() => {
             setEvents(payload.events ?? []);
+            setResultScope(payload.scope === 'global' ? 'global' : 'local');
           });
         }
       } catch (error) {
         console.error('Failed to load events:', error);
         if (!ignore) {
           setEvents(SAMPLE_EVENTS);
+          setResultScope('global');
         }
       }
     };
@@ -213,6 +216,11 @@ const Marketplace: React.FC = () => {
 
       <div className="space-y-4">
         <h2 className="font-bold text-blue-900">Eventos proximos</h2>
+        {resultScope === 'global' && events.length > 0 ? (
+          <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
+            Ainda nao ha eventos publicados na sua regiao. Mostrando eventos de outras regioes.
+          </div>
+        ) : null}
         {events.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-200 bg-white px-5 py-8 text-center text-sm font-medium text-slate-500">
             Nenhum evento aprovado nesta regiao ainda.

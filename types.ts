@@ -11,6 +11,7 @@ export interface User {
   role: UserRole;
   avatar: string;
   location: string;
+  regionKey?: string | null;
   email?: string | null;
   phone?: string | null;
 }

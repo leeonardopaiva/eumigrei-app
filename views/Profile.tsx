@@ -1,11 +1,56 @@
-
-import React from 'react';
-// Remove 'User' icon as it's not used and conflicts with the User type
-import { MoreHorizontal, Plus, MapPin, Globe } from 'lucide-react';
-// Import User type from project types
+import React, { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { Globe, MapPin, PencilLine, Plus } from 'lucide-react';
+import RegionSelector from '../components/RegionSelector';
 import { User } from '../types';
 
 const Profile: React.FC<{ user: User }> = ({ user }) => {
+  const { update } = useSession();
+  const [editingRegion, setEditingRegion] = useState(false);
+  const [selectedRegionKey, setSelectedRegionKey] = useState(user.regionKey || '');
+  const [savingRegion, setSavingRegion] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedRegionKey(user.regionKey || '');
+  }, [user.regionKey]);
+
+  const handleRegionSave = async () => {
+    if (!selectedRegionKey) {
+      setFeedback('Selecione uma regiao valida antes de salvar.');
+      return;
+    }
+
+    setSavingRegion(true);
+    setFeedback(null);
+
+    try {
+      const response = await fetch('/api/profile/region', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ regionKey: selectedRegionKey }),
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setFeedback(payload?.error ?? 'Nao foi possivel atualizar a sua regiao.');
+        return;
+      }
+
+      await update();
+      setEditingRegion(false);
+      setFeedback('Regiao atualizada com sucesso.');
+    } catch (error) {
+      console.error('Failed to update region:', error);
+      setFeedback('Nao foi possivel atualizar a sua regiao.');
+    } finally {
+      setSavingRegion(false);
+    }
+  };
+
   return (
     <div className="animate-in fade-in duration-500 pb-20">
       <div className="px-5 pt-8 flex flex-col items-center">
@@ -37,6 +82,60 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
         <button className="mt-8 bg-blue-600 text-white px-12 py-3 rounded-2xl font-bold shadow-xl shadow-blue-100 flex items-center gap-2 transition-transform active:scale-95">
             <Plus size={18} /> Adicionar
         </button>
+      </div>
+
+      <div className="mt-8 px-5">
+        <div className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Regiao ativa
+              </p>
+              <h2 className="mt-2 text-xl font-bold text-[#004691]">
+                {user.location}
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Comunidade, negocios e eventos priorizam esta regiao.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEditingRegion((current) => !current)}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600"
+            >
+              <PencilLine size={14} />
+              {editingRegion ? 'Fechar' : 'Alterar'}
+            </button>
+          </div>
+
+          {editingRegion ? (
+            <div className="mt-5 space-y-4">
+              <RegionSelector
+                value={selectedRegionKey}
+                onChange={(region) => {
+                  setSelectedRegionKey(region.key);
+                  setFeedback(null);
+                }}
+                hint="Voce pode manter sua localizacao atual ou trocar manualmente para outra regiao existente."
+              />
+
+              <button
+                type="button"
+                onClick={handleRegionSave}
+                disabled={savingRegion}
+                className="w-full rounded-2xl bg-[#004691] px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
+              >
+                {savingRegion ? 'Salvando...' : 'Salvar regiao'}
+              </button>
+            </div>
+          ) : null}
+
+          {feedback ? (
+            <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
+              {feedback}
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-10">

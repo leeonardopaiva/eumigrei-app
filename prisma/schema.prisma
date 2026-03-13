@@ -69,6 +69,21 @@ model User {
   postReports         PostReport[]    @relation("PostReportAuthor")
 }
 
+model Region {
+  key       String   @id
+  label     String   @unique
+  city      String
+  state     String
+  lat       Float
+  lng       Float
+  aliases   String[] @default([])
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, label])
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String

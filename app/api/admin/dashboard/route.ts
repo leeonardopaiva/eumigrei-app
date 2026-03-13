@@ -1,5 +1,6 @@
 import { BusinessStatus, CommunityPostStatus, EventStatus, UserRole } from '@prisma/client';
 import { NextResponse } from 'next/server';
+import { ensureRegionCatalog } from '@/lib/region-store';
 import { requireAdminSession } from '@/lib/require-admin';
 import { prisma } from '@/lib/prisma';
 
@@ -10,6 +11,8 @@ export async function GET() {
     return response;
   }
 
+  await ensureRegionCatalog();
+
   const [
     pendingBusinesses,
     pendingEvents,
@@ -19,6 +22,9 @@ export async function GET() {
     publishedEvents,
     publishedPosts,
     businessOwners,
+    totalRegions,
+    activeRegions,
+    regions,
   ] = await Promise.all([
     prisma.business.findMany({
       where: { status: BusinessStatus.PENDING_REVIEW },
@@ -84,6 +90,22 @@ export async function GET() {
     prisma.event.count({ where: { status: EventStatus.PUBLISHED } }),
     prisma.communityPost.count({ where: { status: CommunityPostStatus.PUBLISHED } }),
     prisma.user.count({ where: { role: UserRole.BUSINESS_OWNER } }),
+    prisma.region.count(),
+    prisma.region.count({ where: { isActive: true } }),
+    prisma.region.findMany({
+      orderBy: [{ label: 'asc' }],
+      select: {
+        key: true,
+        label: true,
+        city: true,
+        state: true,
+        lat: true,
+        lng: true,
+        aliases: true,
+        isActive: true,
+        updatedAt: true,
+      },
+    }),
   ]);
 
   return NextResponse.json({
@@ -96,9 +118,12 @@ export async function GET() {
       pendingBusinesses: pendingBusinesses.length,
       pendingEvents: pendingEvents.length,
       pendingPosts: pendingPosts.length,
+      totalRegions,
+      activeRegions,
     },
     pendingBusinesses,
     pendingEvents,
     pendingPosts,
+    regions,
   });
 }

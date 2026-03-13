@@ -36,7 +36,8 @@ const emptyForm = {
 
 const BusinessList: React.FC = () => {
   const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [activeFilter, setActiveFilter] = useState('Restaurante');
+  const [activeFilter, setActiveFilter] = useState('Todos');
+  const [resultScope, setResultScope] = useState<'local' | 'global'>('local');
   const [search, setSearch] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -47,10 +48,10 @@ const BusinessList: React.FC = () => {
   useEffect(() => {
     let ignore = false;
 
-    const fetchBusinesses = async () => {
+        const fetchBusinesses = async () => {
       try {
         const params = new URLSearchParams();
-        if (activeFilter) {
+        if (activeFilter && activeFilter !== 'Todos') {
           params.set('category', activeFilter);
         }
         if (deferredSearch.trim()) {
@@ -67,12 +68,14 @@ const BusinessList: React.FC = () => {
         if (!ignore) {
           startTransition(() => {
             setBusinesses(payload.businesses ?? []);
+            setResultScope(payload.scope === 'global' ? 'global' : 'local');
           });
         }
       } catch (error) {
         console.error('Failed to load businesses:', error);
         if (!ignore) {
           setBusinesses(SAMPLE_BUSINESSES);
+          setResultScope('global');
         }
       }
     };
@@ -233,7 +236,7 @@ const BusinessList: React.FC = () => {
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {['Restaurante', 'Mercado', 'Beleza', 'Saude'].map((category) => (
+        {['Todos', 'Restaurante', 'Mercado', 'Beleza', 'Saude'].map((category) => (
           <button
             key={category}
             onClick={() => setActiveFilter(category)}
@@ -250,6 +253,11 @@ const BusinessList: React.FC = () => {
 
       <div className="space-y-4 pb-20">
         <h2 className="font-bold text-blue-900">Negocios disponiveis</h2>
+        {resultScope === 'global' && businesses.length > 0 ? (
+          <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
+            Ainda nao ha negocios publicados na sua regiao. Mostrando resultados de outras regioes.
+          </div>
+        ) : null}
         {businesses.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-200 bg-white px-5 py-8 text-center text-sm font-medium text-slate-500">
             Nenhum negocio publicado nesta regiao ainda.

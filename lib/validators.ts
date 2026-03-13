@@ -19,9 +19,31 @@ export const onboardingSchema = z.object({
   name: z.string().trim().min(2).max(80),
   email: z.string().email().optional(),
   phone: optionalString.refine((value) => !value || value.length >= 8, {
-    message: 'Phone number is too short',
+    message: 'Telefone muito curto',
   }),
-  locationLabel: z.string().trim().min(2).max(120),
+  regionKey: z.string().trim().min(2, 'Selecione uma regiao valida'),
+});
+
+export const updateRegionSchema = z.object({
+  regionKey: z.string().trim().min(2, 'Selecione uma regiao valida'),
+});
+
+const regionKeySchema = z
+  .string()
+  .trim()
+  .min(3)
+  .max(80)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use apenas letras minusculas, numeros e hifens');
+
+export const adminRegionSchema = z.object({
+  key: regionKeySchema.optional(),
+  label: z.string().trim().min(3).max(80),
+  city: z.string().trim().min(2).max(60),
+  state: z.string().trim().min(2).max(40),
+  lat: z.coerce.number().min(-90).max(90),
+  lng: z.coerce.number().min(-180).max(180),
+  aliases: z.array(z.string().trim().min(2).max(60)).max(20).default([]),
+  isActive: z.boolean().default(true),
 });
 
 export const businessSchema = z.object({

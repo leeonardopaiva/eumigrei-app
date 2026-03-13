@@ -8,6 +8,8 @@
     "build": "prisma generate && next build",
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",
+    "regions:normalize": "node scripts/normalize-regions.mjs",
+    "regions:normalize:dry-run": "node scripts/normalize-regions.mjs --dry-run",
     "start": "next start"
   },
   "dependencies": {

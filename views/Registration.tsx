@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Shield } from 'lucide-react';
+import RegionSelector from '../components/RegionSelector';
 import { Logo } from '../components/Layout';
 
 type RegistrationMode = 'signin' | 'complete-profile';
@@ -8,7 +9,7 @@ type RegistrationValues = {
   name: string;
   email: string;
   phone: string;
-  locationLabel: string;
+  regionKey: string;
 };
 
 interface RegistrationProps {
@@ -44,7 +45,7 @@ const Registration: React.FC<RegistrationProps> = ({
     name: defaultValues?.name || '',
     email: defaultValues?.email || '',
     phone: defaultValues?.phone || '',
-    locationLabel: defaultValues?.locationLabel || '',
+    regionKey: defaultValues?.regionKey || '',
   });
 
   const isOnboarding = mode === 'complete-profile';
@@ -164,18 +165,20 @@ const Registration: React.FC<RegistrationProps> = ({
               className="w-full bg-slate-100 border border-slate-200 rounded-2xl py-4 px-6 text-sm text-slate-500 outline-none transition-all shadow-sm placeholder:text-slate-400"
             />
 
-            <input
-              required
-              type="text"
-              placeholder="Onde voce mora hoje?"
-              value={formValues.locationLabel}
-              onChange={(event) =>
+            <RegionSelector
+              value={formValues.regionKey}
+              autoDetect
+              onChange={(region) =>
                 setFormValues((current) => ({
                   ...current,
-                  locationLabel: event.target.value,
+                  regionKey: region.key,
                 }))
               }
-              className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm text-slate-900 focus:text-slate-900 focus:ring-2 focus:ring-[#004691] outline-none transition-all shadow-sm placeholder:text-slate-400"
+              hint={
+                formValues.regionKey
+                  ? 'Sua regiao inicial foi sugerida pela geolocalizacao, mas voce pode trocar.'
+                  : 'Selecione uma regiao existente para receber conteudo local.'
+              }
             />
           </div>
 
