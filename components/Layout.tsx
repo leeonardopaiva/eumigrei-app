@@ -14,8 +14,9 @@ import {
   Settings,
   ChevronDown,
   LayoutList,
+  ShieldCheck,
 } from 'lucide-react';
-import { User } from '../types';
+import { User, UserRole } from '../types';
 
 const logo26Url = '/assets/logo26.svg';
 const logo26FallbackUrl = '/assets/logo26.png';
@@ -32,21 +33,17 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = '' }) => {
     lg: 'h-14',
   }[size];
 
-  const logoImage = (
-    <img
-      src={logo26Url}
-      alt="eumigrei"
-      className={`${heightClass} w-auto object-contain transition-all duration-300 ${className}`}
-      onError={(e) => {
-        e.currentTarget.onerror = null;
-        e.currentTarget.src = logo26FallbackUrl;
-      }}
-    />
-  );
-
   return (
     <Link href="/" aria-label="Home">
-      {logoImage}
+      <img
+        src={logo26Url}
+        alt="eumigrei"
+        className={`${heightClass} w-auto object-contain transition-all duration-300 ${className}`}
+        onError={(event) => {
+          event.currentTarget.onerror = null;
+          event.currentTarget.src = logo26FallbackUrl;
+        }}
+      />
     </Link>
   );
 };
@@ -54,23 +51,25 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = '' }) => {
 interface LayoutWithUserProps {
   children: React.ReactNode;
   user: User;
+  onSignOut?: () => void;
 }
 
-const Layout: React.FC<LayoutWithUserProps> = ({ children, user }) => {
+const Layout: React.FC<LayoutWithUserProps> = ({ children, user, onSignOut }) => {
   const pathname = usePathname() || '/';
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) =>
+    path === '/' ? pathname === path : pathname === path || pathname.startsWith(`${path}/`);
   const handleMenuItemClick = () => setIsMenuOpen(false);
 
   return (
     <div className="flex flex-col min-h-screen max-w-md mx-auto bg-texture relative overflow-hidden font-sans shadow-2xl">
-      {isMenuOpen && (
+      {isMenuOpen ? (
         <div
           className="absolute inset-0 bg-black/40 z-50 animate-in fade-in duration-300 backdrop-blur-sm"
           onClick={() => setIsMenuOpen(false)}
         />
-      )}
+      ) : null}
 
       <div
         className={`absolute left-0 top-0 h-full w-[85%] bg-texture z-[60] shadow-2xl transform transition-transform duration-300 ease-out overflow-y-auto ${
@@ -108,20 +107,42 @@ const Layout: React.FC<LayoutWithUserProps> = ({ children, user }) => {
               <QuickAction icon="🇧🇷" label="Brasil" />
             </div>
             <button className="w-full flex items-center justify-center gap-2 py-2 bg-slate-100/50 rounded-xl text-slate-500 text-xs font-bold">
-              OUTROS SERVIÇOS <ChevronDown size={14} />
+              OUTROS SERVICOS <ChevronDown size={14} />
             </button>
           </div>
 
           <div className="bg-white/70 backdrop-blur-md rounded-3xl p-2 shadow-sm border border-white/50 divide-y divide-slate-100">
             <MenuListItem href="/" label="Home" icon={<HomeIcon size={22} />} active={isActive('/')} onClick={handleMenuItemClick} />
-            <MenuListItem href="/negocios" label="Negócios" icon={<Store size={18} />} onClick={handleMenuItemClick} />
-            <MenuListItem href="/noticias" label="Notícias" icon={<LayoutList size={18} />} onClick={handleMenuItemClick} />
+            <MenuListItem href="/negocios" label="Negocios" icon={<Store size={18} />} onClick={handleMenuItemClick} />
+            <MenuListItem href="/noticias" label="Noticias" icon={<LayoutList size={18} />} onClick={handleMenuItemClick} />
             <MenuListItem href="/eventos" label="Eventos" icon={<Calendar size={18} />} onClick={handleMenuItemClick} />
             <MenuListItem href="/moradia" label="Moradia" icon={<HomeIcon size={18} />} onClick={handleMenuItemClick} />
             <MenuListItem href="/profile" label="Favoritos" icon={<Heart size={18} className="text-red-400" />} onClick={handleMenuItemClick} />
+            {user.role === UserRole.ADMIN ? (
+              <MenuListItem
+                href="/admin"
+                label="Admin"
+                icon={<ShieldCheck size={18} />}
+                active={isActive('/admin')}
+                onClick={handleMenuItemClick}
+              />
+            ) : null}
             <MenuListItem href="/" label="Suporte" icon={<Headphones size={18} />} onClick={handleMenuItemClick} />
-            <MenuListItem href="/" label="Configurações" icon={<Settings size={18} />} onClick={handleMenuItemClick} />
+            <MenuListItem href="/" label="Configuracoes" icon={<Settings size={18} />} onClick={handleMenuItemClick} />
           </div>
+
+          {onSignOut ? (
+            <button
+              type="button"
+              onClick={() => {
+                handleMenuItemClick();
+                onSignOut();
+              }}
+              className="w-full rounded-2xl bg-[#004691] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#004691]/20"
+            >
+              Sair
+            </button>
+          ) : null}
         </div>
       </div>
 

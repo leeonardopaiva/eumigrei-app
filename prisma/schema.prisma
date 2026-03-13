@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  USER
+  BUSINESS_OWNER
+  ADMIN
+}
+
+enum BusinessStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  SUSPENDED
+}
+
+enum BusinessMemberRole {
+  OWNER
+  MANAGER
+}
+
+enum EventStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  CANCELED
+}
+
+enum CommunityPostStatus {
+  PUBLISHED
+  PENDING_REVIEW
+  REMOVED
+}
+
+enum ReactionType {
+  LIKE
+}
+
+model User {
+  id                  String          @id @default(cuid())
+  name                String?
+  email               String?         @unique
+  emailVerified       DateTime?
+  image               String?
+  role                UserRole        @default(USER)
+  phone               String?
+  locationLabel       String?
+  regionKey           String?
+  onboardingCompleted Boolean         @default(false)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  accounts            Account[]
+  sessions            Session[]
+  businessMemberships BusinessMember[]
+  createdBusinesses   Business[]      @relation("BusinessCreator")
+  createdEvents       Event[]         @relation("EventCreator")
+  communityPosts      CommunityPost[] @relation("CommunityPostAuthor")
+  postComments        PostComment[]   @relation("PostCommentAuthor")
+  postReactions       PostReaction[]  @relation("PostReactionAuthor")
+  postReports         PostReport[]    @relation("PostReportAuthor")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Business {
+  id            String          @id @default(cuid())
+  name          String
+  slug          String          @unique
+  category      String
+  description   String?
+  phone         String?
+  whatsapp      String?
+  website       String?
+  instagram     String?
+  address       String
+  locationLabel String
+  regionKey     String
+  imageUrl      String?
+  status        BusinessStatus  @default(PENDING_REVIEW)
+  createdById   String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  createdBy     User            @relation("BusinessCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members       BusinessMember[]
+
+  @@index([status, regionKey])
+  @@index([category, regionKey])
+}
+
+model BusinessMember {
+  id         String             @id @default(cuid())
+  businessId String
+  userId     String
+  role       BusinessMemberRole @default(OWNER)
+  createdAt  DateTime           @default(now())
+  business   Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, userId])
+}
+
+model Event {
+  id            String      @id @default(cuid())
+  title         String
+  slug          String      @unique
+  description   String
+  venueName     String
+  startsAt      DateTime
+  endsAt        DateTime?
+  locationLabel String
+  regionKey     String
+  externalUrl   String?
+  imageUrl      String?
+  status        EventStatus @default(PENDING_REVIEW)
+  createdById   String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  createdBy     User        @relation("EventCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([status, regionKey, startsAt])
+}
+
+model CommunityPost {
+  id            String              @id @default(cuid())
+  content       String              @db.Text
+  imageUrl      String?
+  externalUrl   String?
+  status        CommunityPostStatus @default(PUBLISHED)
+  authorId      String
+  regionKey     String
+  locationLabel String
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  author        User                @relation("CommunityPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  comments      PostComment[]
+  reactions     PostReaction[]
+  reports       PostReport[]
+
+  @@index([status, regionKey, createdAt])
+}
+
+model PostComment {
+  id        String        @id @default(cuid())
+  postId    String
+  authorId  String
+  content   String        @db.Text
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User          @relation("PostCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+}
+
+model PostReaction {
+  id        String        @id @default(cuid())
+  postId    String
+  authorId  String
+  type      ReactionType  @default(LIKE)
+  createdAt DateTime      @default(now())
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User          @relation("PostReactionAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, authorId, type])
+}
+
+model PostReport {
+  id        String        @id @default(cuid())
+  postId    String
+  authorId  String
+  reason    String
+  createdAt DateTime      @default(now())
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User          @relation("PostReportAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, authorId])
+}

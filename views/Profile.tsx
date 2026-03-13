@@ -19,7 +19,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
         </div>
 
         <h1 className="text-2xl font-bold text-blue-900 flex items-center gap-2">
-            Vinicius Pires <span className="text-blue-500 bg-blue-50 rounded-full p-0.5"><Plus size={12} fill="currentColor" /></span>
+            {user.name} <span className="text-blue-500 bg-blue-50 rounded-full p-0.5"><Plus size={12} fill="currentColor" /></span>
         </h1>
         <p className="text-slate-500 text-sm italic mt-2 text-center max-w-[280px]">
             "O brasileiro só aceita título se for de campão."
@@ -27,10 +27,10 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
 
         <div className="flex items-center gap-6 mt-6 text-slate-500 text-xs font-medium">
             <div className="flex items-center gap-1">
-                <Globe size={14} /> viniciuspires
+                <Globe size={14} /> {user.email ? user.email.split('@')[0] : 'eumigrei'}
             </div>
             <div className="flex items-center gap-1">
-                <MapPin size={14} /> Danbury, CT
+                <MapPin size={14} /> {user.location}
             </div>
         </div>
 

@@ -1,7 +1,7 @@
 
 export enum UserRole {
-  CLIENT = 'CLIENT',
-  ADVERTISER = 'ADVERTISER',
+  USER = 'USER',
+  BUSINESS_OWNER = 'BUSINESS_OWNER',
   ADMIN = 'ADMIN'
 }
 
@@ -11,28 +11,59 @@ export interface User {
   role: UserRole;
   avatar: string;
   location: string;
+  email?: string | null;
+  phone?: string | null;
+}
+
+export interface CommunityAuthor {
+  id: string;
+  name: string;
+  image?: string | null;
+  locationLabel?: string | null;
 }
 
 export interface Post {
   id: string;
-  author: User;
+  author: CommunityAuthor;
   content: string;
-  timestamp: string;
-  likes: number;
-  comments: number;
-  image?: string;
-  isSponsored?: boolean;
+  createdAt: string;
+  locationLabel: string;
+  imageUrl?: string | null;
+  likeCount: number;
+  commentCount: number;
+  viewerHasLiked: boolean;
+  comments: PostComment[];
+  status?: 'PUBLISHED' | 'PENDING_REVIEW' | 'REMOVED';
+}
+
+export interface PostComment {
+  id: string;
+  content: string;
+  createdAt: string;
+  author: CommunityAuthor;
 }
 
 export interface Business {
   id: string;
+  slug?: string;
   name: string;
   category: string;
-  rating: number;
-  reviews: number;
   address: string;
-  image: string;
+  imageUrl?: string | null;
+  locationLabel?: string;
+  status?: string;
   isFavorite?: boolean;
+}
+
+export interface EventItem {
+  id: string;
+  slug?: string;
+  title: string;
+  venueName: string;
+  startsAt: string;
+  locationLabel: string;
+  imageUrl?: string | null;
+  status?: string;
 }
 
 export interface Job {
