@@ -31,11 +31,14 @@ export interface Post {
   createdAt: string;
   locationLabel: string;
   imageUrl?: string | null;
+  externalUrl?: string | null;
   likeCount: number;
   commentCount: number;
   viewerHasLiked: boolean;
   comments: PostComment[];
   status?: 'PUBLISHED' | 'PENDING_REVIEW' | 'REMOVED';
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 export interface PostComment {
@@ -43,6 +46,8 @@ export interface PostComment {
   content: string;
   createdAt: string;
   author: CommunityAuthor;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 export interface Business {
@@ -72,8 +77,17 @@ export interface EventItem {
   venueName: string;
   startsAt: string;
   locationLabel: string;
+  description?: string;
+  endsAt?: string | null;
+  regionKey?: string;
+  externalUrl?: string | null;
   imageUrl?: string | null;
+  galleryUrls?: string[];
   status?: string;
+  canEdit?: boolean;
+  publicPath?: string;
+  city?: string;
+  state?: string;
 }
 
 export interface BannerAd {

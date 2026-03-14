@@ -100,6 +100,11 @@ export const updateBusinessMediaSchema = z.object({
   galleryUrls: optionalUrlArray,
 });
 
+export const updateEventMediaSchema = z.object({
+  imageUrl: optionalUrl,
+  galleryUrls: optionalUrlArray,
+});
+
 const regionKeySchema = z
   .string()
   .trim()
@@ -149,6 +154,7 @@ export const eventSchema = z.object({
   regionKey: z.string().trim().min(2, 'Selecione uma regiao valida'),
   externalUrl: optionalUrl,
   imageUrl: optionalUrl,
+  galleryUrls: optionalUrlArray,
 });
 
 export const adminBusinessSchema = businessSchema.extend({
@@ -175,6 +181,7 @@ export const adminUserSchema = z.object({
 export const communityPostSchema = z.object({
   content: z.string().trim().min(5).max(500),
   imageUrl: optionalUrl,
+  externalUrl: optionalUrl,
 });
 
 export const commentSchema = z.object({

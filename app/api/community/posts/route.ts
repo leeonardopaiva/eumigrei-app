@@ -7,6 +7,77 @@ import { communityPostSchema } from '@/lib/validators';
 
 const DAILY_POST_LIMIT = 3;
 
+const mapCommunityPost = (
+  post: {
+    id: string;
+    content: string;
+    imageUrl: string | null;
+    externalUrl: string | null;
+    status: CommunityPostStatus;
+    createdAt: Date;
+    locationLabel: string;
+    author: {
+      id: string;
+      name: string | null;
+      image: string | null;
+      locationLabel: string | null;
+    };
+    comments: Array<{
+      id: string;
+      content: string;
+      createdAt: Date;
+      authorId: string;
+      author: {
+        id: string;
+        name: string | null;
+        image: string | null;
+      };
+    }>;
+    reactions: Array<{
+      authorId: string;
+    }>;
+    _count: {
+      comments: number;
+      reactions: number;
+    };
+    authorId: string;
+  },
+  session: Awaited<ReturnType<typeof getServerAuthSession>>,
+) => {
+  const isAdmin = session?.user?.role === 'ADMIN';
+  const isPostOwner = session?.user?.id === post.authorId;
+
+  return {
+    id: post.id,
+    content: post.content,
+    imageUrl: post.imageUrl,
+    externalUrl: post.externalUrl,
+    status: post.status,
+    createdAt: post.createdAt,
+    locationLabel: post.locationLabel,
+    author: post.author,
+    comments: post.comments.map((comment) => {
+      const canManageComment = isAdmin || session?.user?.id === comment.authorId;
+
+      return {
+        id: comment.id,
+        content: comment.content,
+        createdAt: comment.createdAt,
+        author: comment.author,
+        canEdit: canManageComment,
+        canDelete: canManageComment,
+      };
+    }),
+    likeCount: post._count.reactions,
+    commentCount: post._count.comments,
+    viewerHasLiked: session?.user?.id
+      ? post.reactions.some((reaction) => reaction.authorId === session.user.id)
+      : false,
+    canEdit: isAdmin || isPostOwner,
+    canDelete: isAdmin || isPostOwner,
+  };
+};
+
 export async function GET(request: Request) {
   const session = await getServerAuthSession();
   const { searchParams } = new URL(request.url);
@@ -56,21 +127,7 @@ export async function GET(request: Request) {
   });
 
   return NextResponse.json({
-    posts: posts.map((post) => ({
-      id: post.id,
-      content: post.content,
-      imageUrl: post.imageUrl,
-      status: post.status,
-      createdAt: post.createdAt,
-      locationLabel: post.locationLabel,
-      author: post.author,
-      comments: post.comments,
-      likeCount: post._count.reactions,
-      commentCount: post._count.comments,
-      viewerHasLiked: session?.user?.id
-        ? post.reactions.some((reaction) => reaction.authorId === session.user.id)
-        : false,
-    })),
+    posts: posts.map((post) => mapCommunityPost(post, session)),
   });
 }
 
@@ -131,13 +188,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const hasExternalLink = /(https?:\/\/|www\.)/i.test(parsed.data.content);
+  const hasExternalLink = Boolean(parsed.data.externalUrl);
 
   const post = await prisma.communityPost.create({
     data: {
       content: parsed.data.content,
       imageUrl: parsed.data.imageUrl,
-      externalUrl: hasExternalLink ? parsed.data.content.match(/https?:\/\/\S+|www\.\S+/i)?.[0] : null,
+      externalUrl: parsed.data.externalUrl ?? null,
       status: hasExternalLink ? CommunityPostStatus.PENDING_REVIEW : CommunityPostStatus.PUBLISHED,
       authorId: session.user.id,
       regionKey: session.user.regionKey,
@@ -160,6 +217,7 @@ export async function POST(request: Request) {
       id: post.id,
       content: post.content,
       imageUrl: post.imageUrl,
+      externalUrl: post.externalUrl,
       status: post.status,
       createdAt: post.createdAt,
       locationLabel: post.locationLabel,
@@ -168,6 +226,8 @@ export async function POST(request: Request) {
       likeCount: 0,
       commentCount: 0,
       viewerHasLiked: false,
+      canEdit: true,
+      canDelete: true,
     },
     message:
       post.status === CommunityPostStatus.PUBLISHED
