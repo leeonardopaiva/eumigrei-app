@@ -1,5 +1,17 @@
 import React, { startTransition, useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { useToast } from '../components/feedback/ToastProvider';
+import CloudinaryImageField from '../components/forms/CloudinaryImageField';
+import FieldErrorMessage from '../components/forms/FieldErrorMessage';
 import { MapPin, Plus } from 'lucide-react';
+import RegionSelector from '../components/RegionSelector';
+import {
+  type FieldErrors,
+  hasFieldErrors,
+  normalizeUrlFieldValue,
+  requiredFieldError,
+  validateOptionalUrlField,
+} from '../lib/forms/validation';
 import { EventItem } from '../types';
 
 const SAMPLE_EVENTS: EventItem[] = [
@@ -27,19 +39,51 @@ const emptyForm = {
   venueName: '',
   startsAt: '',
   endsAt: '',
-  locationLabel: '',
+  regionKey: '',
   externalUrl: '',
   imageUrl: '',
 };
 
+type EventField =
+  | 'title'
+  | 'description'
+  | 'venueName'
+  | 'startsAt'
+  | 'regionKey'
+  | 'externalUrl'
+  | 'imageUrl';
+
 const Marketplace: React.FC = () => {
+  const { data: session } = useSession();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('Proximos');
   const [events, setEvents] = useState<EventItem[]>([]);
   const [resultScope, setResultScope] = useState<'local' | 'global'>('local');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [createForm, setCreateForm] = useState(emptyForm);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<EventField>>({});
+
+  const clearFieldError = (field: EventField) => {
+    setFieldErrors((current) => {
+      if (!current[field]) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [field]: undefined,
+      };
+    });
+  };
+
+  useEffect(() => {
+    if (session?.user?.regionKey) {
+      setCreateForm((current) =>
+        current.regionKey ? current : { ...current, regionKey: session.user.regionKey || '' },
+      );
+    }
+  }, [session?.user?.regionKey]);
 
   useEffect(() => {
     let ignore = false;
@@ -77,7 +121,45 @@ const Marketplace: React.FC = () => {
 
   const handleCreateEvent = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setFeedback(null);
+
+    const nextErrors: FieldErrors<EventField> = {};
+
+    if (!createForm.title.trim()) {
+      nextErrors.title = requiredFieldError('o titulo do evento');
+    }
+
+    if (!createForm.description.trim()) {
+      nextErrors.description = requiredFieldError('a descricao do evento');
+    }
+
+    if (!createForm.venueName.trim()) {
+      nextErrors.venueName = requiredFieldError('o local do evento');
+    }
+
+    if (!createForm.startsAt.trim()) {
+      nextErrors.startsAt = requiredFieldError('a data de inicio');
+    }
+
+    if (!createForm.regionKey.trim()) {
+      nextErrors.regionKey = requiredFieldError('uma regiao');
+    }
+
+    const externalUrlError = validateOptionalUrlField(createForm.externalUrl, 'O link externo');
+    if (externalUrlError) {
+      nextErrors.externalUrl = externalUrlError;
+    }
+
+    const imageUrlError = validateOptionalUrlField(createForm.imageUrl, 'O link da imagem');
+    if (imageUrlError) {
+      nextErrors.imageUrl = imageUrlError;
+    }
+
+    setFieldErrors(nextErrors);
+
+    if (hasFieldErrors(nextErrors)) {
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -90,22 +172,24 @@ const Marketplace: React.FC = () => {
           ...createForm,
           startsAt: createForm.startsAt ? new Date(createForm.startsAt).toISOString() : '',
           endsAt: createForm.endsAt ? new Date(createForm.endsAt).toISOString() : undefined,
+          externalUrl: normalizeUrlFieldValue(createForm.externalUrl),
+          imageUrl: normalizeUrlFieldValue(createForm.imageUrl),
         }),
       });
 
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setFeedback(payload?.error ?? 'Nao foi possivel enviar o evento.');
+        showToast(payload?.error ?? 'Nao foi possivel enviar o evento.', 'error');
         return;
       }
 
-      setFeedback('Seu evento foi enviado para aprovacao.');
+      showToast('Seu evento foi enviado para aprovacao.', 'success');
       setCreateForm(emptyForm);
       setShowCreateForm(false);
     } catch (error) {
       console.error('Failed to create event:', error);
-      setFeedback('Nao foi possivel enviar o evento.');
+      showToast('Nao foi possivel enviar o evento.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -147,9 +231,12 @@ const Marketplace: React.FC = () => {
               onChange={(event) =>
                 setCreateForm((current) => ({ ...current, title: event.target.value }))
               }
+              onInput={() => clearFieldError('title')}
+              aria-invalid={Boolean(fieldErrors.title)}
               placeholder="Titulo do evento"
               className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
             />
+            <FieldErrorMessage message={fieldErrors.title} />
             <textarea
               required
               rows={3}
@@ -157,18 +244,24 @@ const Marketplace: React.FC = () => {
               onChange={(event) =>
                 setCreateForm((current) => ({ ...current, description: event.target.value }))
               }
+              onInput={() => clearFieldError('description')}
+              aria-invalid={Boolean(fieldErrors.description)}
               placeholder="Descricao do evento"
               className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
             />
+            <FieldErrorMessage message={fieldErrors.description} />
             <input
               required
               value={createForm.venueName}
               onChange={(event) =>
                 setCreateForm((current) => ({ ...current, venueName: event.target.value }))
               }
+              onInput={() => clearFieldError('venueName')}
+              aria-invalid={Boolean(fieldErrors.venueName)}
               placeholder="Local"
               className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
             />
+            <FieldErrorMessage message={fieldErrors.venueName} />
             <div className="grid grid-cols-2 gap-3">
               <input
                 required
@@ -177,6 +270,8 @@ const Marketplace: React.FC = () => {
                 onChange={(event) =>
                   setCreateForm((current) => ({ ...current, startsAt: event.target.value }))
                 }
+                onInput={() => clearFieldError('startsAt')}
+                aria-invalid={Boolean(fieldErrors.startsAt)}
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
               />
               <input
@@ -188,18 +283,41 @@ const Marketplace: React.FC = () => {
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
               />
             </div>
+            <FieldErrorMessage message={fieldErrors.startsAt} />
+            <RegionSelector
+              value={createForm.regionKey}
+              onChange={(region) => {
+                clearFieldError('regionKey');
+                setCreateForm((current) => ({ ...current, regionKey: region.key }));
+              }}
+              hint="Escolha uma regiao existente para padronizar a agenda."
+            />
+            <FieldErrorMessage message={fieldErrors.regionKey} />
             <input
-              required
-              value={createForm.locationLabel}
+              value={createForm.externalUrl}
               onChange={(event) =>
-                setCreateForm((current) => ({ ...current, locationLabel: event.target.value }))
+                setCreateForm((current) => ({ ...current, externalUrl: event.target.value }))
               }
-              placeholder="Cidade / regiao"
+              onInput={() => clearFieldError('externalUrl')}
+              aria-invalid={Boolean(fieldErrors.externalUrl)}
+              placeholder="Link externo do evento"
               className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+            />
+            <FieldErrorMessage message={fieldErrors.externalUrl} />
+            <CloudinaryImageField
+              value={createForm.imageUrl}
+              onChange={(value) =>
+                setCreateForm((current) => ({ ...current, imageUrl: value }))
+              }
+              onClearError={() => clearFieldError('imageUrl')}
+              error={fieldErrors.imageUrl}
+              folder="events"
+              placeholder="Link da imagem do evento"
+              hint="Envie a imagem do evento pela Cloudinary ou cole uma URL publica."
             />
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !createForm.regionKey}
               className="w-full rounded-2xl bg-blue-900 px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
             >
               {submitting ? 'Enviando...' : 'Enviar para aprovacao'}
@@ -207,11 +325,6 @@ const Marketplace: React.FC = () => {
           </form>
         ) : null}
 
-        {feedback ? (
-          <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
-            {feedback}
-          </div>
-        ) : null}
       </div>
 
       <div className="space-y-4">

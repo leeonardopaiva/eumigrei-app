@@ -2,6 +2,7 @@ import { EventStatus } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { findRegionByKey } from '@/lib/region-store';
 import { slugify, uniqueSlug } from '@/lib/slug';
 import { eventSchema } from '@/lib/validators';
 
@@ -84,6 +85,12 @@ export async function POST(request: Request) {
     );
   }
 
+  const region = await findRegionByKey(parsed.data.regionKey, { activeOnly: true });
+
+  if (!region) {
+    return NextResponse.json({ error: 'Selecione uma regiao valida.' }, { status: 400 });
+  }
+
   const baseSlug = slugify(parsed.data.title);
   const slug =
     baseSlug &&
@@ -102,8 +109,8 @@ export async function POST(request: Request) {
       venueName: parsed.data.venueName,
       startsAt: new Date(parsed.data.startsAt),
       endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
-      locationLabel: parsed.data.locationLabel,
-      regionKey: session.user.regionKey || slugify(parsed.data.locationLabel),
+      locationLabel: region.label,
+      regionKey: region.key,
       externalUrl: parsed.data.externalUrl,
       imageUrl: parsed.data.imageUrl,
       status: EventStatus.PENDING_REVIEW,

@@ -1,28 +1,148 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { Globe, MapPin, PencilLine, Plus } from 'lucide-react';
+import { Copy, Globe, Mail, MapPin, PencilLine, Phone, Save, UserRound } from 'lucide-react';
+import { useToast } from '../components/feedback/ToastProvider';
+import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import RegionSelector from '../components/RegionSelector';
+import { formatLoosePhoneInput } from '../lib/forms/phone';
+import { normalizeUrlFieldValue } from '../lib/forms/validation';
+import { normalizeUsernameInput } from '../lib/username';
 import { User } from '../types';
+
+const DEFAULT_AVATAR_URL = 'https://picsum.photos/seed/eumigrei-user/200';
+
+type ProfileFormState = {
+  name: string;
+  username: string;
+  email: string;
+  phone: string;
+};
 
 const Profile: React.FC<{ user: User }> = ({ user }) => {
   const { update } = useSession();
+  const { showToast } = useToast();
+  const [editingAvatar, setEditingAvatar] = useState(false);
+  const [editingAccount, setEditingAccount] = useState(false);
   const [editingRegion, setEditingRegion] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [savingAvatar, setSavingAvatar] = useState(false);
+  const [savingAccount, setSavingAccount] = useState(false);
   const [selectedRegionKey, setSelectedRegionKey] = useState(user.regionKey || '');
   const [savingRegion, setSavingRegion] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [accountForm, setAccountForm] = useState<ProfileFormState>({
+    name: user.name,
+    username: user.username || '',
+    email: user.email || '',
+    phone: user.phone || '',
+  });
 
   useEffect(() => {
     setSelectedRegionKey(user.regionKey || '');
   }, [user.regionKey]);
 
+  useEffect(() => {
+    setAvatarUrl(user.avatar === DEFAULT_AVATAR_URL ? '' : user.avatar);
+  }, [user.avatar]);
+
+  useEffect(() => {
+    setAccountForm({
+      name: user.name,
+      username: user.username || '',
+      email: user.email || '',
+      phone: user.phone || '',
+    });
+  }, [user.email, user.name, user.phone, user.username]);
+
+  const publicProfileUrl = useMemo(() => {
+    return user.username
+      ? `https://eumigrei.com.br/${user.username}`
+      : 'https://eumigrei.com.br/seu-nome-publico';
+  }, [user.username]);
+
+  const handleAvatarSave = async () => {
+    setSavingAvatar(true);
+
+    try {
+      const response = await fetch('/api/profile/image', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: normalizeUrlFieldValue(avatarUrl) || undefined,
+        }),
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        showToast(payload?.error ?? 'Nao foi possivel atualizar sua foto.', 'error');
+        return;
+      }
+
+      await update();
+      setEditingAvatar(false);
+      showToast(avatarUrl ? 'Foto do perfil atualizada.' : 'Foto do perfil removida.', 'success');
+    } catch (error) {
+      console.error('Failed to update profile image:', error);
+      showToast('Nao foi possivel atualizar sua foto.', 'error');
+    } finally {
+      setSavingAvatar(false);
+    }
+  };
+
+  const handleAccountSave = async () => {
+    if (!accountForm.name.trim()) {
+      showToast('Informe seu nome para salvar o perfil.', 'error');
+      return;
+    }
+
+    if (!accountForm.username.trim()) {
+      showToast('Escolha um nome publico disponivel.', 'error');
+      return;
+    }
+
+    setSavingAccount(true);
+
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: accountForm.name.trim(),
+          username: normalizeUsernameInput(accountForm.username),
+          email: accountForm.email.trim() || undefined,
+          phone: accountForm.phone.trim() || undefined,
+        }),
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        showToast(payload?.error ?? 'Nao foi possivel atualizar seus dados.', 'error');
+        return;
+      }
+
+      await update();
+      setEditingAccount(false);
+      showToast('Seus dados foram atualizados.', 'success');
+    } catch (error) {
+      console.error('Failed to update profile data:', error);
+      showToast('Nao foi possivel atualizar seus dados.', 'error');
+    } finally {
+      setSavingAccount(false);
+    }
+  };
+
   const handleRegionSave = async () => {
     if (!selectedRegionKey) {
-      setFeedback('Selecione uma regiao valida antes de salvar.');
+      showToast('Selecione uma regiao valida antes de salvar.', 'error');
       return;
     }
 
     setSavingRegion(true);
-    setFeedback(null);
 
     try {
       const response = await fetch('/api/profile/region', {
@@ -36,144 +156,280 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setFeedback(payload?.error ?? 'Nao foi possivel atualizar a sua regiao.');
+        showToast(payload?.error ?? 'Nao foi possivel atualizar a sua regiao.', 'error');
         return;
       }
 
       await update();
       setEditingRegion(false);
-      setFeedback('Regiao atualizada com sucesso.');
+      showToast('Regiao atualizada com sucesso.', 'success');
     } catch (error) {
       console.error('Failed to update region:', error);
-      setFeedback('Nao foi possivel atualizar a sua regiao.');
+      showToast('Nao foi possivel atualizar a sua regiao.', 'error');
     } finally {
       setSavingRegion(false);
     }
   };
 
+  const handleCopyPublicUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(publicProfileUrl);
+      showToast('Link publico copiado.', 'success');
+    } catch {
+      showToast(publicProfileUrl, 'info', 5000);
+    }
+  };
+
   return (
-    <div className="animate-in fade-in duration-500 pb-20">
-      <div className="px-5 pt-8 flex flex-col items-center">
-        <div className="relative mb-6">
-            <div className="w-32 h-32 rounded-full border-4 border-blue-50 flex items-center justify-center p-1">
-                <img src={user.avatar} className="w-full h-full rounded-full object-cover border-2 border-white shadow-lg" alt="Profile" />
-            </div>
-            <div className="absolute bottom-1 right-2 bg-blue-600 text-white p-1 rounded-full border-2 border-white">
-                <Plus size={16} />
-            </div>
+    <div className="animate-in space-y-5 px-5 pb-24 pt-6 fade-in duration-500">
+      <section className="rounded-[32px] bg-gradient-to-br from-[#004691] via-[#0C58B6] to-[#27A0FF] p-5 text-white shadow-xl">
+        <div className="flex items-start gap-4">
+          <div className="relative">
+            <img
+              src={user.avatar}
+              className="h-24 w-24 rounded-[28px] border-4 border-white/30 object-cover shadow-lg"
+              alt={user.name}
+            />
+            <button
+              type="button"
+              onClick={() => setEditingAvatar((current) => !current)}
+              className="absolute -bottom-2 -right-2 rounded-full border-2 border-white bg-white p-2 text-[#004691] shadow-lg"
+            >
+              <PencilLine size={14} />
+            </button>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/70">Meu perfil</p>
+            <h1 className="mt-2 text-2xl font-bold">{user.name}</h1>
+            <p className="mt-1 text-sm font-semibold text-white/80">
+              {user.username ? `@${user.username}` : 'Defina seu nome publico'}
+            </p>
+            <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white/90">
+              <MapPin size={14} />
+              {user.location}
+            </p>
+          </div>
         </div>
 
-        <h1 className="text-2xl font-bold text-blue-900 flex items-center gap-2">
-            {user.name} <span className="text-blue-500 bg-blue-50 rounded-full p-0.5"><Plus size={12} fill="currentColor" /></span>
-        </h1>
-        <p className="text-slate-500 text-sm italic mt-2 text-center max-w-[280px]">
-            "O brasileiro só aceita título se for de campão."
-        </p>
+        {editingAvatar ? (
+          <div className="mt-5 rounded-[28px] bg-white/10 p-4 backdrop-blur-sm">
+            <CloudinaryImageField
+              value={avatarUrl}
+              onChange={setAvatarUrl}
+              folder="profiles"
+              placeholder="Link da foto do perfil"
+              hint="Envie sua foto pela Cloudinary ou cole uma URL publica."
+            />
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={handleAvatarSave}
+                disabled={savingAvatar}
+                className="flex-1 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-[#004691] shadow-md disabled:opacity-60"
+              >
+                {savingAvatar ? 'Salvando...' : 'Salvar foto'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setAvatarUrl('')}
+                disabled={savingAvatar}
+                className="rounded-2xl border border-white/30 bg-white/10 px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
+              >
+                Remover
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </section>
 
-        <div className="flex items-center gap-6 mt-6 text-slate-500 text-xs font-medium">
-            <div className="flex items-center gap-1">
-                <Globe size={14} /> {user.email ? user.email.split('@')[0] : 'eumigrei'}
-            </div>
-            <div className="flex items-center gap-1">
-                <MapPin size={14} /> {user.location}
-            </div>
+      <section className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+              Nome publico
+            </p>
+            <h2 className="mt-2 text-xl font-bold text-[#004691]">
+              {user.username ? `@${user.username}` : 'Ainda nao definido'}
+            </h2>
+            <p className="mt-2 break-all text-sm text-slate-500">{publicProfileUrl}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void handleCopyPublicUrl()}
+            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600"
+          >
+            <Copy size={14} />
+            Copiar
+          </button>
+        </div>
+      </section>
+
+      <section className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+              Dados da conta
+            </p>
+            <h2 className="mt-2 text-xl font-bold text-[#004691]">Edite seus dados</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Nome, email, telefone e nome publico que sera usado para divulgacao.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingAccount((current) => !current);
+              setAccountForm({
+                name: user.name,
+                username: user.username || '',
+                email: user.email || '',
+                phone: user.phone || '',
+              });
+            }}
+            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600"
+          >
+            <PencilLine size={14} />
+            {editingAccount ? 'Fechar' : 'Editar'}
+          </button>
         </div>
 
-        <button className="mt-8 bg-blue-600 text-white px-12 py-3 rounded-2xl font-bold shadow-xl shadow-blue-100 flex items-center gap-2 transition-transform active:scale-95">
-            <Plus size={18} /> Adicionar
-        </button>
-      </div>
-
-      <div className="mt-8 px-5">
-        <div className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-                Regiao ativa
-              </p>
-              <h2 className="mt-2 text-xl font-bold text-[#004691]">
-                {user.location}
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Comunidade, negocios e eventos priorizam esta regiao.
-              </p>
+        {editingAccount ? (
+          <div className="mt-5 space-y-3 rounded-[28px] bg-slate-50 p-4">
+            <FormInput
+              value={accountForm.name}
+              onChange={(value) => setAccountForm((current) => ({ ...current, name: value }))}
+              placeholder="Nome completo"
+              icon={<UserRound size={16} />}
+            />
+            <FormInput
+              value={accountForm.username}
+              onChange={(value) =>
+                setAccountForm((current) => ({
+                  ...current,
+                  username: normalizeUsernameInput(value),
+                }))
+              }
+              placeholder="Nome publico"
+              icon={<Globe size={16} />}
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FormInput
+                value={accountForm.email}
+                onChange={(value) => setAccountForm((current) => ({ ...current, email: value }))}
+                placeholder="Email"
+                icon={<Mail size={16} />}
+                type="email"
+              />
+              <FormInput
+                value={accountForm.phone}
+                onChange={(value) =>
+                  setAccountForm((current) => ({
+                    ...current,
+                    phone: formatLoosePhoneInput(value),
+                  }))
+                }
+                placeholder="Telefone"
+                icon={<Phone size={16} />}
+                type="tel"
+              />
             </div>
             <button
               type="button"
-              onClick={() => setEditingRegion((current) => !current)}
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600"
+              onClick={handleAccountSave}
+              disabled={savingAccount}
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#004691] px-4 text-sm font-bold text-white shadow-md disabled:opacity-60"
             >
-              <PencilLine size={14} />
-              {editingRegion ? 'Fechar' : 'Alterar'}
+              <Save size={16} />
+              {savingAccount ? 'Salvando...' : 'Salvar dados'}
             </button>
           </div>
+        ) : (
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <ProfileMeta label="Email" value={user.email || 'Nao informado'} icon={<Mail size={16} />} />
+            <ProfileMeta label="Telefone" value={user.phone || 'Nao informado'} icon={<Phone size={16} />} />
+          </div>
+        )}
+      </section>
 
-          {editingRegion ? (
-            <div className="mt-5 space-y-4">
-              <RegionSelector
-                value={selectedRegionKey}
-                onChange={(region) => {
-                  setSelectedRegionKey(region.key);
-                  setFeedback(null);
-                }}
-                hint="Voce pode manter sua localizacao atual ou trocar manualmente para outra regiao existente."
-              />
-
-              <button
-                type="button"
-                onClick={handleRegionSave}
-                disabled={savingRegion}
-                className="w-full rounded-2xl bg-[#004691] px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
-              >
-                {savingRegion ? 'Salvando...' : 'Salvar regiao'}
-              </button>
-            </div>
-          ) : null}
-
-          {feedback ? (
-            <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
-              {feedback}
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="mt-10">
-        <div className="flex items-center justify-around border-b border-slate-100 mb-4 px-5">
-            {['Sobre', 'Interesses', 'Fotos', 'Recomendações'].map((tab, i) => (
-                <button key={tab} className={`pb-3 text-sm font-bold ${i === 2 ? 'text-blue-900 border-b-2 border-blue-900' : 'text-slate-400'}`}>
-                    {tab}
-                </button>
-            ))}
+      <section className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+              Regiao ativa
+            </p>
+            <h2 className="mt-2 text-xl font-bold text-[#004691]">{user.location}</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Comunidade, negocios e eventos priorizam esta regiao.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setEditingRegion((current) => !current)}
+            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600"
+          >
+            <PencilLine size={14} />
+            {editingRegion ? 'Fechar' : 'Alterar'}
+          </button>
         </div>
 
-        <div className="px-5 space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="font-bold text-blue-900">Fotos</h3>
-                <ChevronRight size={20} className="text-slate-400" />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-                {[1, 2, 3, 4, 5, 6].map(i => (
-                    <div key={i} className="relative rounded-xl overflow-hidden aspect-square">
-                        <img src={`https://picsum.photos/seed/profile${i}/400`} className="w-full h-full object-cover" alt="photo" />
-                        {i === 6 && (
-                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-bold text-sm">
-                                +48
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>
-        </div>
-      </div>
+        {editingRegion ? (
+          <div className="mt-5 space-y-4">
+            <RegionSelector
+              value={selectedRegionKey}
+              onChange={(region) => {
+                setSelectedRegionKey(region.key);
+              }}
+              hint="Voce pode manter sua localizacao atual ou trocar manualmente para outra regiao existente."
+            />
+
+            <button
+              type="button"
+              onClick={handleRegionSave}
+              disabled={savingRegion}
+              className="w-full rounded-2xl bg-[#004691] px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
+            >
+              {savingRegion ? 'Salvando...' : 'Salvar regiao'}
+            </button>
+          </div>
+        ) : null}
+      </section>
     </div>
   );
 };
 
-const ChevronRight: React.FC<{ size?: number; className?: string }> = ({ size = 20, className = "" }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <path d="m9 18 6-6-6-6"/>
-    </svg>
+const FormInput: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  icon: React.ReactNode;
+  type?: string;
+}> = ({ value, onChange, placeholder, icon, type = 'text' }) => (
+  <label className="relative block">
+    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+      {icon}
+    </span>
+    <input
+      type={type}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder={placeholder}
+      className="w-full rounded-2xl border border-slate-200 bg-white px-11 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+    />
+  </label>
+);
+
+const ProfileMeta: React.FC<{ label: string; value: string; icon: React.ReactNode }> = ({
+  label,
+  value,
+  icon,
+}) => (
+  <div className="rounded-[24px] border border-slate-100 bg-slate-50 p-4">
+    <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+      {icon}
+      {label}
+    </div>
+    <p className="mt-2 break-all text-sm font-semibold text-slate-700">{value}</p>
+  </div>
 );
 
 export default Profile;

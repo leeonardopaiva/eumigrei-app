@@ -9,15 +9,20 @@ import {
   Share2,
   Sparkles,
 } from 'lucide-react';
+import { useToast } from '../components/feedback/ToastProvider';
+import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import { Post, User } from '../types';
+import { normalizeUrlFieldValue } from '../lib/forms/validation';
 import { getImmigrationHelp } from '../services/geminiService';
 
 const Community: React.FC<{ user: User }> = ({ user }) => {
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('Destaques');
   const [postContent, setPostContent] = useState('');
+  const [postImageUrl, setPostImageUrl] = useState('');
+  const [showImageComposer, setShowImageComposer] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [publishing, setPublishing] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
 
@@ -60,12 +65,11 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
   };
 
   const handlePublish = async () => {
-    if (!postContent.trim()) {
-      setFeedback('Escreva algo antes de publicar.');
+    if (!postContent.trim() && !postImageUrl.trim()) {
+      showToast('Escreva algo antes de publicar.', 'error');
       return;
     }
 
-    setFeedback(null);
     setPublishing(true);
 
     try {
@@ -74,25 +78,30 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ content: postContent }),
+        body: JSON.stringify({
+          content: postContent.trim() || 'Compartilhando uma imagem com a comunidade.',
+          imageUrl: normalizeUrlFieldValue(postImageUrl),
+        }),
       });
 
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setFeedback(payload?.error ?? 'Nao foi possivel publicar agora.');
+        showToast(payload?.error ?? 'Nao foi possivel publicar agora.', 'error');
         return;
       }
 
-      setFeedback(payload?.message ?? 'Post publicado.');
+      showToast(payload?.message ?? 'Post publicado.', 'success');
       setPostContent('');
+      setPostImageUrl('');
+      setShowImageComposer(false);
 
       if (payload?.post?.status === 'PUBLISHED') {
         setPosts((current) => [payload.post, ...current]);
       }
     } catch (error) {
       console.error('Failed to publish post:', error);
-      setFeedback('Nao foi possivel publicar agora.');
+      showToast('Nao foi possivel publicar agora.', 'error');
     } finally {
       setPublishing(false);
     }
@@ -194,9 +203,22 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
               className="flex-1 bg-slate-50 border-none rounded-2xl py-2 px-4 text-sm focus:ring-0"
             />
           </div>
+          {showImageComposer ? (
+            <CloudinaryImageField
+              value={postImageUrl}
+              onChange={setPostImageUrl}
+              folder="community"
+              placeholder="Link da imagem do post"
+              hint="Envie uma imagem pela Cloudinary ou cole uma URL publica."
+            />
+          ) : null}
           <div className="flex items-center justify-between pt-2">
             <div className="flex items-center gap-4">
-              <button className="flex items-center gap-1 text-green-500 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setShowImageComposer((current) => !current)}
+                className="flex items-center gap-1 text-green-500 text-xs font-bold"
+              >
                 <Camera size={16} /> Foto
               </button>
               <button className="flex items-center gap-1 text-blue-500 text-xs font-bold">
@@ -214,7 +236,6 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
               {publishing ? 'Publicando...' : 'Publicar'}
             </button>
           </div>
-          {feedback ? <p className="text-xs font-medium text-blue-700">{feedback}</p> : null}
         </div>
       </div>
 
@@ -329,6 +350,11 @@ const PostCard: React.FC<{
         </button>
       </div>
       <p className="text-slate-700 text-sm leading-relaxed">{post.content}</p>
+      {post.imageUrl ? (
+        <div className="overflow-hidden rounded-3xl border border-slate-100 bg-slate-50">
+          <img src={post.imageUrl} className="max-h-[420px] w-full object-cover" alt="Imagem da publicacao" />
+        </div>
+      ) : null}
       <div className="pt-2 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button

@@ -1,135 +1,452 @@
 import React, { useEffect, useState } from 'react';
-import { Phone, Heart, Star, MapPin, Share2 } from 'lucide-react';
+import {
+  Copy,
+  Globe2,
+  Heart,
+  Images,
+  Instagram,
+  MapPin,
+  MessageCircle,
+  PencilLine,
+  Phone,
+  Share2,
+} from 'lucide-react';
+import { useToast } from '../components/feedback/ToastProvider';
+import CloudinaryImageField from '../components/forms/CloudinaryImageField';
+import ImageGalleryField from '../components/forms/ImageGalleryField';
+import { normalizeUrlFieldValue } from '../lib/forms/validation';
+import { User } from '../types';
 
 interface BusinessDetailProps {
   businessId?: string;
+  user: User;
 }
 
 type BusinessDetailState = {
+  id: string;
+  slug: string;
   name: string;
   description: string;
   address: string;
   category: string;
   imageUrl: string;
+  galleryUrls: string[];
   phone: string;
+  whatsapp: string;
+  website: string;
+  instagram: string;
   locationLabel: string;
+  createdByName: string;
+  canEdit: boolean;
+  publicPath: string;
 };
 
 const defaultBusiness: BusinessDetailState = {
-  name: 'Minas Grill',
-  description:
-    'Um espaco brasileiro para a comunidade local, com foco em atendimento acolhedor e servicos confiaveis.',
-  address: '57 Cambridge St., Boston, MA',
-  category: 'Restaurante Brasileiro',
+  id: '',
+  slug: '',
+  name: 'Negocio local',
+  description: 'Os detalhes deste negocio ainda nao foram carregados.',
+  address: 'Endereco indisponivel',
+  category: 'Negocio',
   imageUrl: 'https://picsum.photos/seed/minasgrill/800/600',
-  phone: '(617) 000-0000',
-  locationLabel: 'Boston, 02108',
+  galleryUrls: [],
+  phone: '',
+  whatsapp: '',
+  website: '',
+  instagram: '',
+  locationLabel: '',
+  createdByName: 'Comunidade local',
+  canEdit: false,
+  publicPath: '',
 };
 
-const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId }) => {
-  const [business, setBusiness] = useState(defaultBusiness);
+const normalizePhoneLink = (value: string) => {
+  const digits = value.replace(/[^\d+]/g, '');
+  return digits ? `tel:${digits}` : '';
+};
+
+const normalizeWhatsappLink = (value: string) => {
+  const digits = value.replace(/\D/g, '');
+  return digits ? `https://wa.me/${digits}` : '';
+};
+
+const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => {
+  const { showToast } = useToast();
+  const [business, setBusiness] = useState<BusinessDetailState>(defaultBusiness);
+  const [loading, setLoading] = useState(true);
+  const [editingMedia, setEditingMedia] = useState(false);
+  const [savingMedia, setSavingMedia] = useState(false);
+  const [coverDraft, setCoverDraft] = useState('');
+  const [galleryDraft, setGalleryDraft] = useState<string[]>([]);
 
   useEffect(() => {
     let ignore = false;
 
     const fetchBusiness = async () => {
       if (!businessId) {
+        setLoading(false);
         return;
       }
+
+      setLoading(true);
 
       try {
         const response = await fetch(`/api/businesses/${businessId}`);
         const payload = await response.json().catch(() => null);
 
         if (!response.ok) {
-          throw new Error(payload?.error ?? 'Business not found');
+          throw new Error(payload?.error ?? 'Negocio nao encontrado.');
         }
 
         if (!ignore) {
-          setBusiness({
+          const nextBusiness: BusinessDetailState = {
+            id: payload.business.id,
+            slug: payload.business.slug,
             name: payload.business.name,
             description: payload.business.description || defaultBusiness.description,
             address: payload.business.address,
             category: payload.business.category,
             imageUrl: payload.business.imageUrl || defaultBusiness.imageUrl,
-            phone: payload.business.phone || defaultBusiness.phone,
-            locationLabel: payload.business.locationLabel || defaultBusiness.locationLabel,
-          });
+            galleryUrls: Array.isArray(payload.business.galleryUrls) ? payload.business.galleryUrls : [],
+            phone: payload.business.phone || '',
+            whatsapp: payload.business.whatsapp || '',
+            website: payload.business.website || '',
+            instagram: payload.business.instagram || '',
+            locationLabel: payload.business.locationLabel || '',
+            createdByName: payload.business.createdBy?.name || 'Comunidade local',
+            canEdit: Boolean(payload.business.canEdit),
+            publicPath: payload.business.publicPath || `/negocios/${payload.business.slug || payload.business.id}`,
+          };
+
+          setBusiness(nextBusiness);
+          setCoverDraft(nextBusiness.imageUrl);
+          setGalleryDraft(nextBusiness.galleryUrls);
         }
       } catch (error) {
         console.error('Failed to load business detail:', error);
+        if (!ignore) {
+          showToast(error instanceof Error ? error.message : 'Nao foi possivel carregar o negocio.', 'error');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchBusiness();
+    void fetchBusiness();
 
     return () => {
       ignore = true;
     };
-  }, [businessId]);
+  }, [businessId, showToast]);
+
+  const handleCopyUrl = async () => {
+    const publicUrl =
+      typeof window === 'undefined'
+        ? business.publicPath
+        : `${window.location.origin}${business.publicPath}`;
+
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      showToast('Link do negocio copiado.', 'success');
+    } catch {
+      showToast(publicUrl, 'info', 5000);
+    }
+  };
+
+  const handleShare = async () => {
+    const publicUrl =
+      typeof window === 'undefined'
+        ? business.publicPath
+        : `${window.location.origin}${business.publicPath}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: business.name,
+          text: business.description,
+          url: publicUrl,
+        });
+        return;
+      } catch {
+        return;
+      }
+    }
+
+    await handleCopyUrl();
+  };
+
+  const handleSaveMedia = async () => {
+    setSavingMedia(true);
+
+    try {
+      const response = await fetch(`/api/businesses/${business.slug || business.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageUrl: normalizeUrlFieldValue(coverDraft),
+          galleryUrls: galleryDraft,
+        }),
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        showToast(payload?.error ?? 'Nao foi possivel salvar a galeria.', 'error');
+        return;
+      }
+
+      const nextImageUrl = payload.business.imageUrl || defaultBusiness.imageUrl;
+      const nextGalleryUrls = Array.isArray(payload.business.galleryUrls) ? payload.business.galleryUrls : [];
+
+      setBusiness((current) => ({
+        ...current,
+        imageUrl: nextImageUrl,
+        galleryUrls: nextGalleryUrls,
+      }));
+      setCoverDraft(nextImageUrl);
+      setGalleryDraft(nextGalleryUrls);
+      setEditingMedia(false);
+      showToast('Capa e galeria atualizadas.', 'success');
+    } catch (error) {
+      console.error('Failed to save business media:', error);
+      showToast('Nao foi possivel salvar a galeria.', 'error');
+    } finally {
+      setSavingMedia(false);
+    }
+  };
+
+  const publicUrl =
+    typeof window === 'undefined'
+      ? business.publicPath
+      : `${window.location.origin}${business.publicPath}`;
+
+  const callHref = normalizePhoneLink(business.phone || business.whatsapp);
+  const whatsappHref = normalizeWhatsappLink(business.whatsapp || business.phone);
+  const galleryImages = [business.imageUrl, ...business.galleryUrls].filter(Boolean);
+
+  if (loading) {
+    return (
+      <div className="animate-in space-y-4 px-5 py-6 fade-in duration-500">
+        <div className="h-64 animate-pulse rounded-[32px] bg-white shadow-sm" />
+        <div className="space-y-3 rounded-[32px] bg-white p-5 shadow-sm">
+          <div className="h-8 w-2/3 animate-pulse rounded-full bg-slate-100" />
+          <div className="h-4 w-1/2 animate-pulse rounded-full bg-slate-100" />
+          <div className="h-28 animate-pulse rounded-3xl bg-slate-100" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="animate-in slide-in-from-right duration-500">
-      <div className="relative h-64">
-        <img src={business.imageUrl} className="w-full h-full object-cover" alt={business.name} />
-        <div className="absolute top-4 right-4 flex gap-2">
-            <button className="bg-white/80 backdrop-blur shadow p-2 rounded-full text-blue-900">
-                <Heart size={20} />
-            </button>
-            <button className="bg-white/80 backdrop-blur shadow p-2 rounded-full text-blue-900">
-                <Share2 size={20} />
-            </button>
+    <div className="animate-in pb-24 fade-in duration-500">
+      <div className="relative h-72">
+        <img src={business.imageUrl} className="h-full w-full object-cover" alt={business.name} />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+        <div className="absolute right-4 top-4 flex gap-2">
+          <button className="rounded-full bg-white/80 p-2 text-blue-900 shadow backdrop-blur">
+            <Heart size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleShare()}
+            className="rounded-full bg-white/80 p-2 text-blue-900 shadow backdrop-blur"
+          >
+            <Share2 size={20} />
+          </button>
+        </div>
+        <div className="absolute bottom-5 left-5 right-5">
+          <div className="inline-flex rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white backdrop-blur-sm">
+            {business.category}
+          </div>
+          <h1 className="mt-3 text-3xl font-bold leading-tight text-white">{business.name}</h1>
+          <p className="mt-2 text-sm text-white/85">{business.locationLabel}</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-t-3xl -mt-8 relative z-10 px-6 pt-6 pb-20 space-y-6">
-        <div className="flex justify-between items-start">
-            <div>
-                <h1 className="text-2xl font-bold text-blue-900">{business.name}</h1>
-                <div className="flex items-center gap-1 text-yellow-400 mt-1">
-                    {[...Array(5)].map((_, index) => <Star key={index} size={16} fill="currentColor" />)}
-                    <span className="text-slate-500 text-sm font-medium ml-2">Listagem local</span>
-                </div>
+      <div className="-mt-8 space-y-5 rounded-t-[36px] bg-white px-5 pt-6">
+        <div className="rounded-[28px] border border-slate-100 bg-slate-50 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 text-sm font-bold text-[#004691]">
+                <Globe2 size={16} />
+                URL publica
+              </div>
+              <p className="break-all text-sm text-slate-600">{publicUrl}</p>
+              <p className="text-xs text-slate-400">Criado por {business.createdByName}</p>
             </div>
-            <button className="bg-blue-600 text-white px-6 py-2.5 rounded-2xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-blue-200">
-                <Phone size={18} fill="currentColor" /> Ligar
+            <button
+              type="button"
+              onClick={() => void handleCopyUrl()}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600"
+            >
+              <Copy size={14} />
+              Copiar link
             </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-4 text-sm text-slate-600">
-            <div className="flex items-center gap-2 font-medium">
-                <span className="text-xl">BR</span> {business.category}
-            </div>
-            <div className="w-1 h-1 bg-slate-300 rounded-full" />
-            <div className="flex items-center gap-1">
-                <MapPin size={16} /> {business.address}
-            </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {business.phone ? (
+            <a
+              href={callHref || undefined}
+              className="flex items-center gap-3 rounded-[28px] border border-slate-100 bg-white p-4 shadow-sm"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#004691]">
+                <Phone size={20} />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Telefone</p>
+                <p className="mt-1 text-sm font-bold text-slate-700">{business.phone}</p>
+              </div>
+            </a>
+          ) : null}
+
+          {business.whatsapp ? (
+            <a
+              href={whatsappHref || undefined}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3 rounded-[28px] border border-slate-100 bg-white p-4 shadow-sm"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+                <MessageCircle size={20} />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">WhatsApp</p>
+                <p className="mt-1 text-sm font-bold text-slate-700">{business.whatsapp}</p>
+              </div>
+            </a>
+          ) : null}
         </div>
 
-        <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-            <div className="flex -space-x-2">
-                {[1, 2, 3].map((index) => (
-                    <img key={index} src={`https://picsum.photos/seed/user${index}/100`} className="w-8 h-8 rounded-full border-2 border-white object-cover" alt="user" />
-                ))}
-            </div>
-            <p className="text-xs text-slate-500">
-                Seguido por <span className="font-bold text-blue-900">Joao, Marina</span> e outros <span className="font-bold text-blue-900">124 pessoas</span> da comunidade
-            </p>
+        <div className="space-y-3 rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.2em] text-slate-400">
+            <MapPin size={16} />
+            Endereco
+          </div>
+          <p className="text-base font-bold text-[#004691]">{business.address}</p>
+          <p className="text-sm leading-relaxed text-slate-600">{business.description}</p>
+          <div className="flex flex-wrap gap-2">
+            {business.website ? (
+              <a
+                href={business.website}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700"
+              >
+                <Globe2 size={14} />
+                Website
+              </a>
+            ) : null}
+            {business.instagram ? (
+              <a
+                href={`https://instagram.com/${business.instagram.replace(/^@/, '')}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700"
+              >
+                <Instagram size={14} />
+                {business.instagram}
+              </a>
+            ) : null}
+          </div>
         </div>
 
-        <p className="text-sm leading-relaxed text-slate-600">{business.description}</p>
-
-        <div className="grid grid-cols-3 gap-2">
-            {[1, 2, 3, 4, 5, 6].map((index) => (
-                <div key={index} className={`relative overflow-hidden rounded-2xl ${index === 6 ? 'group' : ''}`}>
-                    <img src={`https://picsum.photos/seed/food${index}/300`} className="w-full aspect-square object-cover" alt="food" />
-                    {index === 6 ? (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-bold text-lg">
-                            +48
-                        </div>
-                    ) : null}
+        {business.canEdit ? (
+          <div className="space-y-3 rounded-[32px] border border-blue-100 bg-blue-50/60 p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="inline-flex items-center gap-2 text-sm font-bold text-[#004691]">
+                  <PencilLine size={16} />
+                  Gestao de capa e galeria
                 </div>
-            ))}
+                <p className="mt-1 text-sm text-slate-600">
+                  {user.role === 'ADMIN'
+                    ? 'Voce pode editar a capa e a galeria deste negocio como administrador.'
+                    : 'Voce pode manter a vitrine do seu negocio atualizada com novas imagens.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingMedia((current) => !current);
+                  setCoverDraft(business.imageUrl);
+                  setGalleryDraft(business.galleryUrls);
+                }}
+                className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600"
+              >
+                {editingMedia ? 'Fechar' : 'Editar'}
+              </button>
+            </div>
+
+            {editingMedia ? (
+              <div className="space-y-4 rounded-[28px] bg-white p-4 shadow-sm">
+                <CloudinaryImageField
+                  value={coverDraft}
+                  onChange={setCoverDraft}
+                  folder="businesses"
+                  placeholder="Link da imagem de capa"
+                  hint="Essa imagem aparece no topo da pagina do negocio."
+                />
+                <ImageGalleryField
+                  value={galleryDraft}
+                  onChange={setGalleryDraft}
+                  folder="businesses"
+                  hint="Use a galeria para mostrar ambiente, produtos e servicos."
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveMedia()}
+                    disabled={savingMedia}
+                    className="flex-1 rounded-2xl bg-[#004691] px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
+                  >
+                    {savingMedia ? 'Salvando...' : 'Salvar midia'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingMedia(false);
+                      setCoverDraft(business.imageUrl);
+                      setGalleryDraft(business.galleryUrls);
+                    }}
+                    disabled={savingMedia}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-600 disabled:opacity-60"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="space-y-3 pb-8">
+          <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.2em] text-slate-400">
+            <Images size={16} />
+            Galeria
+          </div>
+          {galleryImages.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center text-sm font-medium text-slate-500">
+              Nenhuma imagem adicional cadastrada ainda.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {galleryImages.map((imageUrl, index) => (
+                <div key={`${imageUrl}-${index}`} className="overflow-hidden rounded-[28px] border border-slate-100 bg-slate-50 shadow-sm">
+                  <img
+                    src={imageUrl}
+                    className="aspect-square w-full object-cover"
+                    alt={`${business.name} - imagem ${index + 1}`}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { startTransition, useEffect, useState } from 'react';
+import React, { startTransition, useDeferredValue, useEffect, useState } from 'react';
 import {
   BadgeCheck,
   Building2,
@@ -12,20 +12,64 @@ import {
   PencilLine,
   Plus,
   RefreshCcw,
+  Search,
   ShieldCheck,
   Store,
   Users,
 } from 'lucide-react';
+import BannerManagementSection, { type ManagedBanner } from '../components/admin/BannerManagementSection';
+import { useToast } from '../components/feedback/ToastProvider';
+import CloudinaryImageField from '../components/forms/CloudinaryImageField';
+import ImageGalleryField from '../components/forms/ImageGalleryField';
+import RegionSelector from '../components/RegionSelector';
+import { normalizeUrlFieldValue } from '../lib/forms/validation';
+import { formatLoosePhoneInput } from '../lib/forms/phone';
+import { normalizeUsernameInput } from '../lib/username';
 import type { User } from '../types';
 
 type BusinessAction = 'approve' | 'reject' | 'suspend';
 type EventAction = 'approve' | 'reject' | 'cancel';
 type PostAction = 'approve' | 'remove';
 
-type AdminActor = { id: string; name: string | null; email: string | null; image?: string | null };
-type PendingBusiness = { id: string; name: string; category: string; address: string; locationLabel: string; createdAt: string; createdBy: AdminActor };
-type PendingEvent = { id: string; title: string; venueName: string; locationLabel: string; startsAt: string; createdAt: string; createdBy: AdminActor };
-type PendingPost = { id: string; content: string; locationLabel: string; createdAt: string; author: AdminActor };
+type BusinessStatus = 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED' | 'SUSPENDED';
+type EventStatus = 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED' | 'CANCELED';
+type UserRoleValue = 'USER' | 'BUSINESS_OWNER' | 'ADMIN';
+
+type AdminActor = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image?: string | null;
+};
+
+type PendingBusiness = {
+  id: string;
+  name: string;
+  category: string;
+  address: string;
+  locationLabel: string;
+  createdAt: string;
+  createdBy: AdminActor;
+};
+
+type PendingEvent = {
+  id: string;
+  title: string;
+  venueName: string;
+  locationLabel: string;
+  startsAt: string;
+  createdAt: string;
+  createdBy: AdminActor;
+};
+
+type PendingPost = {
+  id: string;
+  content: string;
+  locationLabel: string;
+  createdAt: string;
+  author: AdminActor;
+};
+
 type ManagedRegion = {
   key: string;
   label: string;
@@ -37,6 +81,61 @@ type ManagedRegion = {
   isActive: boolean;
   updatedAt: string;
 };
+
+type ManagedBusiness = {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  description: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  website: string | null;
+  instagram: string | null;
+  address: string;
+  locationLabel: string;
+  regionKey: string;
+  imageUrl: string | null;
+  galleryUrls: string[];
+  status: BusinessStatus;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: AdminActor;
+};
+
+type ManagedEvent = {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  venueName: string;
+  startsAt: string;
+  endsAt: string | null;
+  locationLabel: string;
+  regionKey: string;
+  externalUrl: string | null;
+  imageUrl: string | null;
+  status: EventStatus;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: AdminActor;
+};
+
+type ManagedUser = {
+  id: string;
+  name: string | null;
+  username: string | null;
+  email: string | null;
+  phone: string | null;
+  role: UserRoleValue;
+  locationLabel: string | null;
+  regionKey: string | null;
+  onboardingCompleted: boolean;
+  image: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 type AdminDashboardData = {
   stats: {
     totalUsers: number;
@@ -53,8 +152,13 @@ type AdminDashboardData = {
   pendingBusinesses: PendingBusiness[];
   pendingEvents: PendingEvent[];
   pendingPosts: PendingPost[];
+  banners: ManagedBanner[];
+  businesses: ManagedBusiness[];
+  events: ManagedEvent[];
+  users: ManagedUser[];
   regions: ManagedRegion[];
 };
+
 type RegionFormState = {
   key: string;
   label: string;
@@ -64,6 +168,44 @@ type RegionFormState = {
   lng: string;
   aliases: string;
   isActive: boolean;
+};
+
+type BusinessFormState = {
+  name: string;
+  category: string;
+  description: string;
+  phone: string;
+  whatsapp: string;
+  website: string;
+  instagram: string;
+  address: string;
+  regionKey: string;
+  imageUrl: string;
+  galleryUrls: string[];
+  status: BusinessStatus;
+};
+
+type EventFormState = {
+  title: string;
+  description: string;
+  venueName: string;
+  startsAt: string;
+  endsAt: string;
+  regionKey: string;
+  externalUrl: string;
+  imageUrl: string;
+  status: EventStatus;
+};
+
+type UserFormState = {
+  name: string;
+  username: string;
+  email: string;
+  phone: string;
+  image: string;
+  role: UserRoleValue;
+  regionKey: string;
+  onboardingCompleted: boolean;
 };
 
 const emptyRegionForm: RegionFormState = {
@@ -77,30 +219,161 @@ const emptyRegionForm: RegionFormState = {
   isActive: true,
 };
 
+const emptyBusinessForm: BusinessFormState = {
+  name: '',
+  category: '',
+  description: '',
+  phone: '',
+  whatsapp: '',
+  website: '',
+  instagram: '',
+  address: '',
+  regionKey: '',
+  imageUrl: '',
+  galleryUrls: [],
+  status: 'PENDING_REVIEW',
+};
+
+const emptyEventForm: EventFormState = {
+  title: '',
+  description: '',
+  venueName: '',
+  startsAt: '',
+  endsAt: '',
+  regionKey: '',
+  externalUrl: '',
+  imageUrl: '',
+  status: 'PENDING_REVIEW',
+};
+
+const emptyUserForm: UserFormState = {
+  name: '',
+  username: '',
+  email: '',
+  phone: '',
+  image: '',
+  role: 'USER',
+  regionKey: '',
+  onboardingCompleted: true,
+};
+
+const businessStatusOptions: BusinessStatus[] = [
+  'DRAFT',
+  'PENDING_REVIEW',
+  'PUBLISHED',
+  'REJECTED',
+  'SUSPENDED',
+];
+
+const eventStatusOptions: EventStatus[] = [
+  'PENDING_REVIEW',
+  'PUBLISHED',
+  'REJECTED',
+  'CANCELED',
+];
+
+const userRoleOptions: UserRoleValue[] = ['USER', 'BUSINESS_OWNER', 'ADMIN'];
+
 const formatDateTime = (value: string) =>
   new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
 
-const summarize = (value: string, limit = 150) => (value.length > limit ? `${value.slice(0, limit).trimEnd()}...` : value);
-const sortRegions = (regions: ManagedRegion[]) => [...regions].sort((a, b) => a.label.localeCompare(b.label, 'en-US'));
+const summarize = (value: string, limit = 150) =>
+  value.length > limit ? `${value.slice(0, limit).trimEnd()}...` : value;
+
+const matchesAdminSearch = (query: string, values: Array<string | null | undefined>) => {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  return values.some((value) => value?.toLowerCase().includes(normalizedQuery));
+};
+
+const sortRegions = (regions: ManagedRegion[]) =>
+  [...regions].sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+
+const toDateTimeInputValue = (value: string | null) => {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+  const localValue = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localValue.toISOString().slice(0, 16);
+};
+
+const getBusinessStatusTone = (status: BusinessStatus) => {
+  switch (status) {
+    case 'PUBLISHED':
+      return 'success';
+    case 'REJECTED':
+    case 'SUSPENDED':
+      return 'danger';
+    default:
+      return 'warning';
+  }
+};
+
+const getEventStatusTone = (status: EventStatus) => {
+  switch (status) {
+    case 'PUBLISHED':
+      return 'success';
+    case 'REJECTED':
+    case 'CANCELED':
+      return 'danger';
+    default:
+      return 'warning';
+  }
+};
 
 const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
+  const { showToast } = useToast();
   const [dashboard, setDashboard] = useState<AdminDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [processingKey, setProcessingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
   const [editingRegionKey, setEditingRegionKey] = useState<string | null>(null);
   const [regionForm, setRegionForm] = useState<RegionFormState>(emptyRegionForm);
 
+  const [editingBusinessId, setEditingBusinessId] = useState<string | null>(null);
+  const [businessForm, setBusinessForm] = useState<BusinessFormState>(emptyBusinessForm);
+  const [businessSearch, setBusinessSearch] = useState('');
+
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [eventForm, setEventForm] = useState<EventFormState>(emptyEventForm);
+  const [eventSearch, setEventSearch] = useState('');
+
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [userForm, setUserForm] = useState<UserFormState>(emptyUserForm);
+  const [userSearch, setUserSearch] = useState('');
+  const deferredBusinessSearch = useDeferredValue(businessSearch);
+  const deferredEventSearch = useDeferredValue(eventSearch);
+  const deferredUserSearch = useDeferredValue(userSearch);
+
   const loadDashboard = async (showRefreshing = false) => {
-    showRefreshing ? setRefreshing(true) : setLoading(true);
+    if (showRefreshing) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+
     setError(null);
+
     try {
       const response = await fetch('/api/admin/dashboard', { cache: 'no-store' });
       const payload = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(payload?.error ?? 'Nao foi possivel carregar o painel admin.');
-      startTransition(() => setDashboard(payload));
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? 'Nao foi possivel carregar o painel admin.');
+      }
+
+      startTransition(() => {
+        setDashboard(payload);
+      });
     } catch (loadError) {
       console.error('Failed to load admin dashboard:', loadError);
       setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar o painel admin.');
@@ -114,123 +387,88 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
     void loadDashboard();
   }, []);
 
+  useEffect(() => {
+    if (error) {
+      showToast(error, 'error');
+    }
+  }, [error, showToast]);
+
+  useEffect(() => {
+    if (message) {
+      showToast(message, 'success');
+    }
+  }, [message, showToast]);
+
   const totalPending = dashboard
     ? dashboard.stats.pendingBusinesses + dashboard.stats.pendingEvents + dashboard.stats.pendingPosts
     : 0;
 
-  const updateDashboardRegion = (region: ManagedRegion) =>
-    setDashboard((current) => {
-      if (!current) return current;
-      const exists = current.regions.some((item) => item.key === region.key);
-      const regions = sortRegions(
-        exists ? current.regions.map((item) => (item.key === region.key ? region : item)) : [...current.regions, region],
-      );
-      return {
-        ...current,
-        stats: {
-          ...current.stats,
-          totalRegions: exists ? current.stats.totalRegions : current.stats.totalRegions + 1,
-          activeRegions: regions.filter((item) => item.isActive).length,
-        },
-        regions,
-      };
-    });
-
-  const reviewItem = async (
+  const runAction = async (
     key: string,
-    url: string,
-    action: BusinessAction | EventAction | PostAction,
-    onSuccess: () => void,
+    request: () => Promise<Response>,
     successMessage: string,
     fallbackError: string,
+    resetEditState?: () => void,
   ) => {
     setProcessingKey(key);
     setError(null);
     setMessage(null);
+
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      });
+      const response = await request();
       const payload = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(payload?.error ?? fallbackError);
-      onSuccess();
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? fallbackError);
+      }
+
+      resetEditState?.();
       setMessage(successMessage);
-    } catch (reviewError) {
-      console.error(fallbackError, reviewError);
-      setError(reviewError instanceof Error ? reviewError.message : fallbackError);
+      await loadDashboard(true);
+    } catch (actionError) {
+      console.error(fallbackError, actionError);
+      setError(actionError instanceof Error ? actionError.message : fallbackError);
     } finally {
       setProcessingKey(null);
     }
   };
 
   const submitBusinessReview = (businessId: string, action: BusinessAction) =>
-    reviewItem(
+    runAction(
       `business:${businessId}:${action}`,
-      `/api/admin/businesses/${businessId}/review`,
-      action,
       () =>
-        setDashboard((current) =>
-          current
-            ? {
-                ...current,
-                stats: {
-                  ...current.stats,
-                  pendingBusinesses: Math.max(current.stats.pendingBusinesses - 1, 0),
-                  publishedBusinesses: action === 'approve' ? current.stats.publishedBusinesses + 1 : current.stats.publishedBusinesses,
-                },
-                pendingBusinesses: current.pendingBusinesses.filter((item) => item.id !== businessId),
-              }
-            : current,
-        ),
-      action === 'approve' ? 'Negocio aprovado e publicado.' : action === 'suspend' ? 'Negocio suspenso.' : 'Negocio rejeitado.',
+        fetch(`/api/admin/businesses/${businessId}/review`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action }),
+        }),
+      action === 'approve' ? 'Negocio aprovado e publicado.' : 'Negocio atualizado na fila.',
       'Nao foi possivel revisar o negocio.',
     );
 
   const submitEventReview = (eventId: string, action: EventAction) =>
-    reviewItem(
+    runAction(
       `event:${eventId}:${action}`,
-      `/api/admin/events/${eventId}/review`,
-      action,
       () =>
-        setDashboard((current) =>
-          current
-            ? {
-                ...current,
-                stats: {
-                  ...current.stats,
-                  pendingEvents: Math.max(current.stats.pendingEvents - 1, 0),
-                  publishedEvents: action === 'approve' ? current.stats.publishedEvents + 1 : current.stats.publishedEvents,
-                },
-                pendingEvents: current.pendingEvents.filter((item) => item.id !== eventId),
-              }
-            : current,
-        ),
-      action === 'approve' ? 'Evento aprovado.' : 'Evento removido da fila.',
+        fetch(`/api/admin/events/${eventId}/review`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action }),
+        }),
+      action === 'approve' ? 'Evento aprovado e publicado.' : 'Evento atualizado na fila.',
       'Nao foi possivel revisar o evento.',
     );
 
   const submitPostReview = (postId: string, action: PostAction) =>
-    reviewItem(
+    runAction(
       `post:${postId}:${action}`,
-      `/api/admin/community/posts/${postId}/review`,
-      action,
       () =>
-        setDashboard((current) =>
-          current
-            ? {
-                ...current,
-                stats: {
-                  ...current.stats,
-                  pendingPosts: Math.max(current.stats.pendingPosts - 1, 0),
-                  publishedPosts: action === 'approve' ? current.stats.publishedPosts + 1 : current.stats.publishedPosts,
-                },
-                pendingPosts: current.pendingPosts.filter((item) => item.id !== postId),
-              }
-            : current,
-        ),
-      action === 'approve' ? 'Publicacao aprovada e liberada.' : 'Publicacao removida da fila.',
+        fetch(`/api/admin/community/posts/${postId}/review`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action }),
+        }),
+      action === 'approve' ? 'Publicacao aprovada e liberada.' : 'Publicacao removida.',
       'Nao foi possivel revisar a publicacao.',
     );
 
@@ -260,72 +498,203 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
       setError('Preencha nome, cidade e estado da regiao.');
       return;
     }
+
     if (!regionForm.lat.trim() || !regionForm.lng.trim()) {
       setError('Informe latitude e longitude validas.');
       return;
     }
 
-    const requestKey = editingRegionKey ? `region:${editingRegionKey}:save` : 'region:create';
-    setProcessingKey(requestKey);
-    setError(null);
-    setMessage(null);
+    const route = editingRegionKey
+      ? `/api/admin/regions/${editingRegionKey}`
+      : '/api/admin/regions';
 
-    try {
-      const response = await fetch(editingRegionKey ? `/api/admin/regions/${editingRegionKey}` : '/api/admin/regions', {
-        method: editingRegionKey ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          key: regionForm.key.trim() || undefined,
-          label: regionForm.label.trim(),
-          city: regionForm.city.trim(),
-          state: regionForm.state.trim(),
-          lat: Number(regionForm.lat),
-          lng: Number(regionForm.lng),
-          aliases: regionForm.aliases.split(',').map((item) => item.trim()).filter(Boolean),
-          isActive: regionForm.isActive,
+    await runAction(
+      editingRegionKey ? `region:${editingRegionKey}:save` : 'region:create',
+      () =>
+        fetch(route, {
+          method: editingRegionKey ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            key: regionForm.key.trim() || undefined,
+            label: regionForm.label.trim(),
+            city: regionForm.city.trim(),
+            state: regionForm.state.trim(),
+            lat: Number(regionForm.lat),
+            lng: Number(regionForm.lng),
+            aliases: regionForm.aliases
+              .split(',')
+              .map((item) => item.trim())
+              .filter(Boolean),
+            isActive: regionForm.isActive,
+          }),
         }),
-      });
-      const payload = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(payload?.error ?? 'Nao foi possivel salvar a regiao.');
-      updateDashboardRegion(payload.region);
-      setMessage(editingRegionKey ? 'Regiao atualizada.' : 'Regiao criada.');
-      resetRegionForm();
-    } catch (saveError) {
-      console.error('Failed to save region:', saveError);
-      setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar a regiao.');
-    } finally {
-      setProcessingKey(null);
-    }
+      editingRegionKey ? 'Regiao atualizada.' : 'Regiao criada.',
+      'Nao foi possivel salvar a regiao.',
+      resetRegionForm,
+    );
   };
 
   const toggleRegionStatus = async (region: ManagedRegion) => {
-    setProcessingKey(`region:${region.key}:toggle`);
+    await runAction(
+      `region:${region.key}:toggle`,
+      () =>
+        fetch(`/api/admin/regions/${region.key}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            label: region.label,
+            city: region.city,
+            state: region.state,
+            lat: region.lat,
+            lng: region.lng,
+            aliases: region.aliases,
+            isActive: !region.isActive,
+          }),
+        }),
+      region.isActive ? 'Regiao desativada.' : 'Regiao ativada.',
+      'Nao foi possivel atualizar a regiao.',
+    );
+  };
+
+  const resetBusinessForm = () => {
+    setEditingBusinessId(null);
+    setBusinessForm(emptyBusinessForm);
+  };
+
+  const startBusinessEdit = (business: ManagedBusiness) => {
+    setEditingBusinessId(business.id);
+    setBusinessForm({
+      name: business.name,
+      category: business.category,
+      description: business.description || '',
+      phone: business.phone || '',
+      whatsapp: business.whatsapp || '',
+      website: business.website || '',
+      instagram: business.instagram || '',
+      address: business.address,
+      regionKey: business.regionKey,
+      imageUrl: business.imageUrl || '',
+      galleryUrls: business.galleryUrls || [],
+      status: business.status,
+    });
     setError(null);
     setMessage(null);
-    try {
-      const response = await fetch(`/api/admin/regions/${region.key}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          label: region.label,
-          city: region.city,
-          state: region.state,
-          lat: region.lat,
-          lng: region.lng,
-          aliases: region.aliases,
-          isActive: !region.isActive,
-        }),
-      });
-      const payload = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(payload?.error ?? 'Nao foi possivel atualizar a regiao.');
-      updateDashboardRegion(payload.region);
-      setMessage(payload.region.isActive ? 'Regiao ativada.' : 'Regiao desativada.');
-    } catch (toggleError) {
-      console.error('Failed to toggle region status:', toggleError);
-      setError(toggleError instanceof Error ? toggleError.message : 'Nao foi possivel atualizar a regiao.');
-    } finally {
-      setProcessingKey(null);
+  };
+
+  const submitBusinessUpdate = async () => {
+    if (!editingBusinessId) {
+      return;
     }
+
+    await runAction(
+      `business:${editingBusinessId}:save`,
+      () =>
+        fetch(`/api/admin/businesses/${editingBusinessId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...businessForm,
+            website: normalizeUrlFieldValue(businessForm.website),
+            imageUrl: normalizeUrlFieldValue(businessForm.imageUrl),
+            galleryUrls: businessForm.galleryUrls,
+          }),
+        }),
+      'Negocio atualizado.',
+      'Nao foi possivel salvar o negocio.',
+      resetBusinessForm,
+    );
+  };
+
+  const resetEventForm = () => {
+    setEditingEventId(null);
+    setEventForm(emptyEventForm);
+  };
+
+  const startEventEdit = (event: ManagedEvent) => {
+    setEditingEventId(event.id);
+    setEventForm({
+      title: event.title,
+      description: event.description,
+      venueName: event.venueName,
+      startsAt: toDateTimeInputValue(event.startsAt),
+      endsAt: toDateTimeInputValue(event.endsAt),
+      regionKey: event.regionKey,
+      externalUrl: event.externalUrl || '',
+      imageUrl: event.imageUrl || '',
+      status: event.status,
+    });
+    setError(null);
+    setMessage(null);
+  };
+
+  const submitEventUpdate = async () => {
+    if (!editingEventId) {
+      return;
+    }
+
+    await runAction(
+      `event:${editingEventId}:save`,
+      () =>
+        fetch(`/api/admin/events/${editingEventId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...eventForm,
+            startsAt: eventForm.startsAt ? new Date(eventForm.startsAt).toISOString() : '',
+            endsAt: eventForm.endsAt ? new Date(eventForm.endsAt).toISOString() : undefined,
+            externalUrl: normalizeUrlFieldValue(eventForm.externalUrl),
+            imageUrl: normalizeUrlFieldValue(eventForm.imageUrl),
+          }),
+        }),
+      'Evento atualizado.',
+      'Nao foi possivel salvar o evento.',
+      resetEventForm,
+    );
+  };
+
+  const resetUserForm = () => {
+    setEditingUserId(null);
+    setUserForm(emptyUserForm);
+  };
+
+  const startUserEdit = (managedUser: ManagedUser) => {
+    setEditingUserId(managedUser.id);
+    setUserForm({
+      name: managedUser.name || '',
+      username: managedUser.username || '',
+      email: managedUser.email || '',
+      phone: managedUser.phone || '',
+      image: managedUser.image || '',
+      role: managedUser.role,
+      regionKey: managedUser.regionKey || '',
+      onboardingCompleted: managedUser.onboardingCompleted,
+    });
+    setError(null);
+    setMessage(null);
+  };
+
+  const submitUserUpdate = async () => {
+    if (!editingUserId) {
+      return;
+    }
+
+    await runAction(
+      `user:${editingUserId}:save`,
+      () =>
+        fetch(`/api/admin/users/${editingUserId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...userForm,
+            username: normalizeUsernameInput(userForm.username),
+            email: userForm.email.trim() || undefined,
+            image: normalizeUrlFieldValue(userForm.image),
+          }),
+        }),
+      'Usuario atualizado.',
+      'Nao foi possivel salvar o usuario.',
+      resetUserForm,
+    );
   };
 
   const statsCards = dashboard
@@ -339,9 +708,46 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
       ]
     : [];
 
+  const filteredBusinesses =
+    dashboard?.businesses.filter((business) =>
+      matchesAdminSearch(deferredBusinessSearch, [
+        business.name,
+        business.slug,
+        business.category,
+        business.locationLabel,
+        business.address,
+        business.createdBy.name,
+        business.createdBy.email,
+      ]),
+    ) ?? [];
+
+  const filteredEvents =
+    dashboard?.events.filter((event) =>
+      matchesAdminSearch(deferredEventSearch, [
+        event.title,
+        event.slug,
+        event.venueName,
+        event.locationLabel,
+        event.createdBy.name,
+        event.createdBy.email,
+      ]),
+    ) ?? [];
+
+  const filteredUsers =
+    dashboard?.users.filter((managedUser) =>
+      matchesAdminSearch(deferredUserSearch, [
+        managedUser.name,
+        managedUser.username,
+        managedUser.email,
+        managedUser.phone,
+        managedUser.locationLabel,
+        managedUser.role,
+      ]),
+    ) ?? [];
+
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
-      <div className="px-5 mt-4">
+    <div className="animate-in space-y-6 fade-in duration-500 pb-20">
+      <div className="mt-4 px-5">
         <div className="rounded-[32px] bg-gradient-to-br from-[#004691] via-[#0C58B6] to-[#27A0FF] p-5 text-white shadow-xl">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-2">
@@ -349,20 +755,32 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                 <ShieldCheck size={14} />
                 Admin
               </div>
-              <h1 className="text-2xl font-bold leading-tight">Painel de moderacao</h1>
-              <p className="max-w-[260px] text-sm text-white/80">Revise conteudos pendentes e mantenha o catalogo de regioes.</p>
+              <h1 className="text-2xl font-bold leading-tight">Painel operacional</h1>
+              <p className="max-w-[280px] text-sm text-white/80">
+                Modere conteudos, padronize regioes e edite usuarios, negocios e eventos.
+              </p>
             </div>
-            <button type="button" onClick={() => loadDashboard(true)} disabled={refreshing || loading} className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-white transition hover:bg-white/20 disabled:opacity-60" aria-label="Atualizar painel admin">
+            <button
+              type="button"
+              onClick={() => void loadDashboard(true)}
+              disabled={refreshing || loading}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-white transition hover:bg-white/20 disabled:opacity-60"
+              aria-label="Atualizar painel admin"
+            >
               <RefreshCcw size={18} className={refreshing ? 'animate-spin' : ''} />
             </button>
           </div>
           <div className="mt-5 grid grid-cols-2 gap-3">
             <div className="rounded-3xl bg-white/12 p-4 backdrop-blur-sm">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/70">Aguardando revisao</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/70">
+                Aguardando revisao
+              </p>
               <p className="mt-2 text-3xl font-bold">{totalPending}</p>
             </div>
             <div className="rounded-3xl bg-white/12 p-4 backdrop-blur-sm">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/70">Responsavel logado</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/70">
+                Responsavel logado
+              </p>
               <p className="mt-2 text-sm font-bold leading-tight">{user.name}</p>
               <p className="text-xs text-white/70">{user.email || 'Administrador'}</p>
             </div>
@@ -370,143 +788,798 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
         </div>
       </div>
 
-      <div className="px-5 space-y-4">
-        {error ? <Feedback tone="error" text={error} /> : null}
-        {message ? <Feedback tone="success" text={message} /> : null}
+      <div className="space-y-4 px-5">
         <div className="grid grid-cols-2 gap-3">
           {loading && !dashboard
-            ? Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-[104px] animate-pulse rounded-3xl bg-white shadow-sm" />)
+            ? Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="h-[104px] animate-pulse rounded-3xl bg-white shadow-sm" />
+              ))
             : statsCards.map((card) => (
                 <div key={card.label} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
-                  <div className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${card.accent}`}>{card.icon}</div>
+                  <div className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${card.accent}`}>
+                    {card.icon}
+                  </div>
                   <p className="mt-4 text-2xl font-bold text-slate-900">{card.value}</p>
                   <p className="text-xs font-medium text-slate-500">{card.label}</p>
                 </div>
               ))}
         </div>
-      </div>
 
-      <div className="px-5 space-y-4">
         <section className="space-y-3">
           <SectionHeader title="Gestao de regioes" count={dashboard?.stats.totalRegions ?? 0} />
-          <div className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm space-y-4">
+          <div className="space-y-3 rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-bold text-slate-700">{editingRegionKey ? 'Editar regiao' : 'Nova regiao'}</p>
-                <p className="text-xs text-slate-400">Cadastre regioes validas para onboarding, perfil e filtros locais.</p>
+                <p className="text-sm font-bold text-slate-700">
+                  {editingRegionKey ? 'Editar regiao' : 'Nova regiao'}
+                </p>
+                <p className="text-xs text-slate-400">
+                  O cadastro abaixo alimenta onboarding, perfil e filtros locais.
+                </p>
               </div>
               {editingRegionKey ? (
-                <button type="button" onClick={resetRegionForm} className="rounded-2xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500">
+                <button
+                  type="button"
+                  onClick={resetRegionForm}
+                  className="rounded-2xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500"
+                >
                   Cancelar
                 </button>
               ) : null}
             </div>
+
             <div className="grid grid-cols-2 gap-3">
-              <FormInput className="col-span-2" value={regionForm.label} onChange={(value) => setRegionForm((current) => ({ ...current, label: value }))} placeholder="Nome da regiao" />
-              <FormInput value={regionForm.city} onChange={(value) => setRegionForm((current) => ({ ...current, city: value }))} placeholder="Cidade" />
-              <FormInput value={regionForm.state} onChange={(value) => setRegionForm((current) => ({ ...current, state: value.toUpperCase() }))} placeholder="Estado" />
-              <FormInput value={regionForm.lat} onChange={(value) => setRegionForm((current) => ({ ...current, lat: value }))} placeholder="Latitude" />
-              <FormInput value={regionForm.lng} onChange={(value) => setRegionForm((current) => ({ ...current, lng: value }))} placeholder="Longitude" />
+              <FormInput
+                className="col-span-2"
+                value={regionForm.label}
+                onChange={(value) => setRegionForm((current) => ({ ...current, label: value }))}
+                placeholder="Nome da regiao"
+              />
+              <FormInput
+                value={regionForm.city}
+                onChange={(value) => setRegionForm((current) => ({ ...current, city: value }))}
+                placeholder="Cidade"
+              />
+              <FormInput
+                value={regionForm.state}
+                onChange={(value) =>
+                  setRegionForm((current) => ({ ...current, state: value.toUpperCase() }))
+                }
+                placeholder="Estado"
+              />
+              <FormInput
+                value={regionForm.lat}
+                onChange={(value) => setRegionForm((current) => ({ ...current, lat: value }))}
+                placeholder="Latitude"
+              />
+              <FormInput
+                value={regionForm.lng}
+                onChange={(value) => setRegionForm((current) => ({ ...current, lng: value }))}
+                placeholder="Longitude"
+              />
               {!editingRegionKey ? (
-                <FormInput className="col-span-2" value={regionForm.key} onChange={(value) => setRegionForm((current) => ({ ...current, key: value }))} placeholder="Chave opcional (ex: miami-fl)" />
+                <FormInput
+                  className="col-span-2"
+                  value={regionForm.key}
+                  onChange={(value) => setRegionForm((current) => ({ ...current, key: value }))}
+                  placeholder="Chave opcional (ex: miami-fl)"
+                />
               ) : (
                 <div className="col-span-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
                   Chave da regiao: <span className="font-bold text-slate-700">{editingRegionKey}</span>
                 </div>
               )}
-              <FormInput className="col-span-2" value={regionForm.aliases} onChange={(value) => setRegionForm((current) => ({ ...current, aliases: value }))} placeholder="Aliases separados por virgula" />
+              <FormInput
+                className="col-span-2"
+                value={regionForm.aliases}
+                onChange={(value) => setRegionForm((current) => ({ ...current, aliases: value }))}
+                placeholder="Aliases separados por virgula"
+              />
             </div>
+
             <label className="inline-flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
-              <input type="checkbox" checked={regionForm.isActive} onChange={(event) => setRegionForm((current) => ({ ...current, isActive: event.target.checked }))} className="h-4 w-4 rounded border-slate-300 text-[#004691] focus:ring-[#004691]" />
-              Regiao ativa para novos usuarios
+              <input
+                type="checkbox"
+                checked={regionForm.isActive}
+                onChange={(event) =>
+                  setRegionForm((current) => ({ ...current, isActive: event.target.checked }))
+                }
+                className="h-4 w-4 rounded border-slate-300 text-[#004691] focus:ring-[#004691]"
+              />
+              Regiao ativa para novos usuarios e novos cadastros
             </label>
-            <button type="button" onClick={submitRegion} disabled={processingKey === 'region:create' || processingKey === `region:${editingRegionKey}:save`} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#004691] px-4 text-sm font-bold text-white shadow-md disabled:opacity-60">
+
+            <button
+              type="button"
+              onClick={() => void submitRegion()}
+              disabled={
+                processingKey === 'region:create' ||
+                processingKey === `region:${editingRegionKey}:save`
+              }
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#004691] px-4 text-sm font-bold text-white shadow-md disabled:opacity-60"
+            >
               {editingRegionKey ? <PencilLine size={16} /> : <Plus size={16} />}
-              {editingRegionKey ? (processingKey === `region:${editingRegionKey}:save` ? 'Salvando regiao...' : 'Salvar alteracoes') : processingKey === 'region:create' ? 'Criando regiao...' : 'Cadastrar regiao'}
+              {editingRegionKey
+                ? processingKey === `region:${editingRegionKey}:save`
+                  ? 'Salvando regiao...'
+                  : 'Salvar alteracoes'
+                : processingKey === 'region:create'
+                  ? 'Criando regiao...'
+                  : 'Cadastrar regiao'}
             </button>
-          </div>
-          <div className="space-y-3">
-            {loading && !dashboard ? Array.from({ length: 2 }).map((_, index) => <div key={index} className="h-[184px] animate-pulse rounded-3xl bg-white shadow-sm" />) : null}
-            {dashboard?.regions.map((region) => (
-              <div key={region.key} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-lg font-bold text-[#004691]">{region.label}</p>
-                      <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${region.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                        {region.isActive ? 'Ativa' : 'Inativa'}
-                      </span>
-                    </div>
-                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">{region.key}</p>
-                  </div>
-                  <MapPinned size={18} className="text-slate-300" />
-                </div>
-                <div className="mt-4 space-y-1 text-sm text-slate-600">
-                  <p>{region.city}, {region.state}</p>
-                  <p>Lat {region.lat} • Lng {region.lng}</p>
-                  <p>Atualizada em {formatDateTime(region.updatedAt)}</p>
-                </div>
-                {region.aliases.length > 0 ? (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {region.aliases.map((alias) => (
-                      <span key={`${region.key}-${alias}`} className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-500">{alias}</span>
-                    ))}
-                  </div>
-                ) : null}
-                <div className="mt-4 flex gap-2">
-                  <ActionButton label="Editar" tone="neutral" disabled={processingKey !== null} onClick={() => startRegionEdit(region)} />
-                  <ActionButton label={region.isActive ? 'Desativar' : 'Ativar'} tone={region.isActive ? 'danger' : 'primary'} disabled={processingKey !== null} loading={processingKey === `region:${region.key}:toggle`} onClick={() => toggleRegionStatus(region)} />
-                </div>
-              </div>
-            ))}
-            {dashboard && dashboard.regions.length === 0 ? <EmptyState text="Nenhuma regiao cadastrada ainda." /> : null}
           </div>
         </section>
 
-        <ModerationSection title="Negocios em aprovacao" count={dashboard?.pendingBusinesses.length ?? 0} emptyLabel="Nenhum negocio aguardando revisao." loading={loading && !dashboard}>
+        <BannerManagementSection
+          banners={dashboard?.banners ?? []}
+          loading={loading && !dashboard}
+          onRefresh={() => loadDashboard(true)}
+          onError={setError}
+          onMessage={setMessage}
+        />
+
+        <div className="space-y-3">
+          {loading && !dashboard
+            ? Array.from({ length: 2 }).map((_, index) => (
+                <div key={index} className="h-[184px] animate-pulse rounded-3xl bg-white shadow-sm" />
+              ))
+            : null}
+          {sortRegions(dashboard?.regions ?? []).map((region) => (
+            <div key={region.key} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-bold text-[#004691]">{region.label}</p>
+                    <StatusBadge label={region.isActive ? 'Ativa' : 'Inativa'} tone={region.isActive ? 'success' : 'neutral'} />
+                  </div>
+                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+                    {region.key}
+                  </p>
+                </div>
+                <MapPinned size={18} className="text-slate-300" />
+              </div>
+              <div className="mt-4 space-y-1 text-sm text-slate-600">
+                <p>
+                  {region.city}, {region.state}
+                </p>
+                <p>
+                  Lat {region.lat} | Lng {region.lng}
+                </p>
+                <p>Atualizada em {formatDateTime(region.updatedAt)}</p>
+              </div>
+              {region.aliases.length > 0 ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {region.aliases.map((alias) => (
+                    <span
+                      key={`${region.key}-${alias}`}
+                      className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-500"
+                    >
+                      {alias}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              <div className="mt-4 flex gap-2">
+                <ActionButton
+                  label="Editar"
+                  tone="neutral"
+                  disabled={processingKey !== null}
+                  onClick={() => startRegionEdit(region)}
+                />
+                <ActionButton
+                  label={region.isActive ? 'Desativar' : 'Ativar'}
+                  tone={region.isActive ? 'danger' : 'primary'}
+                  disabled={processingKey !== null}
+                  loading={processingKey === `region:${region.key}:toggle`}
+                  onClick={() => void toggleRegionStatus(region)}
+                />
+              </div>
+            </div>
+          ))}
+          {dashboard && dashboard.regions.length === 0 ? (
+            <EmptyState text="Nenhuma regiao cadastrada ainda." />
+          ) : null}
+        </div>
+
+        <ModerationSection
+          title="Negocios em aprovacao"
+          count={dashboard?.pendingBusinesses.length ?? 0}
+          emptyLabel="Nenhum negocio aguardando revisao."
+          loading={loading && !dashboard}
+        >
           {dashboard?.pendingBusinesses.map((business) => (
-            <QueueCard key={business.id} title={business.name} subtitle={business.category} lines={[business.locationLabel || business.address, `Criado por ${business.createdBy.name || business.createdBy.email || 'Usuario'}`, `Enviado em ${formatDateTime(business.createdAt)}`]}>
-              <ActionButton label="Aprovar" tone="primary" disabled={processingKey !== null} loading={processingKey === `business:${business.id}:approve`} onClick={() => submitBusinessReview(business.id, 'approve')} />
-              <ActionButton label="Rejeitar" tone="danger" disabled={processingKey !== null} loading={processingKey === `business:${business.id}:reject`} onClick={() => submitBusinessReview(business.id, 'reject')} />
+            <QueueCard
+              key={business.id}
+              title={business.name}
+              subtitle={business.category}
+              lines={[
+                business.locationLabel || business.address,
+                `Criado por ${business.createdBy.name || business.createdBy.email || 'Usuario'}`,
+                `Enviado em ${formatDateTime(business.createdAt)}`,
+              ]}
+            >
+              <ActionButton
+                label="Aprovar"
+                tone="primary"
+                disabled={processingKey !== null}
+                loading={processingKey === `business:${business.id}:approve`}
+                onClick={() => void submitBusinessReview(business.id, 'approve')}
+              />
+              <ActionButton
+                label="Rejeitar"
+                tone="danger"
+                disabled={processingKey !== null}
+                loading={processingKey === `business:${business.id}:reject`}
+                onClick={() => void submitBusinessReview(business.id, 'reject')}
+              />
             </QueueCard>
           ))}
         </ModerationSection>
 
-        <ModerationSection title="Eventos em aprovacao" count={dashboard?.pendingEvents.length ?? 0} emptyLabel="Nenhum evento aguardando revisao." loading={loading && !dashboard}>
+        <ModerationSection
+          title="Eventos em aprovacao"
+          count={dashboard?.pendingEvents.length ?? 0}
+          emptyLabel="Nenhum evento aguardando revisao."
+          loading={loading && !dashboard}
+        >
           {dashboard?.pendingEvents.map((event) => (
-            <QueueCard key={event.id} title={event.title} subtitle={event.venueName} lines={[event.locationLabel, `Comeca em ${formatDateTime(event.startsAt)}`, `Enviado por ${event.createdBy.name || event.createdBy.email || 'Usuario'}`]}>
-              <ActionButton label="Publicar" tone="primary" disabled={processingKey !== null} loading={processingKey === `event:${event.id}:approve`} onClick={() => submitEventReview(event.id, 'approve')} />
-              <ActionButton label="Rejeitar" tone="danger" disabled={processingKey !== null} loading={processingKey === `event:${event.id}:reject`} onClick={() => submitEventReview(event.id, 'reject')} />
+            <QueueCard
+              key={event.id}
+              title={event.title}
+              subtitle={event.venueName}
+              lines={[
+                event.locationLabel,
+                `Comeca em ${formatDateTime(event.startsAt)}`,
+                `Enviado por ${event.createdBy.name || event.createdBy.email || 'Usuario'}`,
+              ]}
+            >
+              <ActionButton
+                label="Publicar"
+                tone="primary"
+                disabled={processingKey !== null}
+                loading={processingKey === `event:${event.id}:approve`}
+                onClick={() => void submitEventReview(event.id, 'approve')}
+              />
+              <ActionButton
+                label="Rejeitar"
+                tone="danger"
+                disabled={processingKey !== null}
+                loading={processingKey === `event:${event.id}:reject`}
+                onClick={() => void submitEventReview(event.id, 'reject')}
+              />
             </QueueCard>
           ))}
         </ModerationSection>
 
-        <ModerationSection title="Posts em revisao" count={dashboard?.pendingPosts.length ?? 0} emptyLabel="Nenhuma publicacao aguardando moderacao." loading={loading && !dashboard}>
+        <ModerationSection
+          title="Posts em revisao"
+          count={dashboard?.pendingPosts.length ?? 0}
+          emptyLabel="Nenhuma publicacao aguardando moderacao."
+          loading={loading && !dashboard}
+        >
           {dashboard?.pendingPosts.map((post) => (
             <div key={post.id} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
               <div className="flex items-start gap-3">
-                <img src={post.author.image || `https://picsum.photos/seed/${post.author.id}/100`} alt={post.author.name || 'Autor'} className="h-11 w-11 rounded-2xl object-cover" />
+                <img
+                  src={post.author.image || `https://picsum.photos/seed/${post.author.id}/100`}
+                  alt={post.author.name || 'Autor'}
+                  className="h-11 w-11 rounded-2xl object-cover"
+                />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-[#004691]">{post.author.name || 'Usuario da comunidade'}</p>
-                  <p className="text-xs text-slate-400">{post.locationLabel} • {formatDateTime(post.createdAt)}</p>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-700">{summarize(post.content)}</p>
+                  <p className="text-sm font-bold text-[#004691]">
+                    {post.author.name || 'Usuario da comunidade'}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    {post.locationLabel} | {formatDateTime(post.createdAt)}
+                  </p>
+                  <p className="mt-3 text-sm leading-relaxed text-slate-700">
+                    {summarize(post.content)}
+                  </p>
                 </div>
               </div>
               <div className="mt-4 flex gap-2">
-                <ActionButton label="Aprovar" tone="primary" disabled={processingKey !== null} loading={processingKey === `post:${post.id}:approve`} onClick={() => submitPostReview(post.id, 'approve')} />
-                <ActionButton label="Remover" tone="danger" disabled={processingKey !== null} loading={processingKey === `post:${post.id}:remove`} onClick={() => submitPostReview(post.id, 'remove')} />
+                <ActionButton
+                  label="Aprovar"
+                  tone="primary"
+                  disabled={processingKey !== null}
+                  loading={processingKey === `post:${post.id}:approve`}
+                  onClick={() => void submitPostReview(post.id, 'approve')}
+                />
+                <ActionButton
+                  label="Remover"
+                  tone="danger"
+                  disabled={processingKey !== null}
+                  loading={processingKey === `post:${post.id}:remove`}
+                  onClick={() => void submitPostReview(post.id, 'remove')}
+                />
               </div>
             </div>
           ))}
         </ModerationSection>
+
+        <section className="space-y-3">
+          <SectionHeader title="Negocios cadastrados" count={filteredBusinesses.length} />
+          <SupportText text="Lista operacional dos ultimos negocios para ajuste de dados, imagem, regiao e status." />
+          <SearchFilterInput
+            value={businessSearch}
+            onChange={setBusinessSearch}
+            placeholder="Filtrar negocios por nome, slug, categoria ou regiao"
+          />
+          {loading && !dashboard ? (
+            <LoadingCards />
+          ) : dashboard && filteredBusinesses.length > 0 ? (
+            <div className="space-y-3">
+              {filteredBusinesses.map((business) => (
+                <div key={business.id} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                  <div className="flex items-start gap-4">
+                    <img
+                      src={business.imageUrl || `https://picsum.photos/seed/${business.id}/200`}
+                      alt={business.name}
+                      className="h-20 w-20 rounded-2xl object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-lg font-bold text-[#004691]">{business.name}</p>
+                          <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+                            {business.category}
+                          </p>
+                        </div>
+                        <StatusBadge label={business.status} tone={getBusinessStatusTone(business.status)} />
+                      </div>
+                      <div className="mt-3 space-y-1 text-sm text-slate-600">
+                        <p>{business.locationLabel}</p>
+                        <p>{business.address}</p>
+                        <p>/negocios/{business.slug}</p>
+                        <p>
+                          Responsavel: {business.createdBy.name || business.createdBy.email || 'Usuario'}
+                        </p>
+                        <p>Atualizado em {formatDateTime(business.updatedAt)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex gap-2">
+                    <ActionButton
+                      label={editingBusinessId === business.id ? 'Fechar' : 'Editar'}
+                      tone="neutral"
+                      disabled={processingKey !== null}
+                      onClick={() =>
+                        editingBusinessId === business.id ? resetBusinessForm() : startBusinessEdit(business)
+                      }
+                    />
+                  </div>
+
+                  {editingBusinessId === business.id ? (
+                    <div className="mt-4 space-y-3 rounded-3xl bg-slate-50 p-4">
+                      <FormInput
+                        value={businessForm.name}
+                        onChange={(value) => setBusinessForm((current) => ({ ...current, name: value }))}
+                        placeholder="Nome do negocio"
+                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <FormInput
+                          value={businessForm.category}
+                          onChange={(value) => setBusinessForm((current) => ({ ...current, category: value }))}
+                          placeholder="Categoria"
+                        />
+                        <FormSelect
+                          value={businessForm.status}
+                          onChange={(value) =>
+                            setBusinessForm((current) => ({ ...current, status: value as BusinessStatus }))
+                          }
+                          options={businessStatusOptions}
+                        />
+                      </div>
+                      <FormTextarea
+                        value={businessForm.description}
+                        onChange={(value) => setBusinessForm((current) => ({ ...current, description: value }))}
+                        placeholder="Descricao"
+                      />
+                      <FormInput
+                        value={businessForm.address}
+                        onChange={(value) => setBusinessForm((current) => ({ ...current, address: value }))}
+                        placeholder="Endereco"
+                      />
+                      <RegionSelector
+                        value={businessForm.regionKey}
+                        onChange={(region) =>
+                          setBusinessForm((current) => ({ ...current, regionKey: region.key }))
+                        }
+                        hint="Use somente regioes cadastradas para manter o catalogo padronizado."
+                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <FormInput
+                          value={businessForm.phone}
+                          onChange={(value) =>
+                            setBusinessForm((current) => ({
+                              ...current,
+                              phone: formatLoosePhoneInput(value),
+                            }))
+                          }
+                          placeholder="Telefone"
+                        />
+                        <FormInput
+                          value={businessForm.whatsapp}
+                          onChange={(value) =>
+                            setBusinessForm((current) => ({
+                              ...current,
+                              whatsapp: formatLoosePhoneInput(value),
+                            }))
+                          }
+                          placeholder="WhatsApp"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <FormInput
+                          value={businessForm.website}
+                          onChange={(value) => setBusinessForm((current) => ({ ...current, website: value }))}
+                          placeholder="Website"
+                        />
+                        <FormInput
+                          value={businessForm.instagram}
+                          onChange={(value) =>
+                            setBusinessForm((current) => ({ ...current, instagram: value }))
+                          }
+                          placeholder="Instagram"
+                        />
+                      </div>
+                      <CloudinaryImageField
+                        value={businessForm.imageUrl}
+                        onChange={(value) =>
+                          setBusinessForm((current) => ({ ...current, imageUrl: value }))
+                        }
+                        folder="businesses"
+                        placeholder="Link da imagem"
+                        hint="Envie a imagem pela Cloudinary ou cole uma URL publica."
+                      />
+                      <ImageGalleryField
+                        value={businessForm.galleryUrls}
+                        onChange={(value) =>
+                          setBusinessForm((current) => ({ ...current, galleryUrls: value }))
+                        }
+                        folder="businesses"
+                        hint="Use a galeria para mostrar ambiente, servicos e produtos do negocio."
+                      />
+                      <div className="flex gap-2">
+                        <ActionButton
+                          label="Salvar negocio"
+                          tone="primary"
+                          disabled={processingKey !== null}
+                          loading={processingKey === `business:${business.id}:save`}
+                          onClick={() => void submitBusinessUpdate()}
+                        />
+                        <ActionButton
+                          label="Cancelar"
+                          tone="neutral"
+                          disabled={processingKey !== null}
+                          onClick={resetBusinessForm}
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState text="Nenhum negocio encontrado para gestao." />
+          )}
+        </section>
+
+        <section className="space-y-3">
+          <SectionHeader title="Eventos cadastrados" count={filteredEvents.length} />
+          <SupportText text="Edite dados da agenda, imagem, links e regiao dos ultimos eventos." />
+          <SearchFilterInput
+            value={eventSearch}
+            onChange={setEventSearch}
+            placeholder="Filtrar eventos por titulo, slug, local ou regiao"
+          />
+          {loading && !dashboard ? (
+            <LoadingCards />
+          ) : dashboard && filteredEvents.length > 0 ? (
+            <div className="space-y-3">
+              {filteredEvents.map((event) => (
+                <div key={event.id} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                  <div className="flex items-start gap-4">
+                    <img
+                      src={event.imageUrl || `https://picsum.photos/seed/${event.id}/200`}
+                      alt={event.title}
+                      className="h-20 w-20 rounded-2xl object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-lg font-bold text-[#004691]">{event.title}</p>
+                          <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+                            {event.venueName}
+                          </p>
+                        </div>
+                        <StatusBadge label={event.status} tone={getEventStatusTone(event.status)} />
+                      </div>
+                      <div className="mt-3 space-y-1 text-sm text-slate-600">
+                        <p>{event.locationLabel}</p>
+                        <p>/eventos/{event.slug}</p>
+                        <p>Inicio: {formatDateTime(event.startsAt)}</p>
+                        <p>
+                          Responsavel: {event.createdBy.name || event.createdBy.email || 'Usuario'}
+                        </p>
+                        <p>Atualizado em {formatDateTime(event.updatedAt)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex gap-2">
+                    <ActionButton
+                      label={editingEventId === event.id ? 'Fechar' : 'Editar'}
+                      tone="neutral"
+                      disabled={processingKey !== null}
+                      onClick={() => (editingEventId === event.id ? resetEventForm() : startEventEdit(event))}
+                    />
+                  </div>
+
+                  {editingEventId === event.id ? (
+                    <div className="mt-4 space-y-3 rounded-3xl bg-slate-50 p-4">
+                      <FormInput
+                        value={eventForm.title}
+                        onChange={(value) => setEventForm((current) => ({ ...current, title: value }))}
+                        placeholder="Titulo do evento"
+                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <FormInput
+                          value={eventForm.venueName}
+                          onChange={(value) =>
+                            setEventForm((current) => ({ ...current, venueName: value }))
+                          }
+                          placeholder="Local"
+                        />
+                        <FormSelect
+                          value={eventForm.status}
+                          onChange={(value) =>
+                            setEventForm((current) => ({ ...current, status: value as EventStatus }))
+                          }
+                          options={eventStatusOptions}
+                        />
+                      </div>
+                      <FormTextarea
+                        value={eventForm.description}
+                        onChange={(value) =>
+                          setEventForm((current) => ({ ...current, description: value }))
+                        }
+                        placeholder="Descricao"
+                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <FormInput
+                          type="datetime-local"
+                          value={eventForm.startsAt}
+                          onChange={(value) =>
+                            setEventForm((current) => ({ ...current, startsAt: value }))
+                          }
+                          placeholder="Inicio"
+                        />
+                        <FormInput
+                          type="datetime-local"
+                          value={eventForm.endsAt}
+                          onChange={(value) =>
+                            setEventForm((current) => ({ ...current, endsAt: value }))
+                          }
+                          placeholder="Fim"
+                        />
+                      </div>
+                      <RegionSelector
+                        value={eventForm.regionKey}
+                        onChange={(region) =>
+                          setEventForm((current) => ({ ...current, regionKey: region.key }))
+                        }
+                        hint="Use somente regioes do catalogo para padronizar a agenda."
+                      />
+                      <FormInput
+                        value={eventForm.externalUrl}
+                        onChange={(value) =>
+                          setEventForm((current) => ({ ...current, externalUrl: value }))
+                        }
+                        placeholder="Link externo"
+                      />
+                      <CloudinaryImageField
+                        value={eventForm.imageUrl}
+                        onChange={(value) =>
+                          setEventForm((current) => ({ ...current, imageUrl: value }))
+                        }
+                        folder="events"
+                        placeholder="Link da imagem"
+                        hint="Envie a imagem pela Cloudinary ou cole uma URL publica."
+                      />
+                      <div className="flex gap-2">
+                        <ActionButton
+                          label="Salvar evento"
+                          tone="primary"
+                          disabled={processingKey !== null}
+                          loading={processingKey === `event:${event.id}:save`}
+                          onClick={() => void submitEventUpdate()}
+                        />
+                        <ActionButton
+                          label="Cancelar"
+                          tone="neutral"
+                          disabled={processingKey !== null}
+                          onClick={resetEventForm}
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState text="Nenhum evento encontrado para gestao." />
+          )}
+        </section>
+
+        <section className="space-y-3">
+          <SectionHeader title="Usuarios" count={filteredUsers.length} />
+          <SupportText text="Visualize perfis, ajuste papel, regiao e nome publico dos usuarios recentes." />
+          <SearchFilterInput
+            value={userSearch}
+            onChange={setUserSearch}
+            placeholder="Filtrar usuarios por nome, username, email ou regiao"
+          />
+          {loading && !dashboard ? (
+            <LoadingCards />
+          ) : dashboard && filteredUsers.length > 0 ? (
+            <div className="space-y-3">
+              {filteredUsers.map((managedUser) => (
+                <div key={managedUser.id} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                  <div className="flex items-start gap-4">
+                    <img
+                      src={managedUser.image || `https://picsum.photos/seed/${managedUser.id}/120`}
+                      alt={managedUser.name || managedUser.email || 'Usuario'}
+                      className="h-14 w-14 rounded-2xl object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-lg font-bold text-[#004691]">
+                            {managedUser.name || 'Usuario sem nome'}
+                          </p>
+                          <p className="text-sm font-medium text-slate-500">
+                            @{managedUser.username || 'sem-username'}
+                          </p>
+                        </div>
+                        <StatusBadge label={managedUser.role} tone="neutral" />
+                      </div>
+                      <div className="mt-3 space-y-1 text-sm text-slate-600">
+                        <p>{managedUser.email || 'Sem email'}</p>
+                        <p>{managedUser.locationLabel || 'Sem regiao definida'}</p>
+                        <p>
+                          Onboarding {managedUser.onboardingCompleted ? 'concluido' : 'pendente'}
+                        </p>
+                        <p>Atualizado em {formatDateTime(managedUser.updatedAt)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex gap-2">
+                    <ActionButton
+                      label={editingUserId === managedUser.id ? 'Fechar' : 'Editar'}
+                      tone="neutral"
+                      disabled={processingKey !== null}
+                      onClick={() => (editingUserId === managedUser.id ? resetUserForm() : startUserEdit(managedUser))}
+                    />
+                  </div>
+
+                  {editingUserId === managedUser.id ? (
+                    <div className="mt-4 space-y-3 rounded-3xl bg-slate-50 p-4">
+                      <FormInput
+                        value={userForm.name}
+                        onChange={(value) => setUserForm((current) => ({ ...current, name: value }))}
+                        placeholder="Nome completo"
+                      />
+                      <FormInput
+                        value={userForm.username}
+                        onChange={(value) =>
+                          setUserForm((current) => ({
+                            ...current,
+                            username: normalizeUsernameInput(value),
+                          }))
+                        }
+                        placeholder="Nome publico"
+                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <FormInput
+                          value={userForm.email}
+                          onChange={(value) => setUserForm((current) => ({ ...current, email: value }))}
+                          placeholder="Email"
+                        />
+                        <FormInput
+                          value={userForm.phone}
+                          onChange={(value) =>
+                            setUserForm((current) => ({
+                              ...current,
+                              phone: formatLoosePhoneInput(value),
+                            }))
+                          }
+                          placeholder="Telefone"
+                        />
+                      </div>
+                      <CloudinaryImageField
+                        value={userForm.image}
+                        onChange={(value) =>
+                          setUserForm((current) => ({ ...current, image: value }))
+                        }
+                        folder="profiles"
+                        placeholder="Link da foto do usuario"
+                        hint="Envie a foto pela Cloudinary ou cole uma URL publica."
+                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <FormSelect
+                          value={userForm.role}
+                          onChange={(value) =>
+                            setUserForm((current) => ({ ...current, role: value as UserRoleValue }))
+                          }
+                          options={userRoleOptions}
+                        />
+                        <label className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-600">
+                          <input
+                            type="checkbox"
+                            checked={userForm.onboardingCompleted}
+                            onChange={(event) =>
+                              setUserForm((current) => ({
+                                ...current,
+                                onboardingCompleted: event.target.checked,
+                              }))
+                            }
+                            className="h-4 w-4 rounded border-slate-300 text-[#004691] focus:ring-[#004691]"
+                          />
+                          Onboarding concluido
+                        </label>
+                      </div>
+                      <RegionSelector
+                        value={userForm.regionKey}
+                        onChange={(region) =>
+                          setUserForm((current) => ({ ...current, regionKey: region.key }))
+                        }
+                        hint="A regiao do usuario controla feed, negocios e eventos priorizados."
+                      />
+                      <div className="flex gap-2">
+                        <ActionButton
+                          label="Salvar usuario"
+                          tone="primary"
+                          disabled={processingKey !== null}
+                          loading={processingKey === `user:${managedUser.id}:save`}
+                          onClick={() => void submitUserUpdate()}
+                        />
+                        <ActionButton
+                          label="Cancelar"
+                          tone="neutral"
+                          disabled={processingKey !== null}
+                          onClick={resetUserForm}
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState text="Nenhum usuario encontrado para gestao." />
+          )}
+        </section>
       </div>
     </div>
   );
 };
 
 const Feedback: React.FC<{ tone: 'error' | 'success'; text: string }> = ({ tone, text }) => (
-  <div className={`flex items-start gap-3 rounded-3xl px-4 py-4 text-sm ${tone === 'error' ? 'border border-red-100 bg-red-50 text-red-700' : 'border border-emerald-100 bg-emerald-50 text-emerald-700'}`}>
-    {tone === 'error' ? <CircleAlert size={18} className="mt-0.5 shrink-0" /> : <BadgeCheck size={18} className="mt-0.5 shrink-0" />}
+  <div
+    className={`flex items-start gap-3 rounded-3xl px-4 py-4 text-sm ${
+      tone === 'error'
+        ? 'border border-red-100 bg-red-50 text-red-700'
+        : 'border border-emerald-100 bg-emerald-50 text-emerald-700'
+    }`}
+  >
+    {tone === 'error' ? (
+      <CircleAlert size={18} className="mt-0.5 shrink-0" />
+    ) : (
+      <BadgeCheck size={18} className="mt-0.5 shrink-0" />
+    )}
     <p>{text}</p>
   </div>
 );
@@ -514,41 +1587,175 @@ const Feedback: React.FC<{ tone: 'error' | 'success'; text: string }> = ({ tone,
 const SectionHeader: React.FC<{ title: string; count: number }> = ({ title, count }) => (
   <div className="flex items-center justify-between">
     <h2 className="text-lg font-bold text-[#004691]">{title}</h2>
-    <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500 shadow-sm">{count}</span>
+    <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500 shadow-sm">
+      {count}
+    </span>
   </div>
 );
 
-const ModerationSection: React.FC<{ title: string; count: number; emptyLabel: string; loading: boolean; children: React.ReactNode }> = ({ title, count, emptyLabel, loading, children }) => (
+const SupportText: React.FC<{ text: string }> = ({ text }) => (
+  <p className="text-sm text-slate-500">{text}</p>
+);
+
+const SearchFilterInput: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}> = ({ value, onChange, placeholder }) => (
+  <div className="relative">
+    <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+    <input
+      type="text"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder={placeholder}
+      className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+    />
+  </div>
+);
+
+const ModerationSection: React.FC<{
+  title: string;
+  count: number;
+  emptyLabel: string;
+  loading: boolean;
+  children: React.ReactNode;
+}> = ({ title, count, emptyLabel, loading, children }) => (
   <section className="space-y-3">
     <SectionHeader title={title} count={count} />
-    {loading ? <div className="space-y-3">{Array.from({ length: 2 }).map((_, index) => <div key={index} className="h-[184px] animate-pulse rounded-3xl bg-white shadow-sm" />)}</div> : count === 0 ? <EmptyState text={emptyLabel} /> : <div className="space-y-3">{children}</div>}
+    {loading ? (
+      <LoadingCards />
+    ) : count === 0 ? (
+      <EmptyState text={emptyLabel} />
+    ) : (
+      <div className="space-y-3">{children}</div>
+    )}
   </section>
 );
 
-const QueueCard: React.FC<{ title: string; subtitle: string; lines: string[]; children: React.ReactNode }> = ({ title, subtitle, lines, children }) => (
+const QueueCard: React.FC<{
+  title: string;
+  subtitle: string;
+  lines: string[];
+  children: React.ReactNode;
+}> = ({ title, subtitle, lines, children }) => (
   <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
     <div className="flex items-start justify-between gap-3">
       <div>
         <p className="text-lg font-bold text-[#004691]">{title}</p>
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">{subtitle}</p>
       </div>
-      <span className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">Pendente</span>
+      <StatusBadge label="PENDENTE" tone="warning" />
     </div>
-    <div className="mt-4 space-y-1 text-sm text-slate-600">{lines.map((line) => <p key={line}>{line}</p>)}</div>
+    <div className="mt-4 space-y-1 text-sm text-slate-600">
+      {lines.map((line) => (
+        <p key={line}>{line}</p>
+      ))}
+    </div>
     <div className="mt-4 flex gap-2">{children}</div>
   </div>
 );
 
 const EmptyState: React.FC<{ text: string }> = ({ text }) => (
-  <div className="rounded-3xl border border-dashed border-slate-200 bg-white px-5 py-7 text-center text-sm font-medium text-slate-500">{text}</div>
+  <div className="rounded-3xl border border-dashed border-slate-200 bg-white px-5 py-7 text-center text-sm font-medium text-slate-500">
+    {text}
+  </div>
 );
 
-const FormInput: React.FC<{ value: string; onChange: (value: string) => void; placeholder: string; className?: string }> = ({ value, onChange, placeholder, className = '' }) => (
-  <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className={`rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200 ${className}`} />
+const LoadingCards: React.FC = () => (
+  <div className="space-y-3">
+    {Array.from({ length: 2 }).map((_, index) => (
+      <div key={index} className="h-[184px] animate-pulse rounded-3xl bg-white shadow-sm" />
+    ))}
+  </div>
 );
 
-const ActionButton: React.FC<{ label: string; tone: 'primary' | 'danger' | 'neutral'; disabled?: boolean; loading?: boolean; onClick: () => void }> = ({ label, tone, disabled = false, loading = false, onClick }) => (
-  <button type="button" onClick={onClick} disabled={disabled} className={`inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl px-4 text-sm font-bold transition disabled:opacity-60 ${tone === 'primary' ? 'bg-[#004691] text-white hover:bg-[#00386f]' : tone === 'danger' ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
+const FormInput: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  className?: string;
+  type?: string;
+}> = ({ value, onChange, placeholder, className = '', type = 'text' }) => (
+  <input
+    type={type}
+    value={value}
+    onChange={(event) => onChange(event.target.value)}
+    placeholder={placeholder}
+    className={`rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200 ${className}`}
+  />
+);
+
+const FormTextarea: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}> = ({ value, onChange, placeholder }) => (
+  <textarea
+    rows={4}
+    value={value}
+    onChange={(event) => onChange(event.target.value)}
+    placeholder={placeholder}
+    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+  />
+);
+
+const FormSelect: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+}> = ({ value, onChange, options }) => (
+  <select
+    value={value}
+    onChange={(event) => onChange(event.target.value)}
+    className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+  >
+    {options.map((option) => (
+      <option key={option} value={option}>
+        {option}
+      </option>
+    ))}
+  </select>
+);
+
+const StatusBadge: React.FC<{
+  label: string;
+  tone: 'success' | 'danger' | 'warning' | 'neutral';
+}> = ({ label, tone }) => (
+  <span
+    className={`rounded-full px-3 py-1 text-[11px] font-bold ${
+      tone === 'success'
+        ? 'bg-emerald-50 text-emerald-700'
+        : tone === 'danger'
+          ? 'bg-red-50 text-red-700'
+          : tone === 'warning'
+            ? 'bg-amber-50 text-amber-700'
+            : 'bg-slate-100 text-slate-600'
+    }`}
+  >
+    {label}
+  </span>
+);
+
+const ActionButton: React.FC<{
+  label: string;
+  tone: 'primary' | 'danger' | 'neutral';
+  disabled?: boolean;
+  loading?: boolean;
+  onClick: () => void;
+}> = ({ label, tone, disabled = false, loading = false, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    className={`inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl px-4 text-sm font-bold transition disabled:opacity-60 ${
+      tone === 'primary'
+        ? 'bg-[#004691] text-white hover:bg-[#00386f]'
+        : tone === 'danger'
+          ? 'bg-red-50 text-red-700 hover:bg-red-100'
+          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+    }`}
+  >
     {loading ? 'Processando...' : label}
   </button>
 );

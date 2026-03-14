@@ -2,6 +2,7 @@ import { BusinessStatus, BusinessMemberRole, Prisma, UserRole } from '@prisma/cl
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { findRegionByKey } from '@/lib/region-store';
 import { slugify, uniqueSlug } from '@/lib/slug';
 import { businessSchema } from '@/lib/validators';
 
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!session.user.onboardingCompleted || !session.user.regionKey || !session.user.locationLabel) {
+  if (!session.user.onboardingCompleted) {
     return NextResponse.json(
       { error: 'Complete your profile before creating a business' },
       { status: 400 },
@@ -90,6 +91,12 @@ export async function POST(request: Request) {
       { error: parsed.error.issues[0]?.message ?? 'Invalid business data' },
       { status: 400 },
     );
+  }
+
+  const region = await findRegionByKey(parsed.data.regionKey, { activeOnly: true });
+
+  if (!region) {
+    return NextResponse.json({ error: 'Selecione uma regiao valida.' }, { status: 400 });
   }
 
   const baseSlug = slugify(parsed.data.name);
@@ -115,8 +122,9 @@ export async function POST(request: Request) {
         website: parsed.data.website,
         instagram: parsed.data.instagram,
         imageUrl: parsed.data.imageUrl,
-        locationLabel: session.user.locationLabel!,
-        regionKey: session.user.regionKey!,
+        galleryUrls: parsed.data.galleryUrls,
+        locationLabel: region.label,
+        regionKey: region.key,
         status: BusinessStatus.PENDING_REVIEW,
         createdById: session.user.id,
         members: {

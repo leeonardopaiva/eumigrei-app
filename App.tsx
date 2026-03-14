@@ -13,10 +13,6 @@ import Marketplace from './views/Marketplace';
 import Profile from './views/Profile';
 import BusinessList from './views/BusinessList';
 import BusinessDetail from './views/BusinessDetail';
-import HousingList from './views/HousingList';
-import JobList from './views/JobList';
-import NewsList from './views/NewsList';
-import EventsList from './views/EventsList';
 import Registration from './views/Registration';
 import { UserRole, type User } from './types';
 
@@ -38,6 +34,7 @@ const mapUserRole = (role?: string | null): UserRole => {
 const buildCurrentUser = (sessionUser: {
   id: string;
   name?: string | null;
+  username?: string | null;
   email?: string | null;
   image?: string | null;
   phone?: string | null;
@@ -47,6 +44,7 @@ const buildCurrentUser = (sessionUser: {
 }): User => ({
   id: sessionUser.id,
   name: sessionUser.name || 'Comunidade Eumigrei',
+  username: sessionUser.username,
   role: mapUserRole(sessionUser.role),
   avatar: sessionUser.image || 'https://picsum.photos/seed/eumigrei-user/200',
   location: sessionUser.locationLabel || 'Defina sua regiao',
@@ -166,12 +164,9 @@ const App: React.FC = () => {
     await requestMagicLink(email);
   };
 
-  const handleDevLogin = async (email: string) => {
-    await requestMagicLink(email.trim() || 'teste@eumigrei.local', true);
-  };
-
   const handleProfileCompletion = async (values: {
     name: string;
+    username: string;
     email: string;
     phone: string;
     regionKey: string;
@@ -215,10 +210,8 @@ const App: React.FC = () => {
         mode="signin"
         googleEnabled={GOOGLE_AUTH_ENABLED}
         emailEnabled={EMAIL_AUTH_ENABLED}
-        devAuthEnabled={DEV_AUTH_ENABLED}
         onGoogleLogin={handleGoogleLogin}
         onEmailLogin={handleEmailLogin}
-        onDevLogin={handleDevLogin}
         submitting={requestingMagicLink}
         error={registrationError}
         notice={registrationNotice}
@@ -226,13 +219,12 @@ const App: React.FC = () => {
     );
   }
 
-  if (!session.user.onboardingCompleted) {
+  if (!session.user.onboardingCompleted || !session.user.username) {
     return (
       <Registration
         mode="complete-profile"
         googleEnabled={GOOGLE_AUTH_ENABLED}
         emailEnabled={EMAIL_AUTH_ENABLED}
-        devAuthEnabled={DEV_AUTH_ENABLED}
         onGoogleLogin={handleGoogleLogin}
         onCompleteProfile={handleProfileCompletion}
         submitting={savingProfile}
@@ -240,6 +232,7 @@ const App: React.FC = () => {
         notice={registrationNotice}
         defaultValues={{
           name: session.user.name || '',
+          username: session.user.username || '',
           email: session.user.email || '',
           phone: session.user.phone || '',
           regionKey: session.user.regionKey || '',
@@ -262,7 +255,7 @@ const App: React.FC = () => {
     }
 
     if (rootSegment === 'negocios' && segments.length === 2) {
-      return <BusinessDetail businessId={decodeURIComponent(segments[1])} />;
+      return <BusinessDetail businessId={decodeURIComponent(segments[1])} user={currentUser} />;
     }
 
     switch (rootSegment) {
@@ -275,17 +268,10 @@ const App: React.FC = () => {
       case 'community':
         return <Community user={currentUser} />;
       case 'marketplace':
+      case 'eventos':
         return <Marketplace />;
       case 'profile':
         return <Profile user={currentUser} />;
-      case 'moradia':
-        return <HousingList />;
-      case 'vagas':
-        return <JobList />;
-      case 'noticias':
-        return <NewsList />;
-      case 'eventos':
-        return <EventsList />;
       default:
         return <Home user={currentUser} />;
     }

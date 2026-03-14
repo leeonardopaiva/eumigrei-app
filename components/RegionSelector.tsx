@@ -12,8 +12,11 @@ import {
 interface RegionSelectorProps {
   value?: string;
   onChange: (region: RegionOption) => void;
+  onClear?: () => void;
   disabled?: boolean;
   autoDetect?: boolean;
+  allowEmpty?: boolean;
+  emptyLabel?: string;
   label?: string;
   hint?: string;
 }
@@ -21,8 +24,11 @@ interface RegionSelectorProps {
 const RegionSelector: React.FC<RegionSelectorProps> = ({
   value,
   onChange,
+  onClear,
   disabled = false,
   autoDetect = false,
+  allowEmpty = false,
+  emptyLabel = 'Todas as regioes',
   label = 'Regiao',
   hint,
 }) => {
@@ -172,6 +178,11 @@ const RegionSelector: React.FC<RegionSelectorProps> = ({
       <select
         value={value || ''}
         onChange={(event) => {
+          if (!event.target.value && allowEmpty) {
+            onClear?.();
+            return;
+          }
+
           const region = getRegionByKey(event.target.value, regionPool);
           if (region) {
             onChange(region);
@@ -180,9 +191,13 @@ const RegionSelector: React.FC<RegionSelectorProps> = ({
         disabled={disabled}
         className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#004691]"
       >
-        <option value="" disabled>
-          Selecione uma regiao
-        </option>
+        {allowEmpty ? (
+          <option value="">{emptyLabel}</option>
+        ) : (
+          <option value="" disabled>
+            Selecione uma regiao
+          </option>
+        )}
         {visibleRegions.map((region) => (
           <option key={region.key} value={region.key}>
             {region.label}

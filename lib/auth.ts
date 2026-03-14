@@ -63,6 +63,7 @@ export const authOptions: NextAuthOptions = {
 
       session.user.id = user.id;
       session.user.role = effectiveRole;
+      session.user.username = user.username;
       session.user.phone = user.phone;
       session.user.locationLabel = user.locationLabel;
       session.user.regionKey = user.regionKey;

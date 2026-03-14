@@ -8,6 +8,7 @@ export enum UserRole {
 export interface User {
   id: string;
   name: string;
+  username?: string | null;
   role: UserRole;
   avatar: string;
   location: string;
@@ -50,10 +51,18 @@ export interface Business {
   name: string;
   category: string;
   address: string;
+  description?: string | null;
   imageUrl?: string | null;
+  galleryUrls?: string[];
   locationLabel?: string;
+  phone?: string | null;
+  whatsapp?: string | null;
+  website?: string | null;
+  instagram?: string | null;
   status?: string;
   isFavorite?: boolean;
+  canEdit?: boolean;
+  publicPath?: string;
 }
 
 export interface EventItem {
@@ -65,6 +74,16 @@ export interface EventItem {
   locationLabel: string;
   imageUrl?: string | null;
   status?: string;
+}
+
+export interface BannerAd {
+  id: string;
+  name: string;
+  imageUrl: string;
+  targetUrl: string;
+  regionKey?: string | null;
+  regionLabel?: string | null;
+  scope?: 'global' | 'regional';
 }
 
 export interface Job {

@@ -48,6 +48,7 @@ enum ReactionType {
 model User {
   id                  String          @id @default(cuid())
   name                String?
+  username            String?         @unique
   email               String?         @unique
   emailVerified       DateTime?
   image               String?
@@ -80,6 +81,7 @@ model Region {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  banners   Banner[]
 
   @@index([isActive, label])
 }
@@ -132,6 +134,7 @@ model Business {
   locationLabel String
   regionKey     String
   imageUrl      String?
+  galleryUrls   String[]        @default([])
   status        BusinessStatus  @default(PENDING_REVIEW)
   createdById   String
   createdAt     DateTime        @default(now())
@@ -230,4 +233,18 @@ model PostReport {
   author    User          @relation("PostReportAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
   @@unique([postId, authorId])
+}
+
+model Banner {
+  id        String   @id @default(cuid())
+  name      String
+  imageUrl  String
+  targetUrl String
+  regionKey String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  region    Region?  @relation(fields: [regionKey], references: [key], onDelete: SetNull)
+
+  @@index([isActive, regionKey, updatedAt])
 }

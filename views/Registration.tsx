@@ -1,12 +1,28 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Shield } from 'lucide-react';
+import FieldErrorMessage from '../components/forms/FieldErrorMessage';
 import RegionSelector from '../components/RegionSelector';
 import { Logo } from '../components/Layout';
+import {
+  COUNTRY_CALLING_CODE_OPTIONS,
+  findCountryByIso2,
+  splitPhoneNumber,
+} from '../lib/country-calling-codes';
+import { buildInternationalPhone, formatPhoneInputByCountry } from '../lib/forms/phone';
+import {
+  type FieldErrors,
+  hasFieldErrors,
+  isValidEmail,
+  requiredFieldError,
+  validatePhoneField,
+} from '../lib/forms/validation';
+import { USERNAME_MIN_LENGTH, normalizeUsernameInput, validateUsernameValue } from '../lib/username';
 
 type RegistrationMode = 'signin' | 'complete-profile';
 
 type RegistrationValues = {
   name: string;
+  username: string;
   email: string;
   phone: string;
   regionKey: string;
@@ -16,10 +32,8 @@ interface RegistrationProps {
   mode: RegistrationMode;
   googleEnabled: boolean;
   emailEnabled: boolean;
-  devAuthEnabled: boolean;
   onGoogleLogin: () => void;
   onEmailLogin?: (email: string) => Promise<void>;
-  onDevLogin?: (email: string) => Promise<void>;
   onCompleteProfile?: (values: RegistrationValues) => Promise<void>;
   submitting?: boolean;
   error?: string | null;
@@ -27,28 +41,145 @@ interface RegistrationProps {
   defaultValues?: RegistrationValues;
 }
 
+type RegistrationField = 'email' | 'name' | 'username' | 'phone' | 'regionKey';
+
 const Registration: React.FC<RegistrationProps> = ({
   mode,
   googleEnabled,
   emailEnabled,
-  devAuthEnabled,
   onGoogleLogin,
   onEmailLogin,
-  onDevLogin,
   onCompleteProfile,
   submitting = false,
   error,
   notice,
   defaultValues,
 }) => {
+  const initialPhoneState = splitPhoneNumber(defaultValues?.phone);
   const [formValues, setFormValues] = useState<RegistrationValues>({
     name: defaultValues?.name || '',
+    username: defaultValues?.username || '',
     email: defaultValues?.email || '',
-    phone: defaultValues?.phone || '',
+    phone: initialPhoneState.localNumber,
     regionKey: defaultValues?.regionKey || '',
   });
+  const [selectedCountryIso2, setSelectedCountryIso2] = useState(initialPhoneState.country.iso2);
+  const [usernameFeedback, setUsernameFeedback] = useState<string | null>(null);
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<RegistrationField>>({});
 
   const isOnboarding = mode === 'complete-profile';
+  const normalizedUsername = normalizeUsernameInput(formValues.username);
+  const selectedCountry = findCountryByIso2(selectedCountryIso2);
+
+  useEffect(() => {
+    const nextPhoneState = splitPhoneNumber(defaultValues?.phone);
+
+    setSelectedCountryIso2(nextPhoneState.country.iso2);
+    setFormValues({
+      name: defaultValues?.name || '',
+      username: defaultValues?.username || '',
+      email: defaultValues?.email || '',
+      phone: nextPhoneState.localNumber,
+      regionKey: defaultValues?.regionKey || '',
+    });
+  }, [
+    defaultValues?.email,
+    defaultValues?.name,
+    defaultValues?.phone,
+    defaultValues?.regionKey,
+    defaultValues?.username,
+  ]);
+
+  useEffect(() => {
+    if (!isOnboarding) {
+      return;
+    }
+
+    if (!formValues.username) {
+      setUsernameFeedback(null);
+      setUsernameAvailable(null);
+      setCheckingUsername(false);
+      return;
+    }
+
+    const validation = validateUsernameValue(formValues.username);
+
+    if (validation.error) {
+      setUsernameFeedback(validation.error);
+      setUsernameAvailable(false);
+      setCheckingUsername(false);
+      return;
+    }
+
+    let ignore = false;
+    const controller = new AbortController();
+
+    setUsernameAvailable(null);
+    setUsernameFeedback(`Validando disponibilidade de @${validation.normalized}...`);
+    setCheckingUsername(true);
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/usernames/check?username=${encodeURIComponent(validation.normalized)}`,
+          {
+            cache: 'no-store',
+            signal: controller.signal,
+          },
+        );
+        const payload = await response.json().catch(() => null);
+
+        if (ignore) {
+          return;
+        }
+
+        setUsernameAvailable(Boolean(payload?.available));
+        setUsernameFeedback(
+          payload?.available
+            ? `Nome publico disponivel: @${payload.username}`
+            : payload?.reason ?? 'Nao foi possivel validar o nome publico.',
+        );
+      } catch (usernameError) {
+        if (!ignore) {
+          console.error('Failed to validate username:', usernameError);
+          setUsernameAvailable(false);
+          setUsernameFeedback('Nao foi possivel validar o nome publico agora.');
+        }
+      } finally {
+        if (!ignore) {
+          setCheckingUsername(false);
+        }
+      }
+    }, 350);
+
+    return () => {
+      ignore = true;
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [formValues.username, isOnboarding]);
+
+  const onboardingBlocked =
+    isOnboarding &&
+    (!formValues.regionKey ||
+      checkingUsername ||
+      usernameAvailable !== true ||
+      normalizedUsername.length < USERNAME_MIN_LENGTH);
+
+  const clearFieldError = (field: RegistrationField) => {
+    setFieldErrors((current) => {
+      if (!current[field]) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [field]: undefined,
+      };
+    });
+  };
 
   return (
     <div className="min-h-screen max-w-md mx-auto bg-texture flex flex-col items-center px-8 pt-20 animate-in fade-in duration-700 overflow-y-auto scrollbar-hide">
@@ -63,7 +194,7 @@ const Registration: React.FC<RegistrationProps> = ({
         <p className="text-slate-500 text-sm font-medium">
           {isOnboarding
             ? 'Precisamos da sua regiao para liberar comunidade, negocios e eventos locais.'
-            : 'Entre com email, Google ou modo teste para finalizar seu cadastro em poucos segundos.'}
+            : 'Entre com email ou Google para finalizar seu cadastro em poucos segundos.'}
         </p>
       </div>
 
@@ -74,6 +205,21 @@ const Registration: React.FC<RegistrationProps> = ({
               className="space-y-3"
               onSubmit={async (event) => {
                 event.preventDefault();
+
+                const nextErrors: FieldErrors<RegistrationField> = {};
+
+                if (!formValues.email.trim()) {
+                  nextErrors.email = requiredFieldError('seu email');
+                } else if (!isValidEmail(formValues.email)) {
+                  nextErrors.email = 'Informe um email valido.';
+                }
+
+                setFieldErrors(nextErrors);
+
+                if (hasFieldErrors(nextErrors)) {
+                  return;
+                }
+
                 await onEmailLogin?.(formValues.email);
               }}
             >
@@ -85,8 +231,11 @@ const Registration: React.FC<RegistrationProps> = ({
                 onChange={(event) =>
                   setFormValues((current) => ({ ...current, email: event.target.value }))
                 }
+                onInput={() => clearFieldError('email')}
+                aria-invalid={Boolean(fieldErrors.email)}
                 className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm text-slate-900 focus:text-slate-900 focus:ring-2 focus:ring-[#004691] outline-none transition-all shadow-sm placeholder:text-slate-400"
               />
+              <FieldErrorMessage message={fieldErrors.email} />
               <button
                 type="submit"
                 disabled={submitting}
@@ -106,16 +255,6 @@ const Registration: React.FC<RegistrationProps> = ({
               Continuar com Google
             </button>
           ) : null}
-          {devAuthEnabled ? (
-            <button
-              type="button"
-              onClick={() => onDevLogin?.(formValues.email)}
-              disabled={submitting}
-              className="w-full rounded-[32px] border border-dashed border-[#004691]/30 bg-[#004691]/5 px-6 py-4 text-sm font-bold text-[#004691] transition-all hover:bg-[#004691]/10 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {submitting ? 'Preparando teste...' : 'Entrar em modo teste local'}
-            </button>
-          ) : null}
           <p className="text-center text-xs font-medium text-slate-400">
             Email envia um magic link. Google cria ou reutiliza sua conta automaticamente.
           </p>
@@ -125,7 +264,39 @@ const Registration: React.FC<RegistrationProps> = ({
           className="w-full space-y-4"
           onSubmit={async (event) => {
             event.preventDefault();
-            await onCompleteProfile?.(formValues);
+
+            const nextErrors: FieldErrors<RegistrationField> = {};
+
+            if (!formValues.name.trim()) {
+              nextErrors.name = requiredFieldError('seu nome');
+            }
+
+            if (!formValues.username.trim()) {
+              nextErrors.username = requiredFieldError('seu nome publico');
+            } else if (usernameAvailable !== true) {
+              nextErrors.username = usernameFeedback || 'Escolha um nome publico disponivel.';
+            }
+
+            if (!formValues.regionKey.trim()) {
+              nextErrors.regionKey = requiredFieldError('uma regiao');
+            }
+
+            const phoneError = validatePhoneField(formValues.phone, 'O telefone');
+
+            if (phoneError) {
+              nextErrors.phone = phoneError;
+            }
+
+            setFieldErrors(nextErrors);
+
+            if (hasFieldErrors(nextErrors)) {
+              return;
+            }
+
+            await onCompleteProfile?.({
+              ...formValues,
+              phone: buildInternationalPhone(selectedCountry.iso2, formValues.phone),
+            });
           }}
         >
           <div className="space-y-3">
@@ -137,24 +308,87 @@ const Registration: React.FC<RegistrationProps> = ({
               onChange={(event) =>
                 setFormValues((current) => ({ ...current, name: event.target.value }))
               }
+              onInput={() => clearFieldError('name')}
+              aria-invalid={Boolean(fieldErrors.name)}
               className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm text-slate-900 focus:text-slate-900 focus:ring-2 focus:ring-[#004691] outline-none transition-all shadow-sm placeholder:text-slate-400"
             />
+            <FieldErrorMessage message={fieldErrors.name} />
+
+            <div className="space-y-2">
+              <input
+                required
+                type="text"
+                placeholder="Nome publico (ex: joao-em-boston)"
+                value={formValues.username}
+                onChange={(event) =>
+                  setFormValues((current) => ({
+                    ...current,
+                    username: normalizeUsernameInput(event.target.value),
+                  }))
+                }
+                onInput={() => clearFieldError('username')}
+                aria-invalid={Boolean(fieldErrors.username)}
+                className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm text-slate-900 focus:text-slate-900 focus:ring-2 focus:ring-[#004691] outline-none transition-all shadow-sm placeholder:text-slate-400"
+              />
+              <p className="px-2 text-[11px] font-medium text-slate-400">
+                Esse nome vai identificar seu perfil publico e futuros links como `eumigrei.com.br/{normalizedUsername || 'joao'}`
+              </p>
+              {usernameFeedback ? (
+                <div
+                  className={`rounded-2xl px-4 py-3 text-sm font-medium ${
+                    usernameAvailable
+                      ? 'border border-emerald-100 bg-emerald-50 text-emerald-700'
+                      : 'border border-amber-100 bg-amber-50 text-amber-700'
+                  }`}
+                >
+                  {checkingUsername ? 'Validando nome publico...' : usernameFeedback}
+                </div>
+              ) : null}
+              <FieldErrorMessage
+                message={fieldErrors.username && fieldErrors.username !== usernameFeedback ? fieldErrors.username : null}
+              />
+            </div>
 
             <div className="flex gap-2">
-              <div className="bg-white border border-slate-200 rounded-2xl py-4 px-4 flex items-center gap-2 text-sm text-slate-700 shadow-sm">
-                <img src="https://flagcdn.com/w20/us.png" className="w-5" alt="US" />
-                <span className="font-bold">+1</span>
-              </div>
+              <label className="min-w-[150px] rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <img src={selectedCountry.flagUrl} className="w-5" alt={selectedCountry.iso2.toUpperCase()} />
+                  <select
+                    value={selectedCountryIso2}
+                    onChange={(event) => {
+                      setSelectedCountryIso2(event.target.value);
+                      clearFieldError('phone');
+                    }}
+                    className="min-w-0 flex-1 appearance-none bg-transparent text-sm font-bold text-slate-700 outline-none"
+                  >
+                    {COUNTRY_CALLING_CODE_OPTIONS.map((country) => (
+                      <option key={country.iso2} value={country.iso2}>
+                        {country.country}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-xs font-bold text-slate-400">{selectedCountry.dialCode}</span>
+                </div>
+              </label>
               <input
                 type="tel"
                 placeholder="WhatsApp"
                 value={formValues.phone}
                 onChange={(event) =>
-                  setFormValues((current) => ({ ...current, phone: event.target.value }))
+                  setFormValues((current) => ({
+                    ...current,
+                    phone: formatPhoneInputByCountry(event.target.value, selectedCountry.iso2),
+                  }))
                 }
+                onInput={() => clearFieldError('phone')}
+                aria-invalid={Boolean(fieldErrors.phone)}
                 className="flex-1 bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm text-slate-900 focus:text-slate-900 focus:ring-2 focus:ring-[#004691] outline-none transition-all shadow-sm placeholder:text-slate-400"
               />
             </div>
+            <FieldErrorMessage message={fieldErrors.phone} />
+            <p className="px-2 text-[11px] font-medium text-slate-400">
+              O numero sera salvo com codigo internacional: {selectedCountry.dialCode} 99999-9999
+            </p>
 
             <input
               required
@@ -168,26 +402,28 @@ const Registration: React.FC<RegistrationProps> = ({
             <RegionSelector
               value={formValues.regionKey}
               autoDetect
-              onChange={(region) =>
+              onChange={(region) => {
+                clearFieldError('regionKey');
                 setFormValues((current) => ({
                   ...current,
                   regionKey: region.key,
-                }))
-              }
+                }));
+              }}
               hint={
                 formValues.regionKey
                   ? 'Sua regiao inicial foi sugerida pela geolocalizacao, mas voce pode trocar.'
                   : 'Selecione uma regiao existente para receber conteudo local.'
               }
             />
+            <FieldErrorMessage message={fieldErrors.regionKey} />
           </div>
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || onboardingBlocked}
             className="w-full bg-[#004691] text-white font-bold py-5 rounded-[32px] mt-8 shadow-2xl shadow-[#004691]/30 hover:bg-[#003670] transition-all active:scale-95 text-lg disabled:opacity-60"
           >
-            {submitting ? 'Salvando...' : 'Entrar na Comunidade'}
+            {submitting ? 'Salvando...' : checkingUsername ? 'Validando nome...' : 'Entrar na Comunidade'}
           </button>
         </form>
       )}

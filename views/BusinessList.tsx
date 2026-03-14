@@ -1,6 +1,20 @@
 import React, { startTransition, useDeferredValue, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { useToast } from '../components/feedback/ToastProvider';
+import CloudinaryImageField from '../components/forms/CloudinaryImageField';
+import FieldErrorMessage from '../components/forms/FieldErrorMessage';
 import { Search, Star, MapPin, Plus } from 'lucide-react';
+import RegionSelector from '../components/RegionSelector';
+import { formatLoosePhoneInput } from '../lib/forms/phone';
+import {
+  type FieldErrors,
+  hasFieldErrors,
+  normalizeUrlFieldValue,
+  requiredFieldError,
+  validateOptionalUrlField,
+  validatePhoneField,
+} from '../lib/forms/validation';
 import { Business } from '../types';
 
 const SAMPLE_BUSINESSES: Business[] = [
@@ -27,6 +41,7 @@ const emptyForm = {
   category: 'Restaurante',
   description: '',
   address: '',
+  regionKey: '',
   phone: '',
   whatsapp: '',
   website: '',
@@ -34,16 +49,48 @@ const emptyForm = {
   imageUrl: '',
 };
 
+type BusinessField =
+  | 'name'
+  | 'phone'
+  | 'address'
+  | 'regionKey'
+  | 'description'
+  | 'website'
+  | 'imageUrl';
+
 const BusinessList: React.FC = () => {
+  const { data: session } = useSession();
+  const { showToast } = useToast();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [activeFilter, setActiveFilter] = useState('Todos');
   const [resultScope, setResultScope] = useState<'local' | 'global'>('local');
   const [search, setSearch] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [createForm, setCreateForm] = useState(emptyForm);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<BusinessField>>({});
   const deferredSearch = useDeferredValue(search);
+
+  const clearFieldError = (field: BusinessField) => {
+    setFieldErrors((current) => {
+      if (!current[field]) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [field]: undefined,
+      };
+    });
+  };
+
+  useEffect(() => {
+    if (session?.user?.regionKey) {
+      setCreateForm((current) =>
+        current.regionKey ? current : { ...current, regionKey: session.user.regionKey || '' },
+      );
+    }
+  }, [session?.user?.regionKey]);
 
   useEffect(() => {
     let ignore = false;
@@ -89,7 +136,50 @@ const BusinessList: React.FC = () => {
 
   const handleCreateBusiness = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setFeedback(null);
+
+    const nextErrors: FieldErrors<BusinessField> = {};
+
+    if (!createForm.name.trim()) {
+      nextErrors.name = requiredFieldError('o nome do negocio');
+    }
+
+    if (!createForm.phone.trim()) {
+      nextErrors.phone = requiredFieldError('o telefone');
+    } else {
+      const phoneError = validatePhoneField(createForm.phone, 'O telefone');
+      if (phoneError) {
+        nextErrors.phone = phoneError;
+      }
+    }
+
+    if (!createForm.address.trim()) {
+      nextErrors.address = requiredFieldError('o endereco');
+    }
+
+    if (!createForm.regionKey.trim()) {
+      nextErrors.regionKey = requiredFieldError('uma regiao');
+    }
+
+    if (!createForm.description.trim()) {
+      nextErrors.description = requiredFieldError('a descricao');
+    }
+
+    const websiteError = validateOptionalUrlField(createForm.website, 'O website');
+    if (websiteError) {
+      nextErrors.website = websiteError;
+    }
+
+    const imageUrlError = validateOptionalUrlField(createForm.imageUrl, 'O link da imagem');
+    if (imageUrlError) {
+      nextErrors.imageUrl = imageUrlError;
+    }
+
+    setFieldErrors(nextErrors);
+
+    if (hasFieldErrors(nextErrors)) {
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -98,22 +188,26 @@ const BusinessList: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(createForm),
+        body: JSON.stringify({
+          ...createForm,
+          website: normalizeUrlFieldValue(createForm.website),
+          imageUrl: normalizeUrlFieldValue(createForm.imageUrl),
+        }),
       });
 
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setFeedback(payload?.error ?? 'Nao foi possivel enviar seu negocio.');
+        showToast(payload?.error ?? 'Nao foi possivel enviar seu negocio.', 'error');
         return;
       }
 
-      setFeedback('Seu negocio foi enviado para aprovacao.');
+      showToast('Seu negocio foi enviado para aprovacao.', 'success');
       setCreateForm(emptyForm);
       setShowCreateForm(false);
     } catch (error) {
       console.error('Failed to create business:', error);
-      setFeedback('Nao foi possivel enviar seu negocio.');
+      showToast('Nao foi possivel enviar seu negocio.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -154,9 +248,12 @@ const BusinessList: React.FC = () => {
               onChange={(event) =>
                 setCreateForm((current) => ({ ...current, name: event.target.value }))
               }
+              onInput={() => clearFieldError('name')}
+              aria-invalid={Boolean(fieldErrors.name)}
               placeholder="Nome do negocio"
               className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
             />
+            <FieldErrorMessage message={fieldErrors.name} />
             <div className="grid grid-cols-2 gap-3">
               <select
                 value={createForm.category}
@@ -175,21 +272,39 @@ const BusinessList: React.FC = () => {
                 required
                 value={createForm.phone}
                 onChange={(event) =>
-                  setCreateForm((current) => ({ ...current, phone: event.target.value }))
+                  setCreateForm((current) => ({
+                    ...current,
+                    phone: formatLoosePhoneInput(event.target.value),
+                  }))
                 }
+                onInput={() => clearFieldError('phone')}
+                aria-invalid={Boolean(fieldErrors.phone)}
                 placeholder="Telefone"
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
               />
             </div>
+            <FieldErrorMessage message={fieldErrors.phone} />
             <input
               required
               value={createForm.address}
               onChange={(event) =>
                 setCreateForm((current) => ({ ...current, address: event.target.value }))
               }
+              onInput={() => clearFieldError('address')}
+              aria-invalid={Boolean(fieldErrors.address)}
               placeholder="Endereco"
               className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
             />
+            <FieldErrorMessage message={fieldErrors.address} />
+            <RegionSelector
+              value={createForm.regionKey}
+              onChange={(region) => {
+                clearFieldError('regionKey');
+                setCreateForm((current) => ({ ...current, regionKey: region.key }));
+              }}
+              hint="Escolha uma regiao existente para padronizar a publicacao."
+            />
+            <FieldErrorMessage message={fieldErrors.regionKey} />
             <textarea
               required
               rows={3}
@@ -197,15 +312,20 @@ const BusinessList: React.FC = () => {
               onChange={(event) =>
                 setCreateForm((current) => ({ ...current, description: event.target.value }))
               }
+              onInput={() => clearFieldError('description')}
+              aria-invalid={Boolean(fieldErrors.description)}
               placeholder="Descricao do negocio"
               className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
             />
+            <FieldErrorMessage message={fieldErrors.description} />
             <div className="grid grid-cols-2 gap-3">
               <input
                 value={createForm.website}
                 onChange={(event) =>
                   setCreateForm((current) => ({ ...current, website: event.target.value }))
                 }
+                onInput={() => clearFieldError('website')}
+                aria-invalid={Boolean(fieldErrors.website)}
                 placeholder="Website"
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
               />
@@ -218,9 +338,21 @@ const BusinessList: React.FC = () => {
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
               />
             </div>
+            <FieldErrorMessage message={fieldErrors.website} />
+            <CloudinaryImageField
+              value={createForm.imageUrl}
+              onChange={(value) =>
+                setCreateForm((current) => ({ ...current, imageUrl: value }))
+              }
+              onClearError={() => clearFieldError('imageUrl')}
+              error={fieldErrors.imageUrl}
+              folder="businesses"
+              placeholder="Link da imagem de capa"
+              hint="Envie a capa pela Cloudinary ou cole uma URL publica."
+            />
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !createForm.regionKey}
               className="w-full rounded-2xl bg-blue-900 px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
             >
               {submitting ? 'Enviando...' : 'Enviar para aprovacao'}
@@ -228,11 +360,6 @@ const BusinessList: React.FC = () => {
           </form>
         ) : null}
 
-        {feedback ? (
-          <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
-            {feedback}
-          </div>
-        ) : null}
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -286,7 +413,10 @@ const BusinessList: React.FC = () => {
                   <MapPin size={10} /> {business.address}
                 </div>
               </div>
-              <Link href={`/negocios/${business.id}`} className="self-end bg-blue-900 text-white px-4 py-1.5 rounded-xl text-[10px] font-bold shadow-sm">
+              <Link
+                href={`/negocios/${business.slug || business.id}`}
+                className="self-end rounded-xl bg-blue-900 px-4 py-1.5 text-[10px] font-bold text-white shadow-sm"
+              >
                 Ver perfil
               </Link>
             </div>

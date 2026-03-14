@@ -6,6 +6,7 @@ declare module 'next-auth' {
     user: DefaultSession['user'] & {
       id: string;
       role: UserRole;
+      username?: string | null;
       phone?: string | null;
       locationLabel?: string | null;
       regionKey?: string | null;
@@ -15,6 +16,7 @@ declare module 'next-auth' {
 
   interface User {
     role: UserRole;
+    username?: string | null;
     phone?: string | null;
     locationLabel?: string | null;
     regionKey?: string | null;
