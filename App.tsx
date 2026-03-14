@@ -13,6 +13,7 @@ import Marketplace from './views/Marketplace';
 import Profile from './views/Profile';
 import BusinessList from './views/BusinessList';
 import BusinessDetail from './views/BusinessDetail';
+import EventDetail from './views/EventDetail';
 import Registration from './views/Registration';
 import { UserRole, type User } from './types';
 
@@ -257,6 +258,10 @@ const App: React.FC = () => {
 
     if (rootSegment === 'negocios' && segments.length === 2) {
       return <BusinessDetail businessId={decodeURIComponent(segments[1])} user={currentUser} />;
+    }
+
+    if ((rootSegment === 'eventos' || rootSegment === 'marketplace') && segments.length === 2) {
+      return <EventDetail eventId={decodeURIComponent(segments[1])} user={currentUser} />;
     }
 
     switch (rootSegment) {

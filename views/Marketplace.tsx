@@ -1,8 +1,10 @@
 import React, { startTransition, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useToast } from '../components/feedback/ToastProvider';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import FieldErrorMessage from '../components/forms/FieldErrorMessage';
+import ImageGalleryField from '../components/forms/ImageGalleryField';
 import { MapPin, Plus } from 'lucide-react';
 import RegionSelector from '../components/RegionSelector';
 import {
@@ -33,7 +35,17 @@ const SAMPLE_EVENTS: EventItem[] = [
   },
 ];
 
-const emptyForm = {
+const emptyForm: {
+  title: string;
+  description: string;
+  venueName: string;
+  startsAt: string;
+  endsAt: string;
+  regionKey: string;
+  externalUrl: string;
+  imageUrl: string;
+  galleryUrls: string[];
+} = {
   title: '',
   description: '',
   venueName: '',
@@ -42,6 +54,7 @@ const emptyForm = {
   regionKey: '',
   externalUrl: '',
   imageUrl: '',
+  galleryUrls: [],
 };
 
 type EventField =
@@ -174,6 +187,7 @@ const Marketplace: React.FC = () => {
           endsAt: createForm.endsAt ? new Date(createForm.endsAt).toISOString() : undefined,
           externalUrl: normalizeUrlFieldValue(createForm.externalUrl),
           imageUrl: normalizeUrlFieldValue(createForm.imageUrl),
+          galleryUrls: createForm.galleryUrls,
         }),
       });
 
@@ -315,6 +329,14 @@ const Marketplace: React.FC = () => {
               placeholder="Link da imagem do evento"
               hint="Envie a imagem do evento pela Cloudinary ou cole uma URL publica."
             />
+            <ImageGalleryField
+              value={createForm.galleryUrls}
+              onChange={(value) =>
+                setCreateForm((current) => ({ ...current, galleryUrls: value }))
+              }
+              folder="events"
+              hint="Adicione mais imagens para a pagina detalhada do evento."
+            />
             <button
               type="submit"
               disabled={submitting || !createForm.regionKey}
@@ -342,6 +364,7 @@ const Marketplace: React.FC = () => {
         {events.map((item) => (
           <EventCard
             key={item.id}
+            href={`/eventos/${item.slug || item.id}`}
             title={item.title}
             date={formatEventDate(item.startsAt)}
             location={item.venueName}
@@ -362,7 +385,7 @@ const formatEventDate = (value: string) => {
   }).format(date);
 };
 
-const EventCard: React.FC<{ title: string; date: string; location: string; region: string; img: string }> = ({ title, date, location, region, img }) => (
+const EventCard: React.FC<{ href: string; title: string; date: string; location: string; region: string; img: string }> = ({ href, title, date, location, region, img }) => (
     <div className="bg-white rounded-3xl p-4 shadow-sm border border-slate-50 flex gap-4">
         <img src={img} className="w-24 h-24 rounded-2xl object-cover" alt={title} />
         <div className="flex-1 flex flex-col justify-between">
@@ -374,9 +397,9 @@ const EventCard: React.FC<{ title: string; date: string; location: string; regio
                 </div>
                 <p className="mt-1 text-[10px] text-slate-400">{region}</p>
             </div>
-            <button className="self-end bg-blue-900 text-white px-4 py-1.5 rounded-xl text-[10px] font-bold shadow-sm">
+            <Link href={href} className="self-end bg-blue-900 text-white px-4 py-1.5 rounded-xl text-[10px] font-bold shadow-sm">
                 Ver evento
-            </button>
+            </Link>
         </div>
     </div>
 );

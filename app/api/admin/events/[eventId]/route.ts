@@ -49,6 +49,7 @@ export async function PUT(request: Request, context: RouteContext) {
         regionKey: region.key,
         externalUrl: parsed.data.externalUrl,
         imageUrl: parsed.data.imageUrl,
+        galleryUrls: parsed.data.galleryUrls,
         status: parsed.data.status,
       },
       select: {
@@ -63,6 +64,7 @@ export async function PUT(request: Request, context: RouteContext) {
         regionKey: true,
         externalUrl: true,
         imageUrl: true,
+        galleryUrls: true,
         status: true,
         createdAt: true,
         updatedAt: true,

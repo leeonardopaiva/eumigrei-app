@@ -154,6 +154,7 @@ export async function GET() {
         regionKey: true,
         externalUrl: true,
         imageUrl: true,
+        galleryUrls: true,
         status: true,
         createdAt: true,
         updatedAt: true,

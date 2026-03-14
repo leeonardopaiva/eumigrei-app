@@ -184,6 +184,7 @@ model Event {
   regionKey     String
   externalUrl   String?
   imageUrl      String?
+  galleryUrls   String[]    @default([])
   status        EventStatus @default(PENDING_REVIEW)
   createdById   String
   createdAt     DateTime    @default(now())
