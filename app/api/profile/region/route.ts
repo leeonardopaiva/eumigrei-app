@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { findRegionByKey } from '@/lib/region-store';
 import { prisma } from '@/lib/prisma';
+import { buildRateLimitHeaders, consumeRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { updateRegionSchema } from '@/lib/validators';
 
 export async function PUT(request: Request) {
@@ -9,6 +10,20 @@ export async function PUT(request: Request) {
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rateLimit = await consumeRateLimit({
+    scope: 'profile:region',
+    key: getRateLimitKey(request, session.user.id),
+    max: 10,
+    windowMs: 10 * 60 * 1000,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: 'Muitas trocas de regiao em pouco tempo.' },
+      { status: 429, headers: buildRateLimitHeaders(rateLimit) },
+    );
   }
 
   const body = await request.json();

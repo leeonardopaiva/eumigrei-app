@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { buildRateLimitHeaders, consumeRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { validateUsernameValue } from '@/lib/username';
 import { updateProfileSchema } from '@/lib/validators';
 
@@ -10,6 +11,20 @@ export async function PUT(request: Request) {
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rateLimit = await consumeRateLimit({
+    scope: 'profile:update',
+    key: getRateLimitKey(request, session.user.id),
+    max: 8,
+    windowMs: 10 * 60 * 1000,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: 'Muitas atualizacoes em pouco tempo. Tente novamente em alguns minutos.' },
+      { status: 429, headers: buildRateLimitHeaders(rateLimit) },
+    );
   }
 
   const body = await request.json();
@@ -44,13 +59,29 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'Esse nome publico ja esta em uso.' }, { status: 409 });
   }
 
+  const currentUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      email: true,
+    },
+  });
+
+  const currentEmail = currentUser?.email?.trim().toLowerCase() || '';
+  const requestedEmail = parsed.data.email?.trim().toLowerCase() || '';
+
+  if (requestedEmail !== currentEmail) {
+    return NextResponse.json(
+      { error: 'A troca de email exige verificacao e ficou bloqueada nesta versao.' },
+      { status: 400 },
+    );
+  }
+
   try {
     const user = await prisma.user.update({
       where: { id: session.user.id },
       data: {
         name: parsed.data.name,
         username: usernameValidation.normalized,
-        email: parsed.data.email,
         phone: parsed.data.phone,
       },
       select: {

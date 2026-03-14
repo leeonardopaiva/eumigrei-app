@@ -1,12 +1,27 @@
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { buildRateLimitHeaders, consumeRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { validateUsernameValue } from '@/lib/username';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const rawUsername = searchParams.get('username') || '';
   const session = await getServerAuthSession();
+  const rateLimit = await consumeRateLimit({
+    scope: 'username:check',
+    key: getRateLimitKey(request, session?.user?.id),
+    max: 40,
+    windowMs: 60 * 1000,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { available: false, reason: 'Muitas verificacoes em pouco tempo.' },
+      { status: 429, headers: buildRateLimitHeaders(rateLimit) },
+    );
+  }
+
   const validation = validateUsernameValue(rawUsername);
 
   if (validation.error) {

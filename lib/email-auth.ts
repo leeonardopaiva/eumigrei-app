@@ -1,6 +1,7 @@
 import { createTransport } from 'nodemailer';
 import type { SendVerificationRequestParams } from 'next-auth/providers/email';
 import { isDevAuthEnabled, normalizeMagicLinkEmail, saveDevMagicLink } from '@/lib/dev-magic-links';
+import { consumeRateLimit } from '@/lib/rate-limit';
 
 const emailServerHost = process.env.EMAIL_SERVER_HOST;
 const emailServerPort = process.env.EMAIL_SERVER_PORT;
@@ -72,6 +73,16 @@ export const sendMagicLinkVerification = async ({
   expires,
 }: SendVerificationRequestParams) => {
   const normalizedEmail = normalizeMagicLinkEmail(identifier);
+  const rateLimit = await consumeRateLimit({
+    scope: 'auth:magic-link',
+    key: `email:${normalizedEmail}`,
+    max: 5,
+    windowMs: 15 * 60 * 1000,
+  });
+
+  if (!rateLimit.allowed) {
+    throw new Error('Muitas tentativas de login por email. Aguarde alguns minutos.');
+  }
 
   if (isEmailServerConfigured) {
     const transport = createTransport(emailProviderServer);

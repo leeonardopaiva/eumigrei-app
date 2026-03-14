@@ -2,6 +2,7 @@ import { CommunityPostStatus } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { buildRateLimitHeaders, consumeRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { communityPostSchema } from '@/lib/validators';
 
 const DAILY_POST_LIMIT = 3;
@@ -78,6 +79,20 @@ export async function POST(request: Request) {
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rateLimit = await consumeRateLimit({
+    scope: 'community:post',
+    key: getRateLimitKey(request, session.user.id),
+    max: 6,
+    windowMs: 60 * 60 * 1000,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: 'Publicacoes demais em pouco tempo. Tente novamente mais tarde.' },
+      { status: 429, headers: buildRateLimitHeaders(rateLimit) },
+    );
   }
 
   if (!session.user.onboardingCompleted || !session.user.regionKey || !session.user.locationLabel) {

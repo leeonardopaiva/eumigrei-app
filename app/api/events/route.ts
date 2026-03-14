@@ -2,6 +2,7 @@ import { EventStatus } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { buildRateLimitHeaders, consumeRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { findRegionByKey } from '@/lib/region-store';
 import { slugify, uniqueSlug } from '@/lib/slug';
 import { eventSchema } from '@/lib/validators';
@@ -66,6 +67,20 @@ export async function POST(request: Request) {
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rateLimit = await consumeRateLimit({
+    scope: 'event:create',
+    key: getRateLimitKey(request, session.user.id),
+    max: 4,
+    windowMs: 60 * 60 * 1000,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: 'Cadastros demais em pouco tempo. Aguarde antes de enviar outro evento.' },
+      { status: 429, headers: buildRateLimitHeaders(rateLimit) },
+    );
   }
 
   if (!session.user.onboardingCompleted) {

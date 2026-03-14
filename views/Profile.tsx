@@ -113,7 +113,6 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
         body: JSON.stringify({
           name: accountForm.name.trim(),
           username: normalizeUsernameInput(accountForm.username),
-          email: accountForm.email.trim() || undefined,
           phone: accountForm.phone.trim() || undefined,
         }),
       });
@@ -272,7 +271,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
             </p>
             <h2 className="mt-2 text-xl font-bold text-[#004691]">Edite seus dados</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Nome, email, telefone e nome publico que sera usado para divulgacao.
+              Nome, telefone e nome publico que sera usado para divulgacao.
             </p>
           </div>
           <button
@@ -319,6 +318,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
                 placeholder="Email"
                 icon={<Mail size={16} />}
                 type="email"
+                disabled
               />
               <FormInput
                 value={accountForm.phone}
@@ -333,6 +333,9 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
                 type="tel"
               />
             </div>
+            <p className="text-xs font-medium text-slate-500">
+              O email fica bloqueado nesta v1. Para trocar, vamos exigir verificacao real.
+            </p>
             <button
               type="button"
               onClick={handleAccountSave}
@@ -403,7 +406,8 @@ const FormInput: React.FC<{
   placeholder: string;
   icon: React.ReactNode;
   type?: string;
-}> = ({ value, onChange, placeholder, icon, type = 'text' }) => (
+  disabled?: boolean;
+}> = ({ value, onChange, placeholder, icon, type = 'text', disabled = false }) => (
   <label className="relative block">
     <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
       {icon}
@@ -413,7 +417,8 @@ const FormInput: React.FC<{
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
-      className="w-full rounded-2xl border border-slate-200 bg-white px-11 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+      disabled={disabled}
+      className="w-full rounded-2xl border border-slate-200 bg-white px-11 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
     />
   </label>
 );

@@ -10,17 +10,23 @@ export function isConfiguredAdminEmail(email?: string | null) {
   return Boolean(email && adminEmails.includes(email.toLowerCase()));
 }
 
-export async function syncAdminRole(userId: string, email?: string | null) {
-  if (!isConfiguredAdminEmail(email)) {
-    return UserRole.USER;
-  }
-
+export async function getStoredUserRole(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { role: true },
   });
 
-  if (!user || user.role === UserRole.ADMIN) {
+  return user?.role ?? UserRole.USER;
+}
+
+export async function syncAdminRole(userId: string, email?: string | null) {
+  const currentRole = await getStoredUserRole(userId);
+
+  if (!isConfiguredAdminEmail(email)) {
+    return currentRole;
+  }
+
+  if (currentRole === UserRole.ADMIN) {
     return UserRole.ADMIN;
   }
 

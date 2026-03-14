@@ -1,9 +1,8 @@
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
-import { UserRole } from '@prisma/client';
 import { getServerSession, type NextAuthOptions } from 'next-auth';
 import EmailProvider from 'next-auth/providers/email';
 import GoogleProvider from 'next-auth/providers/google';
-import { isConfiguredAdminEmail, syncAdminRole } from '@/lib/admin';
+import { getStoredUserRole, isConfiguredAdminEmail, syncAdminRole } from '@/lib/admin';
 import {
   emailFrom,
   emailProviderServer,
@@ -49,17 +48,19 @@ export const authOptions: NextAuthOptions = {
       : []),
   ],
   callbacks: {
+    async signIn({ user }) {
+      if (user.id && isConfiguredAdminEmail(user.email)) {
+        await syncAdminRole(user.id, user.email);
+      }
+
+      return true;
+    },
     async session({ session, user }) {
       if (!session.user) {
         return session;
       }
 
-      const effectiveRole =
-        user.role === UserRole.ADMIN
-          ? UserRole.ADMIN
-          : isConfiguredAdminEmail(user.email)
-            ? await syncAdminRole(user.id, user.email)
-            : user.role;
+      const effectiveRole = await getStoredUserRole(user.id);
 
       session.user.id = user.id;
       session.user.role = effectiveRole;
