@@ -91,6 +91,10 @@ export const updateProfileSchema = z.object({
   }),
 });
 
+export const requestEmailChangeSchema = z.object({
+  email: z.string().trim().email('Use um email valido'),
+});
+
 export const updateBusinessMediaSchema = z.object({
   imageUrl: optionalUrl,
   galleryUrls: optionalUrlArray,

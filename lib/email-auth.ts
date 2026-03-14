@@ -67,6 +67,51 @@ const buildMagicLinkEmailHtml = (url: string) => `
   </div>
 `;
 
+type TransactionalEmailInput = {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+  devLabel?: string;
+};
+
+export const sendTransactionalEmail = async ({
+  to,
+  subject,
+  text,
+  html,
+  devLabel,
+}: TransactionalEmailInput) => {
+  if (isEmailServerConfigured) {
+    const transport = createTransport(emailProviderServer);
+    const result = await transport.sendMail({
+      to,
+      from: emailFrom,
+      subject,
+      text,
+      html,
+    });
+
+    const failedRecipients = result.rejected.concat(result.pending).filter(Boolean);
+
+    if (failedRecipients.length > 0) {
+      throw new Error(`Nao foi possivel entregar o email para ${failedRecipients.join(', ')}`);
+    }
+
+    return;
+  }
+
+  if (isDevAuthEnabled) {
+    console.log(`[dev-email] ${devLabel || subject} para ${to}`);
+    console.log(text);
+    return;
+  }
+
+  throw new Error(
+    'Envio de email indisponivel. Configure SMTP ou habilite DEV_AUTH_ENABLED localmente.',
+  );
+};
+
 export const sendMagicLinkVerification = async ({
   identifier,
   url,
@@ -84,32 +129,16 @@ export const sendMagicLinkVerification = async ({
     throw new Error('Muitas tentativas de login por email. Aguarde alguns minutos.');
   }
 
-  if (isEmailServerConfigured) {
-    const transport = createTransport(emailProviderServer);
-    const result = await transport.sendMail({
-      to: normalizedEmail,
-      from: emailFrom,
-      subject: 'Seu link de acesso para a Eumigrei',
-      text: buildMagicLinkEmailText(url),
-      html: buildMagicLinkEmailHtml(url),
-    });
-
-    const failedRecipients = result.rejected.concat(result.pending).filter(Boolean);
-
-    if (failedRecipients.length > 0) {
-      throw new Error(`Nao foi possivel entregar o magic link para ${failedRecipients.join(', ')}`);
-    }
-
-    return;
-  }
-
   if (isDevAuthEnabled) {
     saveDevMagicLink(normalizedEmail, url, expires);
     console.log(`[dev-auth] Magic link para ${normalizedEmail}: ${url}`);
-    return;
   }
 
-  throw new Error(
-    'Autenticacao por email indisponivel. Configure SMTP ou habilite DEV_AUTH_ENABLED localmente.',
-  );
+  await sendTransactionalEmail({
+    to: normalizedEmail,
+    subject: 'Seu link de acesso para a Eumigrei',
+    text: buildMagicLinkEmailText(url),
+    html: buildMagicLinkEmailHtml(url),
+    devLabel: 'Magic link',
+  });
 };

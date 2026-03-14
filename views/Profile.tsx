@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Copy, Globe, Mail, MapPin, PencilLine, Phone, Save, UserRound } from 'lucide-react';
 import { useToast } from '../components/feedback/ToastProvider';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
@@ -20,6 +21,8 @@ type ProfileFormState = {
 
 const Profile: React.FC<{ user: User }> = ({ user }) => {
   const { update } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const [editingAvatar, setEditingAvatar] = useState(false);
   const [editingAccount, setEditingAccount] = useState(false);
@@ -27,6 +30,8 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [savingAccount, setSavingAccount] = useState(false);
+  const [requestedEmail, setRequestedEmail] = useState(user.email || '');
+  const [requestingEmailChange, setRequestingEmailChange] = useState(false);
   const [selectedRegionKey, setSelectedRegionKey] = useState(user.regionKey || '');
   const [savingRegion, setSavingRegion] = useState(false);
   const [accountForm, setAccountForm] = useState<ProfileFormState>({
@@ -51,7 +56,31 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
       email: user.email || '',
       phone: user.phone || '',
     });
+    setRequestedEmail(user.email || '');
   }, [user.email, user.name, user.phone, user.username]);
+
+  useEffect(() => {
+    const emailChangeStatus = searchParams.get('emailChange');
+
+    if (!emailChangeStatus) {
+      return;
+    }
+
+    if (emailChangeStatus === 'success') {
+      void update();
+      showToast('Seu email foi confirmado e atualizado com sucesso.', 'success');
+    } else if (emailChangeStatus === 'expired') {
+      showToast('Esse link de troca de email expirou. Solicite um novo.', 'error');
+    } else if (emailChangeStatus === 'taken') {
+      showToast('Esse email ja esta em uso por outra conta.', 'error');
+    } else if (emailChangeStatus === 'blocked') {
+      showToast('Esse email nao pode ser usado no autoatendimento.', 'error');
+    } else {
+      showToast('Nao foi possivel validar esse link de troca de email.', 'error');
+    }
+
+    router.replace('/profile');
+  }, [router, searchParams, showToast, update]);
 
   const publicProfileUrl = useMemo(() => {
     return user.username
@@ -179,6 +208,41 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
     }
   };
 
+  const handleEmailChangeRequest = async () => {
+    if (!requestedEmail.trim()) {
+      showToast('Informe o novo email para continuar.', 'error');
+      return;
+    }
+
+    setRequestingEmailChange(true);
+
+    try {
+      const response = await fetch('/api/profile/email/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: requestedEmail.trim(),
+        }),
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        showToast(payload?.error ?? 'Nao foi possivel iniciar a troca de email.', 'error');
+        return;
+      }
+
+      showToast('Enviamos um link de confirmacao para o novo email.', 'success');
+    } catch (error) {
+      console.error('Failed to request email change:', error);
+      showToast('Nao foi possivel iniciar a troca de email.', 'error');
+    } finally {
+      setRequestingEmailChange(false);
+    }
+  };
+
   return (
     <div className="animate-in space-y-5 px-5 pb-24 pt-6 fade-in duration-500">
       <section className="rounded-[32px] bg-gradient-to-br from-[#004691] via-[#0C58B6] to-[#27A0FF] p-5 text-white shadow-xl">
@@ -239,6 +303,42 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
             </div>
           </div>
         ) : null}
+      </section>
+
+      <section className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+              Troca de email
+            </p>
+            <h2 className="mt-2 text-xl font-bold text-[#004691]">Confirmacao por link</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Informe o novo email. Vamos enviar um link para confirmar a alteracao com seguranca.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-3 rounded-[28px] bg-slate-50 p-4">
+          <FormInput
+            value={requestedEmail}
+            onChange={setRequestedEmail}
+            placeholder="Novo email"
+            icon={<Mail size={16} />}
+            type="email"
+          />
+          <p className="text-xs font-medium text-slate-500">
+            O email atual so muda depois que voce abrir o link enviado para o novo endereco.
+          </p>
+          <button
+            type="button"
+            onClick={handleEmailChangeRequest}
+            disabled={requestingEmailChange}
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#004691] px-4 text-sm font-bold text-white shadow-md disabled:opacity-60"
+          >
+            <Mail size={16} />
+            {requestingEmailChange ? 'Enviando link...' : 'Enviar confirmacao'}
+          </button>
+        </div>
       </section>
 
       <section className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">

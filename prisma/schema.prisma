@@ -68,6 +68,7 @@ model User {
   postComments        PostComment[]   @relation("PostCommentAuthor")
   postReactions       PostReaction[]  @relation("PostReactionAuthor")
   postReports         PostReport[]    @relation("PostReportAuthor")
+  emailChangeTokens   EmailChangeToken[]
 }
 
 model Region {
@@ -118,6 +119,19 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model EmailChangeToken {
+  id        String   @id @default(cuid())
+  userId     String
+  newEmail   String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, newEmail])
+  @@index([newEmail, expiresAt])
 }
 
 model Business {
