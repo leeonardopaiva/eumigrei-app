@@ -779,12 +779,12 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
 
   const statsCards = dashboard
     ? [
-        { label: 'Usuarios', value: dashboard.stats.totalUsers, icon: <Users size={20} />, accent: 'bg-cyan-50 text-cyan-800' },
-        { label: 'Donos de negocios', value: dashboard.stats.businessOwners, icon: <Store size={20} />, accent: 'bg-emerald-50 text-emerald-800' },
-        { label: 'Negocios publicados', value: dashboard.stats.publishedBusinesses, icon: <Building2 size={20} />, accent: 'bg-orange-50 text-orange-800' },
-        { label: 'Eventos publicados', value: dashboard.stats.publishedEvents, icon: <CalendarDays size={20} />, accent: 'bg-cyan-50 text-cyan-800' },
-        { label: 'Posts publicados', value: dashboard.stats.publishedPosts, icon: <MessageSquareText size={20} />, accent: 'bg-violet-50 text-violet-800' },
-        { label: 'Regioes ativas', value: dashboard.stats.activeRegions, icon: <Globe2 size={20} />, accent: 'bg-sky-50 text-sky-800' },
+        { label: 'Usuarios', value: dashboard.stats.totalUsers, icon: <Users size={20} />, accent: 'bg-cyan-50 text-cyan-800', section: 'users' as const },
+        { label: 'Donos de negocios', value: dashboard.stats.businessOwners, icon: <Store size={20} />, accent: 'bg-emerald-50 text-emerald-800', section: 'users' as const },
+        { label: 'Negocios publicados', value: dashboard.stats.publishedBusinesses, icon: <Building2 size={20} />, accent: 'bg-orange-50 text-orange-800', section: 'businesses' as const },
+        { label: 'Eventos publicados', value: dashboard.stats.publishedEvents, icon: <CalendarDays size={20} />, accent: 'bg-cyan-50 text-cyan-800', section: 'events' as const },
+        { label: 'Posts publicados', value: dashboard.stats.publishedPosts, icon: <MessageSquareText size={20} />, accent: 'bg-violet-50 text-violet-800', section: 'moderation' as const },
+        { label: 'Regioes ativas', value: dashboard.stats.activeRegions, icon: <Globe2 size={20} />, accent: 'bg-sky-50 text-sky-800', section: 'regions' as const },
       ]
     : [];
 
@@ -884,13 +884,18 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                 <div key={index} className="h-[104px] animate-pulse rounded-3xl bg-white shadow-sm" />
               ))
             : statsCards.map((card) => (
-                <div key={card.label} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                <button
+                  key={card.label}
+                  type="button"
+                  onClick={() => setActiveSection(card.section)}
+                  className="rounded-3xl border border-slate-100 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                >
                   <div className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${card.accent}`}>
                     {card.icon}
                   </div>
                   <p className="mt-4 text-2xl font-bold text-slate-900">{card.value}</p>
                   <p className="text-xs font-medium text-slate-500">{card.label}</p>
-                </div>
+                </button>
               ))}
         </div>
 
@@ -1587,7 +1592,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                         <p>{managedUser.email || 'Sem email'}</p>
                         <p>{managedUser.locationLabel || 'Sem regiao definida'}</p>
                         <p>
-                          Onboarding {managedUser.onboardingCompleted ? 'concluido' : 'pendente'}
+                          Cadastro {managedUser.onboardingCompleted ? 'concluido' : 'pendente'}
                         </p>
                         <p>Atualizado em {formatDateTime(managedUser.updatedAt)}</p>
                       </div>
@@ -1673,7 +1678,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                             }
                             className="h-4 w-4 rounded border-slate-300 text-[#28B8C7] focus:ring-[#28B8C7]"
                           />
-                          Onboarding concluido
+                          Cadastro concluido
                         </label>
                       </div>
                       <RegionSelector

@@ -197,7 +197,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-[#28B8C7]">Banner Ads</h2>
+        <h2 className="text-lg font-bold text-[#28B8C7]">Banners</h2>
         <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500 shadow-sm">
           {banners.length}
         </span>

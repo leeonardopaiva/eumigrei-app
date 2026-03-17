@@ -170,14 +170,6 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
 
       {banners.length > 0 ? (
         <div className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-400">
-              Banner Ads
-            </p>
-            <p className="text-xs font-medium text-slate-400">
-              {banners.length} {banners.length === 1 ? 'banner' : 'banners'}
-            </p>
-          </div>
           <div className="flex snap-x gap-4 overflow-x-auto pb-2 scrollbar-hide">
             {banners.map((banner) => (
               <a
