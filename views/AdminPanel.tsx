@@ -366,6 +366,9 @@ const getSuggestionStatusTone = (status: SuggestionStatusValue) =>
 const formatSuggestionCategory = (category: SuggestionCategoryValue) =>
   category === 'FUNCTIONALITY' ? 'Funcionalidade' : 'Melhoria';
 
+const ADMIN_LIST_PREVIEW_LIMIT = 5;
+type ExpandableSectionKey = 'regions' | 'businesses' | 'events' | 'users' | 'suggestions';
+
 const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
   const { showToast } = useToast();
   const [dashboard, setDashboard] = useState<AdminDashboardData | null>(null);
@@ -393,6 +396,13 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
   const [userForm, setUserForm] = useState<UserFormState>(emptyUserForm);
   const [userSearch, setUserSearch] = useState('');
   const [suggestionSearch, setSuggestionSearch] = useState('');
+  const [expandedSections, setExpandedSections] = useState<Record<ExpandableSectionKey, boolean>>({
+    regions: false,
+    businesses: false,
+    events: false,
+    users: false,
+    suggestions: false,
+  });
   const [confirmationDialog, setConfirmationDialog] = useState<ConfirmationDialogState | null>(null);
   const deferredBusinessSearch = useDeferredValue(businessSearch);
   const deferredEventSearch = useDeferredValue(eventSearch);
@@ -887,6 +897,24 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
       ]),
     ) ?? [];
 
+  const sortedRegions = sortRegions(dashboard?.regions ?? []);
+
+  const getVisibleItems = <T,>(
+    items: T[],
+    section: ExpandableSectionKey,
+    query = '',
+  ) => (query.trim() || expandedSections[section] ? items : items.slice(0, ADMIN_LIST_PREVIEW_LIMIT));
+
+  const visibleRegions = getVisibleItems(sortedRegions, 'regions');
+  const visibleBusinesses = getVisibleItems(filteredBusinesses, 'businesses', deferredBusinessSearch);
+  const visibleEvents = getVisibleItems(filteredEvents, 'events', deferredEventSearch);
+  const visibleUsers = getVisibleItems(filteredUsers, 'users', deferredUserSearch);
+  const visibleSuggestions = getVisibleItems(
+    filteredSuggestions,
+    'suggestions',
+    deferredSuggestionSearch,
+  );
+
   const sectionTabs = [
     { id: 'moderation' as const, label: 'Moderacao', count: totalPending },
     { id: 'banners' as const, label: 'Banners', count: dashboard?.banners.length ?? 0 },
@@ -1107,12 +1135,26 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
 
         {activeSection === 'regions' ? (
           <div className="space-y-3">
+          {sortedRegions.length > ADMIN_LIST_PREVIEW_LIMIT ? (
+            <div className="flex justify-end">
+              <SectionListToggle
+                expanded={expandedSections.regions}
+                total={sortedRegions.length}
+                onToggle={() =>
+                  setExpandedSections((current) => ({
+                    ...current,
+                    regions: !current.regions,
+                  }))
+                }
+              />
+            </div>
+          ) : null}
           {loading && !dashboard
             ? Array.from({ length: 2 }).map((_, index) => (
                 <div key={index} className="h-[184px] animate-pulse rounded-3xl bg-white shadow-sm" />
               ))
             : null}
-          {sortRegions(dashboard?.regions ?? []).map((region) => (
+          {visibleRegions.map((region) => (
             <div key={region.key} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -1299,11 +1341,25 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
             onChange={setBusinessSearch}
             placeholder="Filtrar negocios por nome, slug, categoria ou regiao"
           />
+          {!deferredBusinessSearch.trim() && filteredBusinesses.length > ADMIN_LIST_PREVIEW_LIMIT ? (
+            <div className="flex justify-end">
+              <SectionListToggle
+                expanded={expandedSections.businesses}
+                total={filteredBusinesses.length}
+                onToggle={() =>
+                  setExpandedSections((current) => ({
+                    ...current,
+                    businesses: !current.businesses,
+                  }))
+                }
+              />
+            </div>
+          ) : null}
           {loading && !dashboard ? (
             <LoadingCards />
           ) : dashboard && filteredBusinesses.length > 0 ? (
             <div className="space-y-3">
-              {filteredBusinesses.map((business) => (
+              {visibleBusinesses.map((business) => (
                 <div key={business.id} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
                   <div className="flex items-start gap-4">
                     <img
@@ -1470,11 +1526,25 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
             onChange={setEventSearch}
             placeholder="Filtrar eventos por titulo, slug, local ou regiao"
           />
+          {!deferredEventSearch.trim() && filteredEvents.length > ADMIN_LIST_PREVIEW_LIMIT ? (
+            <div className="flex justify-end">
+              <SectionListToggle
+                expanded={expandedSections.events}
+                total={filteredEvents.length}
+                onToggle={() =>
+                  setExpandedSections((current) => ({
+                    ...current,
+                    events: !current.events,
+                  }))
+                }
+              />
+            </div>
+          ) : null}
           {loading && !dashboard ? (
             <LoadingCards />
           ) : dashboard && filteredEvents.length > 0 ? (
             <div className="space-y-3">
-              {filteredEvents.map((event) => (
+              {visibleEvents.map((event) => (
                 <div key={event.id} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
                   <div className="flex items-start gap-4">
                     <img
@@ -1627,11 +1697,25 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
             onChange={setSuggestionSearch}
             placeholder="Filtrar sugestoes por texto, usuario, email ou categoria"
           />
+          {!deferredSuggestionSearch.trim() && filteredSuggestions.length > ADMIN_LIST_PREVIEW_LIMIT ? (
+            <div className="flex justify-end">
+              <SectionListToggle
+                expanded={expandedSections.suggestions}
+                total={filteredSuggestions.length}
+                onToggle={() =>
+                  setExpandedSections((current) => ({
+                    ...current,
+                    suggestions: !current.suggestions,
+                  }))
+                }
+              />
+            </div>
+          ) : null}
           {loading && !dashboard ? (
             <LoadingCards />
           ) : dashboard && filteredSuggestions.length > 0 ? (
             <div className="space-y-3">
-              {filteredSuggestions.map((suggestion) => (
+              {visibleSuggestions.map((suggestion) => (
                 <div key={suggestion.id} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
                   <div className="flex items-start gap-4">
                     <img
@@ -1703,11 +1787,25 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
             onChange={setUserSearch}
             placeholder="Filtrar usuarios por nome, username, email ou regiao"
           />
+          {!deferredUserSearch.trim() && filteredUsers.length > ADMIN_LIST_PREVIEW_LIMIT ? (
+            <div className="flex justify-end">
+              <SectionListToggle
+                expanded={expandedSections.users}
+                total={filteredUsers.length}
+                onToggle={() =>
+                  setExpandedSections((current) => ({
+                    ...current,
+                    users: !current.users,
+                  }))
+                }
+              />
+            </div>
+          ) : null}
           {loading && !dashboard ? (
             <LoadingCards />
           ) : dashboard && filteredUsers.length > 0 ? (
             <div className="space-y-3">
-              {filteredUsers.map((managedUser) => (
+              {visibleUsers.map((managedUser) => (
                 <div key={managedUser.id} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
                   <div className="flex items-start gap-4">
                     <img
@@ -1900,6 +1998,24 @@ const SectionHeader: React.FC<{ title: string; count: number }> = ({ title, coun
 
 const SupportText: React.FC<{ text: string }> = ({ text }) => (
   <p className="text-sm text-slate-500">{text}</p>
+);
+
+const SectionListToggle: React.FC<{
+  expanded: boolean;
+  total: number;
+  limit?: number;
+  onToggle: () => void;
+}> = ({ expanded, total, limit = ADMIN_LIST_PREVIEW_LIMIT, onToggle }) => (
+  <button
+    type="button"
+    onClick={onToggle}
+    className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-800"
+  >
+    {expanded ? 'Mostrar menos' : `Ver todos (${total})`}
+    {!expanded ? (
+      <span className="ml-2 text-slate-400">mostrando {Math.min(total, limit)}</span>
+    ) : null}
+  </button>
 );
 
 const SearchFilterInput: React.FC<{

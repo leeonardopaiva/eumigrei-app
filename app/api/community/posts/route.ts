@@ -62,7 +62,7 @@ const mapCommunityPost = (
     createdAt: post.createdAt,
     locationLabel: post.locationLabel,
     author: post.author,
-    comments: post.comments.map((comment) => {
+    comments: [...post.comments].reverse().map((comment) => {
       const canManageComment = isAdmin || session?.user?.id === comment.authorId;
 
       return {
@@ -113,7 +113,7 @@ export async function GET(request: Request) {
         },
       },
       comments: {
-        orderBy: [{ createdAt: 'asc' }],
+        orderBy: [{ createdAt: 'desc' }],
         take: 3,
         include: {
           author: {

@@ -46,6 +46,8 @@ const emptyBannerForm: BannerFormState = {
   isActive: true,
 };
 
+const BANNER_PREVIEW_LIMIT = 5;
+
 interface BannerManagementSectionProps {
   banners: ManagedBanner[];
   loading: boolean;
@@ -65,6 +67,9 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
   const [bannerForm, setBannerForm] = useState<BannerFormState>(emptyBannerForm);
   const [processingKey, setProcessingKey] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<BannerField>>({});
+  const [showAllBanners, setShowAllBanners] = useState(false);
+
+  const visibleBanners = showAllBanners ? banners : banners.slice(0, BANNER_PREVIEW_LIMIT);
 
   const clearFieldError = (field: BannerField) => {
     setFieldErrors((current) => {
@@ -314,7 +319,23 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
         </div>
       ) : (
         <div className="space-y-3">
-          {banners.map((banner) => (
+          {banners.length > BANNER_PREVIEW_LIMIT ? (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowAllBanners((current) => !current)}
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-800"
+              >
+                {showAllBanners ? 'Mostrar menos' : `Ver todos (${banners.length})`}
+                {!showAllBanners ? (
+                  <span className="ml-2 text-slate-400">
+                    mostrando {Math.min(banners.length, BANNER_PREVIEW_LIMIT)}
+                  </span>
+                ) : null}
+              </button>
+            </div>
+          ) : null}
+          {visibleBanners.map((banner) => (
             <div key={banner.id} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
               <div className="flex items-start gap-4">
                 <img

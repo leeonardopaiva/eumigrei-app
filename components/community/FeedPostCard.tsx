@@ -35,12 +35,17 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
   const [openCommentMenuId, setOpenCommentMenuId] = useState<string | null>(null);
   const [supportsHover, setSupportsHover] = useState(false);
   const [likesOpen, setLikesOpen] = useState(false);
+  const [commentsExpanded, setCommentsExpanded] = useState(post.commentCount <= 1);
 
   useEffect(() => {
     setEditingPostContent(post.content);
     setEditingPostImageUrl(post.imageUrl || '');
     setEditingPostExternalUrl(post.externalUrl || '');
   }, [post.content, post.externalUrl, post.imageUrl]);
+
+  useEffect(() => {
+    setCommentsExpanded(post.commentCount <= 1);
+  }, [post.id]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -152,6 +157,13 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
   };
 
   const hiddenLikesCount = Math.max(post.likeCount - post.likedBy.length, 0);
+  const visibleComments = commentsExpanded ? post.comments : post.comments.slice(-1);
+  const shouldShowCommentsToggle = post.commentCount > 1;
+  const loadedCommentCount = post.comments.length;
+  const collapsedCommentsLabel =
+    post.commentCount > loadedCommentCount
+      ? `Ver ${loadedCommentCount} comentarios recentes`
+      : `Ver ${loadedCommentCount} comentarios`;
 
   const likesPreviewContent =
     post.likeCount > 0 ? (
@@ -252,6 +264,10 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
         likeCount={post.likeCount}
         commentCount={post.commentCount}
         onToggleLike={onToggleLike}
+        onToggleComments={
+          shouldShowCommentsToggle ? () => setCommentsExpanded((current) => !current) : undefined
+        }
+        commentsExpanded={commentsExpanded}
         onOpenLikes={() => {
           if (post.likeCount === 0) {
             return;
@@ -278,7 +294,17 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
         }
       />
 
-      {post.comments.map((comment) => (
+      {shouldShowCommentsToggle ? (
+        <button
+          type="button"
+          onClick={() => setCommentsExpanded((current) => !current)}
+          className="w-fit text-xs font-bold text-cyan-600 transition hover:text-cyan-700"
+        >
+          {commentsExpanded ? 'Ocultar comentarios' : collapsedCommentsLabel}
+        </button>
+      ) : null}
+
+      {visibleComments.map((comment) => (
         <PostCard.CommentItem
           key={comment.id}
           authorImage={comment.author.image || `https://picsum.photos/seed/${comment.author.id}/100`}

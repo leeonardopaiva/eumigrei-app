@@ -97,10 +97,11 @@ const SuggestionButton: React.FC = () => {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-24 right-5 z-[70] inline-flex items-center gap-2 rounded-full bg-[#28B8C7] px-4 py-3 text-sm font-bold text-white shadow-2xl shadow-[#28B8C7]/25 transition hover:bg-[#24A9B7] lg:bottom-8 lg:right-8"
+        className="fixed bottom-28 right-5 z-[70] inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#28B8C7] text-white shadow-2xl shadow-[#28B8C7]/25 transition hover:bg-[#24A9B7] lg:bottom-8 lg:right-8 lg:h-auto lg:w-auto lg:gap-2 lg:px-4 lg:py-3"
+        aria-label="Enviar sugestao"
       >
         <MessageSquarePlus size={18} />
-        <span>Sugestao</span>
+        <span className="hidden lg:inline">Sugestao</span>
       </button>
 
       {open ? (

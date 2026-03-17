@@ -55,6 +55,8 @@ type ActionsProps = {
   likeCount: number;
   commentCount: number;
   onToggleLike: () => void;
+  onToggleComments?: () => void;
+  commentsExpanded?: boolean;
   onOpenLikes?: () => void;
   onLikesHoverStart?: () => void;
   onLikesHoverEnd?: () => void;
@@ -247,6 +249,8 @@ const Actions: React.FC<ActionsProps> = ({
   likeCount,
   commentCount,
   onToggleLike,
+  onToggleComments,
+  commentsExpanded = false,
   onOpenLikes,
   onLikesHoverStart,
   onLikesHoverEnd,
@@ -280,7 +284,18 @@ const Actions: React.FC<ActionsProps> = ({
         </button>
         {likesPreview}
       </div>
-      <button className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
+      <button
+        type="button"
+        onClick={onToggleComments}
+        disabled={commentCount === 0 || !onToggleComments}
+        className={`flex items-center gap-1.5 text-xs font-bold ${
+          commentCount > 0 && onToggleComments
+            ? commentsExpanded
+              ? 'text-cyan-600'
+              : 'text-slate-500 hover:text-cyan-600'
+            : 'text-slate-300'
+        } disabled:cursor-default`}
+      >
         <MessageSquare size={16} /> {commentCount}
       </button>
     </div>
