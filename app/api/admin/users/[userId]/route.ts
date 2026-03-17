@@ -13,10 +13,14 @@ type RouteContext = {
 };
 
 export async function PUT(request: Request, context: RouteContext) {
-  const { response } = await requireAdminSession();
+  const { session, response } = await requireAdminSession();
 
   if (response) {
     return response;
+  }
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const body = await request.json();
@@ -30,6 +34,40 @@ export async function PUT(request: Request, context: RouteContext) {
   }
 
   const { userId } = await context.params;
+  const targetUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      role: true,
+    },
+  });
+
+  if (!targetUser) {
+    return NextResponse.json({ error: 'Usuario nao encontrado.' }, { status: 404 });
+  }
+
+  if (userId === session.user.id && parsed.data.role !== 'ADMIN') {
+    return NextResponse.json(
+      { error: 'Voce nao pode remover sua propria permissao de administrador.' },
+      { status: 400 },
+    );
+  }
+
+  if (targetUser.role === 'ADMIN' && parsed.data.role !== 'ADMIN') {
+    const adminCount = await prisma.user.count({
+      where: {
+        role: 'ADMIN',
+      },
+    });
+
+    if (adminCount <= 1) {
+      return NextResponse.json(
+        { error: 'Nao e permitido rebaixar o ultimo administrador da plataforma.' },
+        { status: 400 },
+      );
+    }
+  }
+
   const region = await findRegionByKey(parsed.data.regionKey);
 
   if (!region) {
@@ -105,6 +143,71 @@ export async function PUT(request: Request, context: RouteContext) {
         { error: 'Email ou nome publico ja esta em uso.' },
         { status: 409 },
       );
+    }
+
+    throw error;
+  }
+}
+
+export async function DELETE(_request: Request, context: RouteContext) {
+  const { session, response } = await requireAdminSession();
+
+  if (response) {
+    return response;
+  }
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { userId } = await context.params;
+
+  if (userId === session.user.id) {
+    return NextResponse.json(
+      { error: 'Voce nao pode excluir a propria conta de administrador.' },
+      { status: 400 },
+    );
+  }
+
+  const targetUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      role: true,
+    },
+  });
+
+  if (!targetUser) {
+    return NextResponse.json({ error: 'Usuario nao encontrado.' }, { status: 404 });
+  }
+
+  if (targetUser.role === 'ADMIN') {
+    const adminCount = await prisma.user.count({
+      where: {
+        role: 'ADMIN',
+      },
+    });
+
+    if (adminCount <= 1) {
+      return NextResponse.json(
+        { error: 'Nao e permitido excluir o ultimo administrador da plataforma.' },
+        { status: 400 },
+      );
+    }
+  }
+
+  try {
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      return NextResponse.json({ error: 'Usuario nao encontrado.' }, { status: 404 });
     }
 
     throw error;

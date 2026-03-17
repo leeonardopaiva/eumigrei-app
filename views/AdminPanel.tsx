@@ -260,6 +260,14 @@ const emptyUserForm: UserFormState = {
   onboardingCompleted: true,
 };
 
+type ConfirmationDialogState = {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  tone: 'primary' | 'danger';
+  onConfirm: () => Promise<void> | void;
+};
+
 const businessStatusOptions: BusinessStatus[] = [
   'DRAFT',
   'PENDING_REVIEW',
@@ -356,6 +364,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [userForm, setUserForm] = useState<UserFormState>(emptyUserForm);
   const [userSearch, setUserSearch] = useState('');
+  const [confirmationDialog, setConfirmationDialog] = useState<ConfirmationDialogState | null>(null);
   const deferredBusinessSearch = useDeferredValue(businessSearch);
   const deferredEventSearch = useDeferredValue(eventSearch);
   const deferredUserSearch = useDeferredValue(userSearch);
@@ -703,6 +712,69 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
       'Nao foi possivel salvar o usuario.',
       resetUserForm,
     );
+  };
+
+  const requestUserUpdateConfirmation = (managedUser: ManagedUser) => {
+    const isPromotingToAdmin =
+      managedUser.role !== 'ADMIN' && userForm.role === 'ADMIN';
+    const isDemotingAdmin =
+      managedUser.role === 'ADMIN' && userForm.role !== 'ADMIN';
+
+    if (isPromotingToAdmin) {
+      setConfirmationDialog({
+        title: 'Confirmar nova permissao de admin',
+        description: `Voce esta concedendo acesso total de administrador para ${managedUser.name || managedUser.email || managedUser.username || 'este usuario'}.`,
+        confirmLabel: 'Confirmar promocao',
+        tone: 'primary',
+        onConfirm: async () => {
+          await submitUserUpdate();
+        },
+      });
+      return;
+    }
+
+    if (isDemotingAdmin) {
+      setConfirmationDialog({
+        title: 'Confirmar remocao de admin',
+        description: `Voce esta removendo a permissao de administrador de ${managedUser.name || managedUser.email || managedUser.username || 'este usuario'}.`,
+        confirmLabel: 'Confirmar rebaixamento',
+        tone: 'danger',
+        onConfirm: async () => {
+          await submitUserUpdate();
+        },
+      });
+      return;
+    }
+
+    void submitUserUpdate();
+  };
+
+  const deleteUser = async (managedUser: ManagedUser) => {
+    const userLabel =
+      managedUser.name || managedUser.email || managedUser.username || 'este usuario';
+
+    setConfirmationDialog({
+      title: 'Confirmar exclusao de usuario',
+      description: `Excluir ${userLabel}? Essa acao remove a conta e os dados ligados a ela.`,
+      confirmLabel: 'Excluir usuario',
+      tone: 'danger',
+      onConfirm: async () => {
+        await runAction(
+          `user:${managedUser.id}:delete`,
+          () =>
+            fetch(`/api/admin/users/${managedUser.id}`, {
+              method: 'DELETE',
+            }),
+          'Usuario excluido.',
+          'Nao foi possivel excluir o usuario.',
+          () => {
+            if (editingUserId === managedUser.id) {
+              resetUserForm();
+            }
+          },
+        );
+      },
+    });
   };
 
   const statsCards = dashboard
@@ -1481,7 +1553,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
         {activeSection === 'users' ? (
           <section className="space-y-3">
           <SectionHeader title="Usuarios" count={filteredUsers.length} />
-          <SupportText text="Visualize perfis, ajuste papel, regiao e nome publico dos usuarios recentes." />
+          <SupportText text="Visualize perfis, ajuste papel, regiao, nome publico e exclua usuarios quando necessario." />
           <SearchFilterInput
             value={userSearch}
             onChange={setUserSearch}
@@ -1528,6 +1600,13 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                       tone="neutral"
                       disabled={processingKey !== null}
                       onClick={() => (editingUserId === managedUser.id ? resetUserForm() : startUserEdit(managedUser))}
+                    />
+                    <ActionButton
+                      label="Excluir"
+                      tone="danger"
+                      disabled={processingKey !== null || managedUser.id === user.id}
+                      loading={processingKey === `user:${managedUser.id}:delete`}
+                      onClick={() => void deleteUser(managedUser)}
                     />
                   </div>
 
@@ -1610,7 +1689,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                           tone="primary"
                           disabled={processingKey !== null}
                           loading={processingKey === `user:${managedUser.id}:save`}
-                          onClick={() => void submitUserUpdate()}
+                          onClick={() => void requestUserUpdateConfirmation(managedUser)}
                         />
                         <ActionButton
                           label="Cancelar"
@@ -1630,6 +1709,21 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
           </section>
         ) : null}
       </div>
+
+      {confirmationDialog ? (
+        <ConfirmationDialog
+          title={confirmationDialog.title}
+          description={confirmationDialog.description}
+          confirmLabel={confirmationDialog.confirmLabel}
+          tone={confirmationDialog.tone}
+          disabled={processingKey !== null}
+          onCancel={() => setConfirmationDialog(null)}
+          onConfirm={async () => {
+            await confirmationDialog.onConfirm();
+            setConfirmationDialog(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 };
@@ -1726,6 +1820,38 @@ const QueueCard: React.FC<{
 const EmptyState: React.FC<{ text: string }> = ({ text }) => (
   <div className="rounded-3xl border border-dashed border-slate-200 bg-white px-5 py-7 text-center text-sm font-medium text-slate-500">
     {text}
+  </div>
+);
+
+const ConfirmationDialog: React.FC<{
+  title: string;
+  description: string;
+  confirmLabel: string;
+  tone: 'primary' | 'danger';
+  disabled?: boolean;
+  onCancel: () => void;
+  onConfirm: () => void | Promise<void>;
+}> = ({ title, description, confirmLabel, tone, disabled = false, onCancel, onConfirm }) => (
+  <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/35 px-4 backdrop-blur-sm">
+    <div className="w-full max-w-md rounded-[32px] border border-white/70 bg-white p-6 shadow-2xl">
+      <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-400">Confirmacao</p>
+      <h3 className="mt-3 text-xl font-bold text-slate-900">{title}</h3>
+      <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
+      <div className="mt-6 flex gap-2">
+        <ActionButton
+          label="Cancelar"
+          tone="neutral"
+          disabled={disabled}
+          onClick={onCancel}
+        />
+        <ActionButton
+          label={confirmLabel}
+          tone={tone}
+          disabled={disabled}
+          onClick={() => void onConfirm()}
+        />
+      </div>
+    </div>
   </div>
 );
 
