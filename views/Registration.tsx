@@ -362,16 +362,23 @@ const Registration: React.FC<RegistrationProps> = ({
                         >
                           Entrar com Email e Senha
                         </button>
+                        <div className="flex items-center gap-3 px-1 py-1">
+                          <div className="h-px flex-1 bg-slate-200" />
+                          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                            ou
+                          </span>
+                          <div className="h-px flex-1 bg-slate-200" />
+                        </div>
                         <button
                           type="button"
                           onClick={() => openPasswordView('signup')}
                           className="w-full rounded-[28px] bg-slate-900 px-6 py-5 text-base font-bold text-white shadow-xl transition-all hover:bg-slate-800"
                         >
-                          Criar conta por Email (temporario)
+                          Criar conta por Email e Senha
                         </button>
                         <p className="px-2 text-center text-xs font-medium text-slate-400">
-                          Use o cadastro temporario apenas enquanto a verificacao por magic link nao
-                          estiver configurada.
+                          Cadastro sem verificacao por email, usado enquanto o magic link nao
+                          estiver configurado.
                         </p>
                       </div>
                     ) : null}
@@ -505,9 +512,9 @@ const Registration: React.FC<RegistrationProps> = ({
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="text-sm font-bold text-slate-700">Cadastro temporario</p>
+                            <p className="text-sm font-bold text-slate-700">Criar sua conta</p>
                             <p className="text-xs text-slate-400">
-                              Fluxo provisório sem verificacao por email.
+                              Cadastro por email e senha sem verificacao por email.
                             </p>
                           </div>
                           <button
@@ -519,8 +526,8 @@ const Registration: React.FC<RegistrationProps> = ({
                           </button>
                         </div>
                         <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-700">
-                          Cadastro temporario sem verificacao por email. Use apenas enquanto o magic
-                          link nao estiver configurado.
+                          Cadastro sem verificacao por email. Use este fluxo enquanto o magic link
+                          nao estiver configurado.
                         </div>
                         <input
                           type="email"
