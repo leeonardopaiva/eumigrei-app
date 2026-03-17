@@ -72,7 +72,14 @@ export const onboardingSchema = z.object({
     message: 'Telefone muito curto',
   }),
   regionKey: z.string().trim().min(2, 'Selecione uma regiao valida'),
-  referralUsername: z.string().trim().optional(),
+  referralUsername: z
+    .string()
+    .trim()
+    .nullish()
+    .transform((value) => {
+      const normalized = value?.trim();
+      return normalized ? normalized : undefined;
+    }),
 });
 
 export const updateRegionSchema = z.object({

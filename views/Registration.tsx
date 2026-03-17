@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Shield } from 'lucide-react';
+import { RefreshCcw, Shield } from 'lucide-react';
 import FieldErrorMessage from '../components/forms/FieldErrorMessage';
 import RegionSelector from '../components/RegionSelector';
 import { Logo } from '../components/Layout';
@@ -16,6 +16,7 @@ import {
   requiredFieldError,
   validatePhoneField,
 } from '../lib/forms/validation';
+import { getPasswordValidationIssues } from '../lib/forms/password';
 import { USERNAME_MIN_LENGTH, normalizeUsernameInput, validateUsernameValue } from '../lib/username';
 
 type RegistrationMode = 'signin' | 'complete-profile';
@@ -33,8 +34,16 @@ interface RegistrationProps {
   mode: RegistrationMode;
   googleEnabled: boolean;
   emailEnabled: boolean;
+  passwordEnabled: boolean;
   onGoogleLogin: () => void;
   onEmailLogin?: (email: string) => Promise<void>;
+  onPasswordLogin?: (values: { email: string; password: string }) => Promise<void>;
+  onPasswordRegister?: (values: {
+    email: string;
+    password: string;
+    captchaToken: string;
+    captchaAnswer: string;
+  }) => Promise<void>;
   onCompleteProfile?: (values: RegistrationValues) => Promise<void>;
   submitting?: boolean;
   error?: string | null;
@@ -43,14 +52,27 @@ interface RegistrationProps {
   defaultValues?: RegistrationValues;
 }
 
-type RegistrationField = 'email' | 'name' | 'username' | 'phone' | 'regionKey';
+type RegistrationField =
+  | 'email'
+  | 'name'
+  | 'username'
+  | 'phone'
+  | 'regionKey'
+  | 'password'
+  | 'confirmPassword'
+  | 'captchaAnswer';
+
+type PasswordAuthView = 'none' | 'signin' | 'signup';
 
 const Registration: React.FC<RegistrationProps> = ({
   mode,
   googleEnabled,
   emailEnabled,
+  passwordEnabled,
   onGoogleLogin,
   onEmailLogin,
+  onPasswordLogin,
+  onPasswordRegister,
   onCompleteProfile,
   submitting = false,
   error,
@@ -71,10 +93,25 @@ const Registration: React.FC<RegistrationProps> = ({
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<RegistrationField>>({});
+  const [passwordAuthView, setPasswordAuthView] = useState<PasswordAuthView>('none');
+  const [passwordSignIn, setPasswordSignIn] = useState({
+    email: '',
+    password: '',
+  });
+  const [passwordSignUp, setPasswordSignUp] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    captchaAnswer: '',
+  });
+  const [captchaPrompt, setCaptchaPrompt] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [loadingCaptcha, setLoadingCaptcha] = useState(false);
 
   const isOnboarding = mode === 'complete-profile';
   const normalizedUsername = normalizeUsernameInput(formValues.username);
   const selectedCountry = findCountryByIso2(selectedCountryIso2);
+  const passwordIssues = getPasswordValidationIssues(passwordSignUp.password);
 
   useEffect(() => {
     const nextPhoneState = splitPhoneNumber(defaultValues?.phone);
@@ -184,6 +221,53 @@ const Registration: React.FC<RegistrationProps> = ({
     });
   };
 
+  const loadCaptcha = async () => {
+    if (!passwordEnabled) {
+      return;
+    }
+
+    setLoadingCaptcha(true);
+
+    try {
+      const response = await fetch('/api/auth/captcha', { cache: 'no-store' });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.prompt || !payload?.token) {
+        throw new Error('Nao foi possivel carregar o captcha.');
+      }
+
+      setCaptchaPrompt(payload.prompt);
+      setCaptchaToken(payload.token);
+    } catch (captchaError) {
+      console.error('Failed to load captcha:', captchaError);
+      setCaptchaPrompt('');
+      setCaptchaToken('');
+    } finally {
+      setLoadingCaptcha(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isOnboarding && passwordEnabled && passwordAuthView === 'signup' && !captchaToken) {
+      void loadCaptcha();
+    }
+  }, [captchaToken, isOnboarding, passwordAuthView, passwordEnabled]);
+
+  const openPasswordView = (view: Exclude<PasswordAuthView, 'none'>) => {
+    setPasswordAuthView(view);
+    setFieldErrors((current) => ({
+      ...current,
+      email: undefined,
+      password: undefined,
+      confirmPassword: undefined,
+      captchaAnswer: undefined,
+    }));
+
+    if (view === 'signup') {
+      void loadCaptcha();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-texture px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
       <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-5xl items-center justify-center">
@@ -267,8 +351,278 @@ const Registration: React.FC<RegistrationProps> = ({
                     Continuar com Google
                   </button>
                 ) : null}
+                {passwordEnabled ? (
+                  <div className="space-y-4">
+                    {passwordAuthView === 'none' ? (
+                      <div className="space-y-3">
+                        <button
+                          type="button"
+                          onClick={() => openPasswordView('signin')}
+                          className="w-full rounded-[28px] bg-slate-900 px-6 py-5 text-base font-bold text-white shadow-xl transition-all hover:bg-slate-800"
+                        >
+                          Entrar com Email e Senha
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openPasswordView('signup')}
+                          className="w-full rounded-[28px] bg-slate-900 px-6 py-5 text-base font-bold text-white shadow-xl transition-all hover:bg-slate-800"
+                        >
+                          Criar conta por Email (temporario)
+                        </button>
+                        <p className="px-2 text-center text-xs font-medium text-slate-400">
+                          Use o cadastro temporario apenas enquanto a verificacao por magic link nao
+                          estiver configurada.
+                        </p>
+                      </div>
+                    ) : null}
+
+                    {passwordAuthView === 'signin' ? (
+                      <form
+                        className="space-y-3"
+                        onSubmit={async (event) => {
+                          event.preventDefault();
+
+                          const nextErrors: FieldErrors<RegistrationField> = {};
+
+                          if (!passwordSignIn.email.trim()) {
+                            nextErrors.email = requiredFieldError('seu email');
+                          } else if (!isValidEmail(passwordSignIn.email)) {
+                            nextErrors.email = 'Informe um email valido.';
+                          }
+
+                          if (!passwordSignIn.password.trim()) {
+                            nextErrors.password = requiredFieldError('sua senha');
+                          }
+
+                          setFieldErrors(nextErrors);
+
+                          if (hasFieldErrors(nextErrors)) {
+                            return;
+                          }
+
+                          await onPasswordLogin?.({
+                            email: passwordSignIn.email,
+                            password: passwordSignIn.password,
+                          });
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-bold text-slate-700">Entrar com senha</p>
+                            <p className="text-xs text-slate-400">
+                              Use sua conta temporaria de email e senha.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setPasswordAuthView('none')}
+                            className="rounded-2xl px-3 py-2 text-xs font-bold text-slate-500 transition hover:bg-slate-100"
+                          >
+                            Voltar
+                          </button>
+                        </div>
+                        <input
+                          type="email"
+                          placeholder="Seu e-mail"
+                          value={passwordSignIn.email}
+                          onChange={(event) =>
+                            setPasswordSignIn((current) => ({ ...current, email: event.target.value }))
+                          }
+                          onInput={() => clearFieldError('email')}
+                          aria-invalid={Boolean(fieldErrors.email)}
+                          className="w-full rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#28B8C7]"
+                        />
+                        <FieldErrorMessage message={fieldErrors.email} />
+                        <input
+                          type="password"
+                          placeholder="Sua senha"
+                          value={passwordSignIn.password}
+                          onChange={(event) =>
+                            setPasswordSignIn((current) => ({
+                              ...current,
+                              password: event.target.value,
+                            }))
+                          }
+                          onInput={() => clearFieldError('password')}
+                          aria-invalid={Boolean(fieldErrors.password)}
+                          className="w-full rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#28B8C7]"
+                        />
+                        <FieldErrorMessage message={fieldErrors.password} />
+                        <button
+                          type="submit"
+                          disabled={submitting}
+                          className="w-full rounded-[32px] bg-slate-900 px-6 py-5 text-base font-bold text-white shadow-xl transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {submitting ? 'Entrando...' : 'Entrar com Email e Senha'}
+                        </button>
+                      </form>
+                    ) : null}
+
+                    {passwordAuthView === 'signup' ? (
+                      <form
+                        className="space-y-3"
+                        onSubmit={async (event) => {
+                          event.preventDefault();
+
+                          const nextErrors: FieldErrors<RegistrationField> = {};
+
+                          if (!passwordSignUp.email.trim()) {
+                            nextErrors.email = requiredFieldError('seu email');
+                          } else if (!isValidEmail(passwordSignUp.email)) {
+                            nextErrors.email = 'Informe um email valido.';
+                          }
+
+                          if (!passwordSignUp.password.trim()) {
+                            nextErrors.password = requiredFieldError('uma senha forte');
+                          } else if (passwordIssues.length > 0) {
+                            nextErrors.password = passwordIssues[0];
+                          }
+
+                          if (passwordSignUp.confirmPassword !== passwordSignUp.password) {
+                            nextErrors.confirmPassword = 'As senhas precisam ser iguais.';
+                          }
+
+                          if (!passwordSignUp.captchaAnswer.trim()) {
+                            nextErrors.captchaAnswer = 'Resolva o calculo de verificacao.';
+                          }
+
+                          setFieldErrors(nextErrors);
+
+                          if (hasFieldErrors(nextErrors) || !captchaToken) {
+                            if (!captchaToken) {
+                              await loadCaptcha();
+                            }
+                            return;
+                          }
+
+                          await onPasswordRegister?.({
+                            email: passwordSignUp.email,
+                            password: passwordSignUp.password,
+                            captchaToken,
+                            captchaAnswer: passwordSignUp.captchaAnswer,
+                          });
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-bold text-slate-700">Cadastro temporario</p>
+                            <p className="text-xs text-slate-400">
+                              Fluxo provisório sem verificacao por email.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setPasswordAuthView('none')}
+                            className="rounded-2xl px-3 py-2 text-xs font-bold text-slate-500 transition hover:bg-slate-100"
+                          >
+                            Voltar
+                          </button>
+                        </div>
+                        <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-700">
+                          Cadastro temporario sem verificacao por email. Use apenas enquanto o magic
+                          link nao estiver configurado.
+                        </div>
+                        <input
+                          type="email"
+                          placeholder="Seu e-mail"
+                          value={passwordSignUp.email}
+                          onChange={(event) =>
+                            setPasswordSignUp((current) => ({ ...current, email: event.target.value }))
+                          }
+                          onInput={() => clearFieldError('email')}
+                          aria-invalid={Boolean(fieldErrors.email)}
+                          className="w-full rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#28B8C7]"
+                        />
+                        <FieldErrorMessage message={fieldErrors.email} />
+                        <input
+                          type="password"
+                          placeholder="Crie uma senha"
+                          value={passwordSignUp.password}
+                          onChange={(event) =>
+                            setPasswordSignUp((current) => ({
+                              ...current,
+                              password: event.target.value,
+                            }))
+                          }
+                          onInput={() => clearFieldError('password')}
+                          aria-invalid={Boolean(fieldErrors.password)}
+                          className="w-full rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#28B8C7]"
+                        />
+                        <FieldErrorMessage message={fieldErrors.password} />
+                        {passwordSignUp.password ? (
+                          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-500">
+                            {passwordIssues.length === 0 ? (
+                              <p className="font-medium text-emerald-700">Senha forte.</p>
+                            ) : (
+                              <div className="space-y-1">
+                                {passwordIssues.map((issue) => (
+                                  <p key={issue}>{issue}</p>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
+                        <input
+                          type="password"
+                          placeholder="Confirme sua senha"
+                          value={passwordSignUp.confirmPassword}
+                          onChange={(event) =>
+                            setPasswordSignUp((current) => ({
+                              ...current,
+                              confirmPassword: event.target.value,
+                            }))
+                          }
+                          onInput={() => clearFieldError('confirmPassword')}
+                          aria-invalid={Boolean(fieldErrors.confirmPassword)}
+                          className="w-full rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#28B8C7]"
+                        />
+                        <FieldErrorMessage message={fieldErrors.confirmPassword} />
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-bold text-slate-700">
+                              {loadingCaptcha ? 'Carregando captcha...' : captchaPrompt || 'Captcha temporariamente indisponivel'}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => void loadCaptcha()}
+                              className="rounded-full p-2 text-slate-400 transition hover:bg-white hover:text-slate-600"
+                              aria-label="Gerar novo captcha"
+                            >
+                              <RefreshCcw size={16} className={loadingCaptcha ? 'animate-spin' : ''} />
+                            </button>
+                          </div>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="Resultado"
+                            value={passwordSignUp.captchaAnswer}
+                            onChange={(event) =>
+                              setPasswordSignUp((current) => ({
+                                ...current,
+                                captchaAnswer: event.target.value,
+                              }))
+                            }
+                            onInput={() => clearFieldError('captchaAnswer')}
+                            aria-invalid={Boolean(fieldErrors.captchaAnswer)}
+                            className="mt-3 w-full rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#28B8C7]"
+                          />
+                          <FieldErrorMessage message={fieldErrors.captchaAnswer} />
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={submitting || loadingCaptcha}
+                          className="w-full rounded-[32px] bg-slate-900 px-6 py-5 text-base font-bold text-white shadow-xl transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {submitting ? 'Criando conta...' : 'Criar conta com Email'}
+                        </button>
+                      </form>
+                    ) : null}
+                  </div>
+                ) : null}
                 <p className="text-center text-xs font-medium text-slate-400">
-                  Email envia um magic link. Google cria ou reutiliza sua conta automaticamente.
+                  {emailEnabled
+                    ? 'Email envia um magic link. Google cria ou reutiliza sua conta automaticamente.'
+                    : 'Google ou email e senha liberam o acesso, e o perfil e concluido no proximo passo.'}
                 </p>
               </div>
             ) : (

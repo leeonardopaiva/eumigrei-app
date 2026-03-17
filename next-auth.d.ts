@@ -23,3 +23,15 @@ declare module 'next-auth' {
     onboardingCompleted: boolean;
   }
 }
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id?: string;
+    role?: UserRole;
+    username?: string | null;
+    phone?: string | null;
+    locationLabel?: string | null;
+    regionKey?: string | null;
+    onboardingCompleted?: boolean;
+  }
+}

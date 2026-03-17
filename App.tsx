@@ -19,6 +19,7 @@ import { UserRole, type User } from './types';
 
 const GOOGLE_AUTH_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED !== 'false';
 const EMAIL_AUTH_ENABLED = process.env.NEXT_PUBLIC_EMAIL_AUTH_ENABLED !== 'false';
+const PASSWORD_AUTH_ENABLED = process.env.NEXT_PUBLIC_PASSWORD_AUTH_ENABLED !== 'false';
 const DEV_AUTH_ENABLED =
   process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_DEV_AUTH_ENABLED === 'true';
 
@@ -81,7 +82,7 @@ const App: React.FC = () => {
   const [registrationError, setRegistrationError] = useState<string | null>(null);
   const [registrationNotice, setRegistrationNotice] = useState<string | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
-  const [requestingMagicLink, setRequestingMagicLink] = useState(false);
+  const [authSubmitting, setAuthSubmitting] = useState(false);
   const segments = pathname.split('/').filter(Boolean);
   const rootSegment = segments[0];
   const referralUsername =
@@ -132,7 +133,7 @@ const App: React.FC = () => {
 
     setRegistrationError(null);
     setRegistrationNotice(null);
-    setRequestingMagicLink(true);
+    setAuthSubmitting(true);
 
     try {
       const result = await signIn('email', {
@@ -162,12 +163,94 @@ const App: React.FC = () => {
       console.error('Email sign-in failed:', error);
       setRegistrationError('Nao foi possivel enviar o link de acesso.');
     } finally {
-      setRequestingMagicLink(false);
+      setAuthSubmitting(false);
     }
   };
 
   const handleEmailLogin = async (email: string) => {
     await requestMagicLink(email);
+  };
+
+  const performPasswordLogin = async (email: string, password: string) => {
+    const result = await signIn('credentials', {
+      email: email.trim().toLowerCase(),
+      password,
+      redirect: false,
+      callbackUrl: pathname || '/',
+    });
+
+    if (!result || result.error) {
+      return {
+        ok: false,
+        error: result?.error || 'Nao foi possivel entrar com email e senha.',
+      };
+    }
+
+    if (result.url) {
+      window.location.assign(result.url);
+    } else {
+      window.location.assign(pathname || '/');
+    }
+
+    return { ok: true };
+  };
+
+  const handlePasswordLogin = async (values: { email: string; password: string }) => {
+    setRegistrationError(null);
+    setRegistrationNotice(null);
+    setAuthSubmitting(true);
+
+    try {
+      const result = await performPasswordLogin(values.email, values.password);
+
+      if (!result.ok) {
+        setRegistrationError('Email ou senha invalidos.');
+      }
+    } catch (error) {
+      console.error('Credentials sign-in failed:', error);
+      setRegistrationError('Nao foi possivel entrar com email e senha.');
+    } finally {
+      setAuthSubmitting(false);
+    }
+  };
+
+  const handlePasswordRegister = async (values: {
+    email: string;
+    password: string;
+    captchaToken: string;
+    captchaAnswer: string;
+  }) => {
+    setRegistrationError(null);
+    setRegistrationNotice(null);
+    setAuthSubmitting(true);
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setRegistrationError(payload?.error ?? 'Nao foi possivel criar a conta.');
+        return;
+      }
+
+      setRegistrationNotice(payload?.message ?? 'Conta criada. Entrando...');
+      const result = await performPasswordLogin(values.email, values.password);
+
+      if (!result.ok) {
+        setRegistrationNotice('Conta criada. Agora entre com seu email e senha.');
+      }
+    } catch (error) {
+      console.error('Password registration failed:', error);
+      setRegistrationError('Nao foi possivel criar a conta.');
+    } finally {
+      setAuthSubmitting(false);
+    }
   };
 
   const handleProfileCompletion = async (values: {
@@ -183,12 +266,17 @@ const App: React.FC = () => {
     setSavingProfile(true);
 
     try {
+      const onboardingPayload = {
+        ...values,
+        referralUsername: values.referralUsername ?? undefined,
+      };
+
       const response = await fetch('/api/onboarding', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(onboardingPayload),
       });
 
       const payload = await response.json().catch(() => null);
@@ -217,9 +305,12 @@ const App: React.FC = () => {
         mode="signin"
         googleEnabled={GOOGLE_AUTH_ENABLED}
         emailEnabled={EMAIL_AUTH_ENABLED}
+        passwordEnabled={PASSWORD_AUTH_ENABLED}
         onGoogleLogin={handleGoogleLogin}
         onEmailLogin={handleEmailLogin}
-        submitting={requestingMagicLink}
+        onPasswordLogin={handlePasswordLogin}
+        onPasswordRegister={handlePasswordRegister}
+        submitting={authSubmitting}
         error={registrationError}
         notice={registrationNotice}
         referralUsername={referralUsername}
@@ -233,6 +324,7 @@ const App: React.FC = () => {
         mode="complete-profile"
         googleEnabled={GOOGLE_AUTH_ENABLED}
         emailEnabled={EMAIL_AUTH_ENABLED}
+        passwordEnabled={PASSWORD_AUTH_ENABLED}
         onGoogleLogin={handleGoogleLogin}
         onCompleteProfile={handleProfileCompletion}
         submitting={savingProfile}
