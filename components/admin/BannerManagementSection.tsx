@@ -197,7 +197,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-[#004691]">Banner Ads</h2>
+        <h2 className="text-lg font-bold text-[#28B8C7]">Banner Ads</h2>
         <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500 shadow-sm">
           {banners.length}
         </span>
@@ -235,7 +235,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
           }}
           placeholder="Nome do banner"
           aria-invalid={Boolean(fieldErrors.name)}
-          className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+          className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
         />
         <FieldErrorMessage message={fieldErrors.name} />
         <CloudinaryImageField
@@ -261,7 +261,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
           }
           placeholder="Link de destino"
           aria-invalid={Boolean(fieldErrors.targetUrl)}
-          className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+          className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
         />
         <FieldErrorMessage message={fieldErrors.targetUrl} />
         <RegionSelector
@@ -281,7 +281,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
             onChange={(event) =>
               setBannerForm((current) => ({ ...current, isActive: event.target.checked }))
             }
-            className="h-4 w-4 rounded border-slate-300 text-[#004691] focus:ring-[#004691]"
+            className="h-4 w-4 rounded border-slate-300 text-[#28B8C7] focus:ring-[#28B8C7]"
           />
           Banner visivel na Home
         </label>
@@ -289,7 +289,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
           type="button"
           onClick={() => void submitBanner()}
           disabled={processingKey === 'banner:create' || processingKey === `banner:${editingBannerId}:save`}
-          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#004691] px-4 text-sm font-bold text-white shadow-md disabled:opacity-60"
+          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#28B8C7] px-4 text-sm font-bold text-white shadow-md disabled:opacity-60"
         >
           {editingBannerId ? <PencilLine size={16} /> : <Plus size={16} />}
           {editingBannerId
@@ -325,7 +325,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-lg font-bold text-[#004691]">{banner.name}</p>
+                      <p className="text-lg font-bold text-[#28B8C7]">{banner.name}</p>
                       <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
                         {banner.region?.label || 'Todas as regioes'}
                       </p>
@@ -344,7 +344,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                     href={banner.targetUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+                    className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-cyan-600 hover:text-cyan-700"
                   >
                     <ImagePlus size={14} />
                     Abrir destino
@@ -372,7 +372,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                   className={`inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl px-4 text-sm font-bold transition disabled:opacity-60 ${
                     banner.isActive
                       ? 'bg-red-50 text-red-700 hover:bg-red-100'
-                      : 'bg-[#004691] text-white hover:bg-[#00386f]'
+                      : 'bg-[#28B8C7] text-white hover:bg-[#1E96A4]'
                   }`}
                 >
                   {processingKey === `banner:${banner.id}:toggle`

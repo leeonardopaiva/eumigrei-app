@@ -213,11 +213,11 @@ const Marketplace: React.FC = () => {
     <div className="px-5 space-y-6 animate-in fade-in duration-500 pb-20">
       <div className="mt-4 space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold text-blue-900">Agenda de Eventos</h1>
+          <h1 className="text-2xl font-bold text-cyan-900">Agenda de Eventos</h1>
           <button
             type="button"
             onClick={() => setShowCreateForm((current) => !current)}
-            className="inline-flex items-center gap-2 rounded-2xl bg-blue-900 px-4 py-2 text-xs font-bold text-white shadow-md"
+            className="inline-flex items-center gap-2 rounded-2xl bg-cyan-600 px-4 py-2 text-xs font-bold text-white shadow-md"
           >
             <Plus size={14} /> Criar
           </button>
@@ -227,7 +227,7 @@ const Marketplace: React.FC = () => {
                 <button 
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-5 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap shadow-sm border ${activeTab === tab ? 'bg-blue-900 text-white border-blue-900' : 'bg-white text-blue-900 border-slate-100'}`}
+                    className={`px-5 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap shadow-sm border ${activeTab === tab ? 'bg-cyan-600 text-white border-cyan-700' : 'bg-white text-cyan-900 border-slate-100'}`}
                 >
                     {tab}
                 </button>
@@ -248,7 +248,7 @@ const Marketplace: React.FC = () => {
               onInput={() => clearFieldError('title')}
               aria-invalid={Boolean(fieldErrors.title)}
               placeholder="Titulo do evento"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
             />
             <FieldErrorMessage message={fieldErrors.title} />
             <textarea
@@ -261,7 +261,7 @@ const Marketplace: React.FC = () => {
               onInput={() => clearFieldError('description')}
               aria-invalid={Boolean(fieldErrors.description)}
               placeholder="Descricao do evento"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
             />
             <FieldErrorMessage message={fieldErrors.description} />
             <input
@@ -273,7 +273,7 @@ const Marketplace: React.FC = () => {
               onInput={() => clearFieldError('venueName')}
               aria-invalid={Boolean(fieldErrors.venueName)}
               placeholder="Local"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
             />
             <FieldErrorMessage message={fieldErrors.venueName} />
             <div className="grid grid-cols-2 gap-3">
@@ -286,7 +286,7 @@ const Marketplace: React.FC = () => {
                 }
                 onInput={() => clearFieldError('startsAt')}
                 aria-invalid={Boolean(fieldErrors.startsAt)}
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
               />
               <input
                 type="datetime-local"
@@ -294,7 +294,7 @@ const Marketplace: React.FC = () => {
                 onChange={(event) =>
                   setCreateForm((current) => ({ ...current, endsAt: event.target.value }))
                 }
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
               />
             </div>
             <FieldErrorMessage message={fieldErrors.startsAt} />
@@ -315,7 +315,7 @@ const Marketplace: React.FC = () => {
               onInput={() => clearFieldError('externalUrl')}
               aria-invalid={Boolean(fieldErrors.externalUrl)}
               placeholder="Link externo do evento"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
             />
             <FieldErrorMessage message={fieldErrors.externalUrl} />
             <CloudinaryImageField
@@ -340,7 +340,7 @@ const Marketplace: React.FC = () => {
             <button
               type="submit"
               disabled={submitting || !createForm.regionKey}
-              className="w-full rounded-2xl bg-blue-900 px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
+              className="w-full rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
             >
               {submitting ? 'Enviando...' : 'Enviar para aprovacao'}
             </button>
@@ -350,7 +350,7 @@ const Marketplace: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        <h2 className="font-bold text-blue-900">Eventos proximos</h2>
+        <h2 className="font-bold text-cyan-900">Eventos proximos</h2>
         {resultScope === 'global' && events.length > 0 ? (
           <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
             Ainda nao ha eventos publicados na sua regiao. Mostrando eventos de outras regioes.
@@ -390,14 +390,14 @@ const EventCard: React.FC<{ href: string; title: string; date: string; location:
         <img src={img} className="w-24 h-24 rounded-2xl object-cover" alt={title} />
         <div className="flex-1 flex flex-col justify-between">
             <div>
-                <h4 className="font-bold text-blue-900 text-sm leading-tight">{title}</h4>
+                <h4 className="font-bold text-cyan-900 text-sm leading-tight">{title}</h4>
                 <p className="text-slate-500 text-[10px] mt-1 font-medium">{date}</p>
-                <div className="flex items-center gap-1 text-blue-600 text-[10px] font-bold mt-2">
+                <div className="flex items-center gap-1 text-cyan-600 text-[10px] font-bold mt-2">
                     <MapPin size={10} fill="currentColor" /> {location}
                 </div>
                 <p className="mt-1 text-[10px] text-slate-400">{region}</p>
             </div>
-            <Link href={href} className="self-end bg-blue-900 text-white px-4 py-1.5 rounded-xl text-[10px] font-bold shadow-sm">
+            <Link href={href} className="self-end bg-cyan-600 text-white px-4 py-1.5 rounded-xl text-[10px] font-bold shadow-sm">
                 Ver evento
             </Link>
         </div>

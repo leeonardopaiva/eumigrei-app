@@ -171,7 +171,7 @@ const CloudinaryImageField: React.FC<CloudinaryImageFieldProps> = ({
               placeholder={placeholder}
               aria-invalid={Boolean(error)}
               disabled={disabled}
-              className="w-full rounded-2xl border border-slate-200 px-11 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60"
+              className="w-full rounded-2xl border border-slate-200 px-11 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
             />
           </div>
           <FieldErrorMessage message={error} />

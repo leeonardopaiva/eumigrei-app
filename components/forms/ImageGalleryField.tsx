@@ -48,7 +48,7 @@ const ImageGalleryField: React.FC<ImageGalleryFieldProps> = ({
     <div className="space-y-3 rounded-3xl border border-slate-100 bg-white/70 p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="inline-flex items-center gap-2 text-sm font-bold text-[#004691]">
+          <div className="inline-flex items-center gap-2 text-sm font-bold text-[#28B8C7]">
             <Images size={16} />
             Galeria de imagens
           </div>

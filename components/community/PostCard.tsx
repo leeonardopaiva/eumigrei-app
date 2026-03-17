@@ -89,7 +89,7 @@ const Header: React.FC<HeaderProps> = ({
     <div className="flex items-center gap-3">
       <img src={authorImage} className="h-10 w-10 rounded-full object-cover" alt={authorName} />
       <div>
-        <h5 className="text-sm font-bold text-blue-900">{authorName}</h5>
+        <h5 className="text-sm font-bold text-cyan-900">{authorName}</h5>
         <p className="text-[10px] text-slate-400">
           {formatRelativeTime(createdAt)} | {locationLabel}
         </p>
@@ -165,7 +165,7 @@ const Body: React.FC<BodyProps> = ({ postId, content, imageUrl, externalUrl }) =
             <LinkIcon size={14} />
             Link externo
           </div>
-          <p className="mt-2 break-all text-sm font-bold text-[#004691]">{externalUrl}</p>
+          <p className="mt-2 break-all text-sm font-bold text-[#28B8C7]">{externalUrl}</p>
           {externalHostname ? (
             <p className="mt-1 text-xs font-medium text-slate-500">{externalHostname}</p>
           ) : null}
@@ -196,12 +196,12 @@ const Editor: React.FC<EditorProps> = ({
   onCancel,
   saving,
 }) => (
-  <div className="space-y-3 rounded-3xl border border-blue-100 bg-blue-50/50 p-4">
+  <div className="space-y-3 rounded-3xl border border-cyan-100 bg-cyan-50/50 p-4">
     <textarea
       rows={4}
       value={content}
       onChange={(event) => onContentChange(event.target.value)}
-      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
     />
     <CloudinaryImageField
       value={imageUrl}
@@ -215,14 +215,14 @@ const Editor: React.FC<EditorProps> = ({
       value={externalUrl}
       onChange={(event) => onExternalChange(event.target.value)}
       placeholder="Link externo ou YouTube"
-      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
     />
     <div className="flex gap-2">
       <button
         type="button"
         onClick={onSave}
         disabled={saving}
-        className="flex-1 rounded-2xl bg-blue-900 px-4 py-3 text-xs font-bold text-white disabled:opacity-60"
+        className="flex-1 rounded-2xl bg-cyan-600 px-4 py-3 text-xs font-bold text-white disabled:opacity-60"
       >
         {saving ? 'Salvando...' : 'Salvar publicacao'}
       </button>
@@ -249,7 +249,7 @@ const Actions: React.FC<ActionsProps> = ({
       <button
         onClick={onToggleLike}
         className={`flex items-center gap-1.5 text-xs font-bold ${
-          liked ? 'text-blue-600' : 'text-slate-500'
+          liked ? 'text-cyan-600' : 'text-slate-500'
         }`}
       >
         <ThumbsUp size={16} /> {likeCount}
@@ -277,7 +277,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h6 className="mb-1 text-xs font-bold text-blue-900">{authorName}</h6>
+            <h6 className="mb-1 text-xs font-bold text-cyan-900">{authorName}</h6>
             {content}
           </div>
           {menu}
@@ -300,13 +300,13 @@ const CommentComposer: React.FC<CommentComposerProps> = ({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder="Escreva um comentario..."
-      className="flex-1 rounded-2xl bg-slate-50 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+      className="flex-1 rounded-2xl bg-slate-50 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-cyan-100"
     />
     <button
       type="button"
       onClick={onSubmit}
       disabled={submitting}
-      className="rounded-2xl bg-blue-900 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+      className="rounded-2xl bg-cyan-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
     >
       {submitting ? '...' : 'Responder'}
     </button>

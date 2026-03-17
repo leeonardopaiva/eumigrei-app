@@ -10,9 +10,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Eumigrei - Comunidade Brasileira',
+  title: 'Emigrei - Comunidade Brasileira',
   description:
-    'Uma plataforma completa para a comunidade brasileira no exterior, oferecendo serviços de moradia, empregos, negócios locais, notícias e rede social.',
+    'Uma plataforma completa para a comunidade brasileira no exterior, oferecendo servicos de moradia, empregos, negocios locais, noticias e rede social.',
 };
 
 export default function RootLayout({
@@ -22,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className={`${inter.className} bg-[#F8F9FA]`}>
+      <body className={`${inter.className} bg-[#F6FBFC]`}>
         <Script src="https://cdn.tailwindcss.com" strategy="beforeInteractive" />
         <Providers>{children}</Providers>
       </body>

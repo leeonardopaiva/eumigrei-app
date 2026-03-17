@@ -21,29 +21,29 @@ type RateLimitResult = {
 
 declare global {
   // eslint-disable-next-line no-var
-  var __eumigreiRateLimitStore: Map<string, RateLimitEntry> | undefined;
+  var __emigreiRateLimitStore: Map<string, RateLimitEntry> | undefined;
   // eslint-disable-next-line no-var
-  var __eumigreiRateLimitOps: number | undefined;
+  var __emigreiRateLimitOps: number | undefined;
   // eslint-disable-next-line no-var
-  var __eumigreiUpstashRateLimiters: Map<string, Ratelimit> | undefined;
+  var __emigreiUpstashRateLimiters: Map<string, Ratelimit> | undefined;
 }
 
 const localRateLimitStore =
-  globalThis.__eumigreiRateLimitStore ?? new Map<string, RateLimitEntry>();
+  globalThis.__emigreiRateLimitStore ?? new Map<string, RateLimitEntry>();
 
-if (!globalThis.__eumigreiRateLimitStore) {
-  globalThis.__eumigreiRateLimitStore = localRateLimitStore;
+if (!globalThis.__emigreiRateLimitStore) {
+  globalThis.__emigreiRateLimitStore = localRateLimitStore;
 }
 
-if (!globalThis.__eumigreiRateLimitOps) {
-  globalThis.__eumigreiRateLimitOps = 0;
+if (!globalThis.__emigreiRateLimitOps) {
+  globalThis.__emigreiRateLimitOps = 0;
 }
 
 const upstashRateLimiters =
-  globalThis.__eumigreiUpstashRateLimiters ?? new Map<string, Ratelimit>();
+  globalThis.__emigreiUpstashRateLimiters ?? new Map<string, Ratelimit>();
 
-if (!globalThis.__eumigreiUpstashRateLimiters) {
-  globalThis.__eumigreiUpstashRateLimiters = upstashRateLimiters;
+if (!globalThis.__emigreiUpstashRateLimiters) {
+  globalThis.__emigreiUpstashRateLimiters = upstashRateLimiters;
 }
 
 const hasUpstashCredentials = Boolean(
@@ -83,7 +83,7 @@ const getUpstashLimiter = (scope: string, max: number, windowMs: number) => {
   const nextLimiter = new Ratelimit({
     redis: upstashRedis!,
     limiter: Ratelimit.fixedWindow(max, toDurationString(windowMs)),
-    prefix: `@eumigrei/ratelimit/${scope}`,
+    prefix: `@emigrei/ratelimit/${scope}`,
   });
 
   upstashRateLimiters.set(limiterKey, nextLimiter);
@@ -92,10 +92,10 @@ const getUpstashLimiter = (scope: string, max: number, windowMs: number) => {
 };
 
 const cleanupExpiredEntries = (now: number) => {
-  globalThis.__eumigreiRateLimitOps = (globalThis.__eumigreiRateLimitOps ?? 0) + 1;
+  globalThis.__emigreiRateLimitOps = (globalThis.__emigreiRateLimitOps ?? 0) + 1;
 
   if (
-    (globalThis.__eumigreiRateLimitOps ?? 0) % 200 !== 0 &&
+    (globalThis.__emigreiRateLimitOps ?? 0) % 200 !== 0 &&
     localRateLimitStore.size < 2000
   ) {
     return;

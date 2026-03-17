@@ -217,11 +217,11 @@ const BusinessList: React.FC = () => {
     <div className="px-5 space-y-6 animate-in fade-in duration-500">
       <div className="mt-4 space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold text-blue-900">Negocios</h1>
+          <h1 className="text-2xl font-bold text-cyan-900">Negocios</h1>
           <button
             type="button"
             onClick={() => setShowCreateForm((current) => !current)}
-            className="inline-flex items-center gap-2 rounded-2xl bg-blue-900 px-4 py-2 text-xs font-bold text-white shadow-md"
+            className="inline-flex items-center gap-2 rounded-2xl bg-cyan-600 px-4 py-2 text-xs font-bold text-white shadow-md"
           >
             <Plus size={14} /> Cadastrar
           </button>
@@ -251,7 +251,7 @@ const BusinessList: React.FC = () => {
               onInput={() => clearFieldError('name')}
               aria-invalid={Boolean(fieldErrors.name)}
               placeholder="Nome do negocio"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
             />
             <FieldErrorMessage message={fieldErrors.name} />
             <div className="grid grid-cols-2 gap-3">
@@ -260,7 +260,7 @@ const BusinessList: React.FC = () => {
                 onChange={(event) =>
                   setCreateForm((current) => ({ ...current, category: event.target.value }))
                 }
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
               >
                 {['Restaurante', 'Mercado', 'Beleza', 'Saude'].map((category) => (
                   <option key={category} value={category}>
@@ -280,7 +280,7 @@ const BusinessList: React.FC = () => {
                 onInput={() => clearFieldError('phone')}
                 aria-invalid={Boolean(fieldErrors.phone)}
                 placeholder="Telefone"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
               />
             </div>
             <FieldErrorMessage message={fieldErrors.phone} />
@@ -293,7 +293,7 @@ const BusinessList: React.FC = () => {
               onInput={() => clearFieldError('address')}
               aria-invalid={Boolean(fieldErrors.address)}
               placeholder="Endereco"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
             />
             <FieldErrorMessage message={fieldErrors.address} />
             <RegionSelector
@@ -315,7 +315,7 @@ const BusinessList: React.FC = () => {
               onInput={() => clearFieldError('description')}
               aria-invalid={Boolean(fieldErrors.description)}
               placeholder="Descricao do negocio"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
             />
             <FieldErrorMessage message={fieldErrors.description} />
             <div className="grid grid-cols-2 gap-3">
@@ -327,7 +327,7 @@ const BusinessList: React.FC = () => {
                 onInput={() => clearFieldError('website')}
                 aria-invalid={Boolean(fieldErrors.website)}
                 placeholder="Website"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
               />
               <input
                 value={createForm.instagram}
@@ -335,7 +335,7 @@ const BusinessList: React.FC = () => {
                   setCreateForm((current) => ({ ...current, instagram: event.target.value }))
                 }
                 placeholder="Instagram"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
               />
             </div>
             <FieldErrorMessage message={fieldErrors.website} />
@@ -353,7 +353,7 @@ const BusinessList: React.FC = () => {
             <button
               type="submit"
               disabled={submitting || !createForm.regionKey}
-              className="w-full rounded-2xl bg-blue-900 px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
+              className="w-full rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
             >
               {submitting ? 'Enviando...' : 'Enviar para aprovacao'}
             </button>
@@ -369,8 +369,8 @@ const BusinessList: React.FC = () => {
             onClick={() => setActiveFilter(category)}
             className={`px-6 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap shadow-sm border ${
               activeFilter === category
-                ? 'bg-blue-900 text-white border-blue-900'
-                : 'bg-white text-blue-900 border-slate-100'
+                ? 'bg-cyan-600 text-white border-cyan-700'
+                : 'bg-white text-cyan-900 border-slate-100'
             }`}
           >
             {category}
@@ -379,7 +379,7 @@ const BusinessList: React.FC = () => {
       </div>
 
       <div className="space-y-4 pb-20">
-        <h2 className="font-bold text-blue-900">Negocios disponiveis</h2>
+        <h2 className="font-bold text-cyan-900">Negocios disponiveis</h2>
         {resultScope === 'global' && businesses.length > 0 ? (
           <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
             Ainda nao ha negocios publicados na sua regiao. Mostrando resultados de outras regioes.
@@ -399,7 +399,7 @@ const BusinessList: React.FC = () => {
             />
             <div className="flex-1 flex flex-col justify-between">
               <div>
-                <h4 className="font-bold text-blue-900">{business.name}</h4>
+                <h4 className="font-bold text-cyan-900">{business.name}</h4>
                 <div className="flex items-center gap-1 text-yellow-400 text-xs">
                   {[...Array(5)].map((_, index) => (
                     <Star key={index} size={12} fill={index < 4 ? 'currentColor' : 'none'} />
@@ -408,14 +408,14 @@ const BusinessList: React.FC = () => {
                     comunidade local
                   </span>
                 </div>
-                <p className="text-blue-600 text-[10px] font-bold mt-0.5">{business.category}</p>
+                <p className="text-cyan-600 text-[10px] font-bold mt-0.5">{business.category}</p>
                 <div className="flex items-center gap-1 text-slate-500 text-[10px] mt-1">
                   <MapPin size={10} /> {business.address}
                 </div>
               </div>
               <Link
                 href={`/negocios/${business.slug || business.id}`}
-                className="self-end rounded-xl bg-blue-900 px-4 py-1.5 text-[10px] font-bold text-white shadow-sm"
+                className="self-end rounded-xl bg-cyan-600 px-4 py-1.5 text-[10px] font-bold text-white shadow-sm"
               >
                 Ver perfil
               </Link>

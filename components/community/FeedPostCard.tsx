@@ -205,7 +205,7 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
                 rows={3}
                 value={editingCommentContent}
                 onChange={(event) => setEditingCommentContent(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600 outline-none focus:ring-2 focus:ring-blue-200"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600 outline-none focus:ring-2 focus:ring-cyan-200"
               />
             ) : (
               <p className="text-[11px] leading-tight text-slate-600">{comment.content}</p>
@@ -247,7 +247,7 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
                   type="button"
                   onClick={() => void handleSaveComment()}
                   disabled={savingCommentId === comment.id}
-                  className="rounded-2xl bg-blue-900 px-4 py-2 text-[11px] font-bold text-white disabled:opacity-60"
+                  className="rounded-2xl bg-cyan-600 px-4 py-2 text-[11px] font-bold text-white disabled:opacity-60"
                 >
                   {savingCommentId === comment.id ? 'Salvando...' : 'Salvar'}
                 </button>

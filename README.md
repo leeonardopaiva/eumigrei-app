@@ -1,4 +1,4 @@
-# Eumigrei App (Next.js)
+# Emigrei App (Next.js)
 
 ## Rodar localmente
 

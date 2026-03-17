@@ -50,7 +50,7 @@ const Editor: React.FC<EditorProps> = ({ avatar, value, onChange, placeholder })
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
-      className="min-h-[96px] flex-1 rounded-2xl border-none bg-slate-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"
+      className="min-h-[96px] flex-1 rounded-2xl border-none bg-slate-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-100"
     />
   </div>
 );
@@ -81,7 +81,7 @@ const MediaField: React.FC<MediaFieldProps> = ({
         value={externalUrl}
         onChange={(event) => onExternalChange(event.target.value)}
         placeholder={mode === 'video' ? 'Cole o link do YouTube' : 'Cole o link externo'}
-        className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+        className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
       />
     );
   }
@@ -94,7 +94,7 @@ const ModeButton: React.FC<ModeButtonProps> = ({ active, icon, label, onClick })
     type="button"
     onClick={onClick}
     className={`flex items-center gap-1 text-xs font-bold ${
-      active ? 'text-blue-700' : 'text-slate-500'
+      active ? 'text-cyan-700' : 'text-slate-500'
     }`}
   >
     {icon} {label}
@@ -126,7 +126,7 @@ const Actions: React.FC<ActionsProps> = ({ mode, onModeChange, onPublish, publis
     <button
       onClick={onPublish}
       disabled={publishing}
-      className="rounded-2xl bg-blue-900 px-6 py-2 text-xs font-bold text-white shadow-md transition-colors hover:bg-blue-800 disabled:opacity-60"
+      className="rounded-2xl bg-cyan-600 px-6 py-2 text-xs font-bold text-white shadow-md transition-colors hover:bg-cyan-700 disabled:opacity-60"
     >
       {publishing ? 'Publicando...' : 'Publicar'}
     </button>

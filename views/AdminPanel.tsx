@@ -707,7 +707,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
 
   const statsCards = dashboard
     ? [
-        { label: 'Usuarios', value: dashboard.stats.totalUsers, icon: <Users size={20} />, accent: 'bg-blue-50 text-blue-800' },
+        { label: 'Usuarios', value: dashboard.stats.totalUsers, icon: <Users size={20} />, accent: 'bg-cyan-50 text-cyan-800' },
         { label: 'Donos de negocios', value: dashboard.stats.businessOwners, icon: <Store size={20} />, accent: 'bg-emerald-50 text-emerald-800' },
         { label: 'Negocios publicados', value: dashboard.stats.publishedBusinesses, icon: <Building2 size={20} />, accent: 'bg-orange-50 text-orange-800' },
         { label: 'Eventos publicados', value: dashboard.stats.publishedEvents, icon: <CalendarDays size={20} />, accent: 'bg-cyan-50 text-cyan-800' },
@@ -765,7 +765,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
   return (
     <div className="animate-in space-y-6 fade-in duration-500 pb-20">
       <div className="mt-4 px-5">
-        <div className="rounded-[32px] bg-gradient-to-br from-[#004691] via-[#0C58B6] to-[#27A0FF] p-5 text-white shadow-xl">
+        <div className="rounded-[32px] bg-gradient-to-br from-[#28B8C7] via-[#1EA7B6] to-[#6ADDE6] p-5 text-white shadow-xl">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em]">
@@ -831,7 +831,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                 onClick={() => setActiveSection(tab.id)}
                 className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold transition ${
                   activeSection === tab.id
-                    ? 'bg-[#004691] text-white shadow-lg shadow-[#004691]/20'
+                    ? 'bg-[#28B8C7] text-white shadow-lg shadow-[#28B8C7]/20'
                     : 'bg-white text-slate-600 shadow-sm'
                 }`}
               >
@@ -928,7 +928,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                 onChange={(event) =>
                   setRegionForm((current) => ({ ...current, isActive: event.target.checked }))
                 }
-                className="h-4 w-4 rounded border-slate-300 text-[#004691] focus:ring-[#004691]"
+                className="h-4 w-4 rounded border-slate-300 text-[#28B8C7] focus:ring-[#28B8C7]"
               />
               Regiao ativa para novos usuarios e novos cadastros
             </label>
@@ -940,7 +940,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                 processingKey === 'region:create' ||
                 processingKey === `region:${editingRegionKey}:save`
               }
-              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#004691] px-4 text-sm font-bold text-white shadow-md disabled:opacity-60"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#28B8C7] px-4 text-sm font-bold text-white shadow-md disabled:opacity-60"
             >
               {editingRegionKey ? <PencilLine size={16} /> : <Plus size={16} />}
               {editingRegionKey
@@ -977,7 +977,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-lg font-bold text-[#004691]">{region.label}</p>
+                    <p className="text-lg font-bold text-[#28B8C7]">{region.label}</p>
                     <StatusBadge label={region.isActive ? 'Ativa' : 'Inativa'} tone={region.isActive ? 'success' : 'neutral'} />
                   </div>
                   <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
@@ -1117,7 +1117,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                   className="h-11 w-11 rounded-2xl object-cover"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-[#004691]">
+                  <p className="text-sm font-bold text-[#28B8C7]">
                     {post.author.name || 'Usuario da comunidade'}
                   </p>
                   <p className="text-xs text-slate-400">
@@ -1174,7 +1174,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-lg font-bold text-[#004691]">{business.name}</p>
+                          <p className="text-lg font-bold text-[#28B8C7]">{business.name}</p>
                           <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
                             {business.category}
                           </p>
@@ -1345,7 +1345,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-lg font-bold text-[#004691]">{event.title}</p>
+                          <p className="text-lg font-bold text-[#28B8C7]">{event.title}</p>
                           <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
                             {event.venueName}
                           </p>
@@ -1502,7 +1502,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-lg font-bold text-[#004691]">
+                          <p className="text-lg font-bold text-[#28B8C7]">
                             {managedUser.name || 'Usuario sem nome'}
                           </p>
                           <p className="text-sm font-medium text-slate-500">
@@ -1592,7 +1592,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                                 onboardingCompleted: event.target.checked,
                               }))
                             }
-                            className="h-4 w-4 rounded border-slate-300 text-[#004691] focus:ring-[#004691]"
+                            className="h-4 w-4 rounded border-slate-300 text-[#28B8C7] focus:ring-[#28B8C7]"
                           />
                           Onboarding concluido
                         </label>
@@ -1653,7 +1653,7 @@ const Feedback: React.FC<{ tone: 'error' | 'success'; text: string }> = ({ tone,
 
 const SectionHeader: React.FC<{ title: string; count: number }> = ({ title, count }) => (
   <div className="flex items-center justify-between">
-    <h2 className="text-lg font-bold text-[#004691]">{title}</h2>
+    <h2 className="text-lg font-bold text-[#28B8C7]">{title}</h2>
     <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500 shadow-sm">
       {count}
     </span>
@@ -1676,7 +1676,7 @@ const SearchFilterInput: React.FC<{
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
-      className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+      className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
     />
   </div>
 );
@@ -1709,7 +1709,7 @@ const QueueCard: React.FC<{
   <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
     <div className="flex items-start justify-between gap-3">
       <div>
-        <p className="text-lg font-bold text-[#004691]">{title}</p>
+        <p className="text-lg font-bold text-[#28B8C7]">{title}</p>
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">{subtitle}</p>
       </div>
       <StatusBadge label="PENDENTE" tone="warning" />
@@ -1749,7 +1749,7 @@ const FormInput: React.FC<{
     value={value}
     onChange={(event) => onChange(event.target.value)}
     placeholder={placeholder}
-    className={`rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200 ${className}`}
+    className={`rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200 ${className}`}
   />
 );
 
@@ -1763,7 +1763,7 @@ const FormTextarea: React.FC<{
     value={value}
     onChange={(event) => onChange(event.target.value)}
     placeholder={placeholder}
-    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
   />
 );
 
@@ -1775,7 +1775,7 @@ const FormSelect: React.FC<{
   <select
     value={value}
     onChange={(event) => onChange(event.target.value)}
-    className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+    className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
   >
     {options.map((option) => (
       <option key={option} value={option}>
@@ -1817,7 +1817,7 @@ const ActionButton: React.FC<{
     disabled={disabled}
     className={`inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl px-4 text-sm font-bold transition disabled:opacity-60 ${
       tone === 'primary'
-        ? 'bg-[#004691] text-white hover:bg-[#00386f]'
+        ? 'bg-[#28B8C7] text-white hover:bg-[#1E96A4]'
         : tone === 'danger'
           ? 'bg-red-50 text-red-700 hover:bg-red-100'
           : 'bg-slate-100 text-slate-700 hover:bg-slate-200'

@@ -45,10 +45,10 @@ const buildCurrentUser = (sessionUser: {
   role?: string | null;
 }): User => ({
   id: sessionUser.id,
-  name: sessionUser.name || 'Comunidade Eumigrei',
+  name: sessionUser.name || 'Comunidade Emigrei',
   username: sessionUser.username,
   role: mapUserRole(sessionUser.role),
-  avatar: sessionUser.image || 'https://picsum.photos/seed/eumigrei-user/200',
+  avatar: sessionUser.image || 'https://picsum.photos/seed/emigrei-user/200',
   location: sessionUser.locationLabel || 'Defina sua regiao',
   regionKey: sessionUser.regionKey,
   email: sessionUser.email,
@@ -61,13 +61,13 @@ const AdminAccessDenied: React.FC = () => (
       <div className="inline-flex h-14 w-14 items-center justify-center rounded-3xl bg-red-50 text-red-600">
         <ShieldAlert size={28} />
       </div>
-      <h1 className="mt-5 text-2xl font-bold text-[#004691]">Acesso restrito</h1>
+      <h1 className="mt-5 text-2xl font-bold text-[#28B8C7]">Acesso restrito</h1>
       <p className="mt-2 text-sm leading-relaxed text-slate-600">
         Seu usuario nao possui permissao de administrador para acessar esta area.
       </p>
       <Link
         href="/"
-        className="mt-5 inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#004691] px-5 text-sm font-bold text-white"
+        className="mt-5 inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#28B8C7] px-5 text-sm font-bold text-white"
       >
         Voltar para home
       </Link>

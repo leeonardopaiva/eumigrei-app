@@ -132,7 +132,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
                 type="button"
                 onClick={handleRegionSave}
                 disabled={savingRegion}
-                className="flex-1 rounded-2xl bg-[#004691] px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
+                className="flex-1 rounded-2xl bg-[#28B8C7] px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
               >
                 {savingRegion ? 'Salvando...' : 'Salvar regiao'}
               </button>
@@ -224,7 +224,7 @@ const ServiceCard: React.FC<{ href: string; icon: LucideIcon; label: string }> =
     href={href}
     className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-slate-50 bg-white p-5 shadow-sm transition-all hover:shadow-md active:scale-95"
   >
-    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#004691]">
+    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-[#28B8C7]">
       <Icon size={24} strokeWidth={2.2} />
     </div>
     <span className="text-center text-[11px] font-bold leading-tight text-[#333]">{label}</span>

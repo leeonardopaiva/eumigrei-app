@@ -191,7 +191,7 @@ const Registration: React.FC<RegistrationProps> = ({
             </div>
 
             <div className="mb-10 space-y-3 text-center">
-              <h1 className="text-2xl font-black leading-tight text-[#004691]">
+              <h1 className="text-2xl font-black leading-tight text-[#28B8C7]">
                 {isOnboarding ? 'Complete seu perfil' : 'A comunidade brasileira pelo mundo.'}
               </h1>
               <p className="text-sm font-medium text-slate-500">
@@ -236,13 +236,13 @@ const Registration: React.FC<RegistrationProps> = ({
                       }
                       onInput={() => clearFieldError('email')}
                       aria-invalid={Boolean(fieldErrors.email)}
-                      className="w-full rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#004691]"
+                      className="w-full rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#28B8C7]"
                     />
                     <FieldErrorMessage message={fieldErrors.email} />
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="w-full rounded-[32px] bg-[#004691] px-6 py-5 text-base font-bold text-white shadow-2xl shadow-[#004691]/25 transition-all hover:bg-[#003670] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="w-full rounded-[32px] bg-[#28B8C7] px-6 py-5 text-base font-bold text-white shadow-2xl shadow-[#28B8C7]/25 transition-all hover:bg-[#1E96A4] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {submitting ? 'Enviando link...' : 'Continuar com Email'}
                     </button>
@@ -314,7 +314,7 @@ const Registration: React.FC<RegistrationProps> = ({
                     }
                     onInput={() => clearFieldError('name')}
                     aria-invalid={Boolean(fieldErrors.name)}
-                    className="w-full rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#004691]"
+                    className="w-full rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#28B8C7]"
                   />
                   <FieldErrorMessage message={fieldErrors.name} />
 
@@ -332,12 +332,12 @@ const Registration: React.FC<RegistrationProps> = ({
                       }
                       onInput={() => clearFieldError('username')}
                       aria-invalid={Boolean(fieldErrors.username)}
-                      className="w-full rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#004691]"
+                      className="w-full rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#28B8C7]"
                     />
                     <p className="px-2 text-[11px] font-medium text-slate-400">
                       Esse nome vai identificar seu perfil publico e futuros links como
                       {' '}
-                      `eumigrei.com.br/{normalizedUsername || 'joao'}`
+                      `emigrei.com.br/{normalizedUsername || 'joao'}`
                     </p>
                     {usernameFeedback ? (
                       <div
@@ -401,7 +401,7 @@ const Registration: React.FC<RegistrationProps> = ({
                       }
                       onInput={() => clearFieldError('phone')}
                       aria-invalid={Boolean(fieldErrors.phone)}
-                      className="flex-1 rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#004691]"
+                      className="flex-1 rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#28B8C7]"
                     />
                   </div>
                   <FieldErrorMessage message={fieldErrors.phone} />
@@ -442,7 +442,7 @@ const Registration: React.FC<RegistrationProps> = ({
                 <button
                   type="submit"
                   disabled={submitting || onboardingBlocked}
-                  className="mt-8 w-full rounded-[32px] bg-[#004691] py-5 text-lg font-bold text-white shadow-2xl shadow-[#004691]/30 transition-all hover:bg-[#003670] active:scale-95 disabled:opacity-60"
+                  className="mt-8 w-full rounded-[32px] bg-[#28B8C7] py-5 text-lg font-bold text-white shadow-2xl shadow-[#28B8C7]/30 transition-all hover:bg-[#1E96A4] active:scale-95 disabled:opacity-60"
                 >
                   {submitting
                     ? 'Salvando...'
@@ -460,13 +460,13 @@ const Registration: React.FC<RegistrationProps> = ({
             ) : null}
 
             {notice ? (
-              <div className="mt-6 w-full rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
+              <div className="mt-6 w-full rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm font-medium text-cyan-700">
                 {notice}
               </div>
             ) : null}
 
             <div className="mb-2 mt-12 flex items-center gap-3 rounded-2xl border border-white/50 bg-white/40 px-6 py-3 backdrop-blur-sm">
-              <Shield size={18} className="flex-shrink-0 text-[#66BB1E]" />
+              <Shield size={18} className="flex-shrink-0 text-[#28B8C7]" />
               <p className="text-[10px] font-bold uppercase tracking-tight text-slate-500">
                 Ambiente seguro, com autenticacao e conteudo local.
               </p>

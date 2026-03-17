@@ -14,4 +14,4 @@ export type CloudinaryFolder =
   | 'community';
 
 export const getCloudinaryFolderPath = (folder: CloudinaryFolder) =>
-  `eumigrei/${folder}`;
+  `emigrei/${folder}`;

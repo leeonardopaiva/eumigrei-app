@@ -10,7 +10,7 @@ import { normalizeUrlFieldValue } from '../lib/forms/validation';
 import { normalizeUsernameInput } from '../lib/username';
 import { User } from '../types';
 
-const DEFAULT_AVATAR_URL = 'https://picsum.photos/seed/eumigrei-user/200';
+const DEFAULT_AVATAR_URL = 'https://picsum.photos/seed/emigrei-user/200';
 
 type ProfileFormState = {
   name: string;
@@ -84,8 +84,8 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
 
   const publicProfileUrl = useMemo(() => {
     return user.username
-      ? `https://eumigrei.com.br/${user.username}`
-      : 'https://eumigrei.com.br/seu-nome-publico';
+      ? `https://emigrei.com.br/${user.username}`
+      : 'https://emigrei.com.br/seu-nome-publico';
   }, [user.username]);
 
   const handleAvatarSave = async () => {
@@ -245,7 +245,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
 
   return (
     <div className="animate-in space-y-5 px-5 pb-24 pt-6 fade-in duration-500">
-      <section className="rounded-[32px] bg-gradient-to-br from-[#004691] via-[#0C58B6] to-[#27A0FF] p-5 text-white shadow-xl">
+      <section className="rounded-[32px] bg-gradient-to-br from-[#28B8C7] via-[#1EA7B6] to-[#6ADDE6] p-5 text-white shadow-xl">
         <div className="flex items-start gap-4">
           <div className="relative">
             <img
@@ -256,7 +256,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
             <button
               type="button"
               onClick={() => setEditingAvatar((current) => !current)}
-              className="absolute -bottom-2 -right-2 rounded-full border-2 border-white bg-white p-2 text-[#004691] shadow-lg"
+              className="absolute -bottom-2 -right-2 rounded-full border-2 border-white bg-white p-2 text-[#28B8C7] shadow-lg"
             >
               <PencilLine size={14} />
             </button>
@@ -288,7 +288,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
                 type="button"
                 onClick={handleAvatarSave}
                 disabled={savingAvatar}
-                className="flex-1 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-[#004691] shadow-md disabled:opacity-60"
+                className="flex-1 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-[#28B8C7] shadow-md disabled:opacity-60"
               >
                 {savingAvatar ? 'Salvando...' : 'Salvar foto'}
               </button>
@@ -311,7 +311,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
               Troca de email
             </p>
-            <h2 className="mt-2 text-xl font-bold text-[#004691]">Confirmacao por link</h2>
+            <h2 className="mt-2 text-xl font-bold text-[#28B8C7]">Confirmacao por link</h2>
             <p className="mt-1 text-sm text-slate-500">
               Informe o novo email. Vamos enviar um link para confirmar a alteracao com seguranca.
             </p>
@@ -333,7 +333,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
             type="button"
             onClick={handleEmailChangeRequest}
             disabled={requestingEmailChange}
-            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#004691] px-4 text-sm font-bold text-white shadow-md disabled:opacity-60"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#28B8C7] px-4 text-sm font-bold text-white shadow-md disabled:opacity-60"
           >
             <Mail size={16} />
             {requestingEmailChange ? 'Enviando link...' : 'Enviar confirmacao'}
@@ -347,7 +347,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
               Nome publico
             </p>
-            <h2 className="mt-2 text-xl font-bold text-[#004691]">
+            <h2 className="mt-2 text-xl font-bold text-[#28B8C7]">
               {user.username ? `@${user.username}` : 'Ainda nao definido'}
             </h2>
             <p className="mt-2 break-all text-sm text-slate-500">{publicProfileUrl}</p>
@@ -369,7 +369,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
               Dados da conta
             </p>
-            <h2 className="mt-2 text-xl font-bold text-[#004691]">Edite seus dados</h2>
+            <h2 className="mt-2 text-xl font-bold text-[#28B8C7]">Edite seus dados</h2>
             <p className="mt-1 text-sm text-slate-500">
               Nome, telefone e nome publico que sera usado para divulgacao.
             </p>
@@ -440,7 +440,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
               type="button"
               onClick={handleAccountSave}
               disabled={savingAccount}
-              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#004691] px-4 text-sm font-bold text-white shadow-md disabled:opacity-60"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#28B8C7] px-4 text-sm font-bold text-white shadow-md disabled:opacity-60"
             >
               <Save size={16} />
               {savingAccount ? 'Salvando...' : 'Salvar dados'}
@@ -460,7 +460,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
               Regiao ativa
             </p>
-            <h2 className="mt-2 text-xl font-bold text-[#004691]">{user.location}</h2>
+            <h2 className="mt-2 text-xl font-bold text-[#28B8C7]">{user.location}</h2>
             <p className="mt-1 text-sm text-slate-500">
               Comunidade, negocios e eventos priorizam esta regiao.
             </p>
@@ -489,7 +489,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
               type="button"
               onClick={handleRegionSave}
               disabled={savingRegion}
-              className="w-full rounded-2xl bg-[#004691] px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
+              className="w-full rounded-2xl bg-[#28B8C7] px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
             >
               {savingRegion ? 'Salvando...' : 'Salvar regiao'}
             </button>
@@ -518,7 +518,7 @@ const FormInput: React.FC<{
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
       disabled={disabled}
-      className="w-full rounded-2xl border border-slate-200 bg-white px-11 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+      className="w-full rounded-2xl border border-slate-200 bg-white px-11 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
     />
   </label>
 );

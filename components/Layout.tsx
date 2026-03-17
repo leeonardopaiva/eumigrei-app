@@ -14,8 +14,8 @@ import {
 } from 'lucide-react';
 import { User, UserRole } from '../types';
 
-const logo26Url = '/assets/logo26.svg';
-const logo26FallbackUrl = '/assets/logo26.png';
+const logoPrimaryUrl = '/assets/logo-emigrei.png';
+const logoFallbackUrl = '/assets/logo26.png';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -32,12 +32,12 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = '' }) => {
   return (
     <Link href="/" aria-label="Home">
       <img
-        src={logo26Url}
-        alt="eumigrei"
+        src={logoPrimaryUrl}
+        alt="emigrei"
         className={`${heightClass} w-auto object-contain transition-all duration-300 ${className}`}
         onError={(event) => {
           event.currentTarget.onerror = null;
-          event.currentTarget.src = logo26FallbackUrl;
+          event.currentTarget.src = logoFallbackUrl;
         }}
       />
     </Link>
@@ -77,7 +77,7 @@ const SidebarContent: React.FC<{
             />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-[#004691]">{user.name}</h2>
+            <h2 className="text-xl font-bold text-[#28B8C7]">{user.name}</h2>
             <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
               {user.username ? `@${user.username}` : 'Membro da comunidade'}
             </p>
@@ -115,7 +115,7 @@ const SidebarContent: React.FC<{
           onItemClick?.();
           onSignOut();
         }}
-        className="w-full rounded-2xl bg-[#004691] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#004691]/20"
+        className="w-full rounded-2xl bg-[#28B8C7] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#28B8C7]/20"
       >
         Sair
       </button>
@@ -161,7 +161,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({ children, user, onSignOut }) =>
               <button
                 type="button"
                 onClick={() => setIsMenuOpen(true)}
-                className="p-1 text-[#004691]"
+                className="p-1 text-[#28B8C7]"
               >
                 <Menu size={28} />
               </button>
@@ -190,7 +190,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({ children, user, onSignOut }) =>
           </main>
 
           <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-6 lg:hidden">
-            <nav className="flex w-full max-w-[360px] items-center justify-between rounded-full border border-white/10 bg-[#004691] px-2 py-2 shadow-2xl">
+            <nav className="flex w-full max-w-[360px] items-center justify-between rounded-full border border-white/10 bg-[#28B8C7] px-2 py-2 shadow-2xl">
               <NavItem href="/" icon={<HomeIcon size={20} />} active={isActive('/')} />
               <NavItem href="/negocios" icon={<Store size={20} />} active={isActive('/negocios')} />
               <NavItem href="/community" icon={<Users size={20} />} active={isActive('/community')} />
@@ -218,7 +218,7 @@ const MenuListItem: React.FC<{
       active ? 'bg-white/40' : ''
     }`}
   >
-    <div className="text-[#004691]">{icon}</div>
+    <div className="text-[#28B8C7]">{icon}</div>
     <span className="text-sm font-bold text-slate-700">{label}</span>
   </Link>
 );
@@ -232,7 +232,7 @@ const NavItem: React.FC<{ href: string; icon: React.ReactNode; active: boolean }
     href={href}
     className={`flex items-center justify-center transition-all duration-300 ${
       active
-        ? 'h-12 w-12 scale-105 rounded-full bg-white text-[#004691] shadow-lg'
+        ? 'h-12 w-12 scale-105 rounded-full bg-white text-[#28B8C7] shadow-lg'
         : 'h-11 w-11 text-white/70 hover:text-white'
     }`}
   >

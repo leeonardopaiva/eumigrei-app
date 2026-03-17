@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `O usuario brasileiro no exterior tem a seguinte duvida: "${query}". Responda de forma amigavel, concisa e informativa em portugues, agindo como um consultor experiente da comunidade Eumigrei.`,
+      contents: `O usuario brasileiro no exterior tem a seguinte duvida: "${query}". Responda de forma amigavel, concisa e informativa em portugues, agindo como um consultor experiente da comunidade Emigrei.`,
       config: {
         temperature: 0.7,
         topP: 0.95,

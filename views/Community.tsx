@@ -314,14 +314,14 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="mt-4 px-5">
-        <h1 className="mb-4 text-2xl font-bold text-blue-900">Comunidade</h1>
+        <h1 className="mb-4 text-2xl font-bold text-cyan-900">Comunidade</h1>
         <div className="mb-4 flex items-center gap-4 overflow-x-auto whitespace-nowrap border-b border-slate-100 scrollbar-hide">
           {['Destaques', 'Recente', 'Populares'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`pb-2 text-sm font-bold transition-all ${
-                activeTab === tab ? 'border-b-2 border-blue-900 text-blue-900' : 'text-slate-400'
+                activeTab === tab ? 'border-b-2 border-cyan-700 text-cyan-900' : 'text-slate-400'
               }`}
             >
               {tab}
@@ -366,13 +366,13 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
       </div>
 
       <div className="px-5">
-        <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white shadow-lg">
+        <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#28B8C7] to-[#1E96A4] p-4 text-white shadow-lg">
           <div className="relative z-10 flex items-center justify-between">
             <div className="max-w-[70%]">
               <div className="mb-1 flex items-center gap-2">
                 <Sparkles size={16} className="animate-pulse text-yellow-400" />
                 <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">
-                  Eumigrei AI
+                  Emigrei AI
                 </span>
               </div>
               <h4 className="mb-2 text-sm font-bold">
@@ -381,7 +381,7 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
               <button
                 onClick={handleAskAi}
                 disabled={aiLoading}
-                className="rounded-full bg-white px-4 py-1.5 text-[10px] font-bold text-blue-600 transition-colors hover:bg-slate-100"
+                className="rounded-full bg-white px-4 py-1.5 text-[10px] font-bold text-cyan-600 transition-colors hover:bg-slate-100"
               >
                 {aiLoading ? 'Consultando...' : 'Pedir Ajuda IA'}
               </button>
