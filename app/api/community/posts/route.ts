@@ -6,6 +6,7 @@ import { buildRateLimitHeaders, consumeRateLimit, getRateLimitKey } from '@/lib/
 import { communityPostSchema } from '@/lib/validators';
 
 const DAILY_POST_LIMIT = 3;
+const LIKERS_PREVIEW_LIMIT = 8;
 
 const mapCommunityPost = (
   post: {
@@ -35,6 +36,11 @@ const mapCommunityPost = (
     }>;
     reactions: Array<{
       authorId: string;
+      author: {
+        id: string;
+        name: string | null;
+        image: string | null;
+      };
     }>;
     _count: {
       comments: number;
@@ -73,6 +79,13 @@ const mapCommunityPost = (
     viewerHasLiked: session?.user?.id
       ? post.reactions.some((reaction) => reaction.authorId === session.user.id)
       : false,
+    likedBy: post.reactions
+      .slice(0, LIKERS_PREVIEW_LIMIT)
+      .map((reaction) => ({
+        id: reaction.author.id,
+        name: reaction.author.name || 'Usuario da comunidade',
+        image: reaction.author.image,
+      })),
     canEdit: isAdmin || isPostOwner,
     canDelete: isAdmin || isPostOwner,
   };
@@ -113,8 +126,16 @@ export async function GET(request: Request) {
         },
       },
       reactions: {
+        orderBy: [{ createdAt: 'desc' }],
         select: {
           authorId: true,
+          author: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
         },
       },
       _count: {
@@ -226,6 +247,7 @@ export async function POST(request: Request) {
       likeCount: 0,
       commentCount: 0,
       viewerHasLiked: false,
+      likedBy: [],
       canEdit: true,
       canDelete: true,
     },

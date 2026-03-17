@@ -236,7 +236,13 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
             ? {
                 ...post,
                 viewerHasLiked: payload.liked,
-                likeCount: payload.liked ? post.likeCount + 1 : Math.max(post.likeCount - 1, 0),
+                likeCount:
+                  typeof payload?.likeCount === 'number'
+                    ? payload.likeCount
+                    : payload.liked
+                      ? post.likeCount + 1
+                      : Math.max(post.likeCount - 1, 0),
+                likedBy: Array.isArray(payload?.likedBy) ? payload.likedBy : post.likedBy,
               }
             : post,
         ),

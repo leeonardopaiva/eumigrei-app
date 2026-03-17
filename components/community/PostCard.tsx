@@ -55,6 +55,10 @@ type ActionsProps = {
   likeCount: number;
   commentCount: number;
   onToggleLike: () => void;
+  onOpenLikes?: () => void;
+  onLikesHoverStart?: () => void;
+  onLikesHoverEnd?: () => void;
+  likesPreview?: React.ReactNode;
 };
 
 type CommentItemProps = {
@@ -243,17 +247,39 @@ const Actions: React.FC<ActionsProps> = ({
   likeCount,
   commentCount,
   onToggleLike,
+  onOpenLikes,
+  onLikesHoverStart,
+  onLikesHoverEnd,
+  likesPreview,
 }) => (
   <div className="flex items-center justify-between pt-2">
     <div className="flex items-center gap-4">
-      <button
-        onClick={onToggleLike}
-        className={`flex items-center gap-1.5 text-xs font-bold ${
-          liked ? 'text-cyan-600' : 'text-slate-500'
-        }`}
+      <div
+        className="relative flex items-center gap-1.5"
+        onMouseEnter={onLikesHoverStart}
+        onMouseLeave={onLikesHoverEnd}
       >
-        <ThumbsUp size={16} /> {likeCount}
-      </button>
+        <button
+          type="button"
+          onClick={onToggleLike}
+          className={`flex items-center gap-1.5 text-xs font-bold ${
+            liked ? 'text-cyan-600' : 'text-slate-500'
+          }`}
+        >
+          <ThumbsUp size={16} />
+        </button>
+        <button
+          type="button"
+          onClick={onOpenLikes}
+          disabled={likeCount === 0}
+          className={`text-xs font-bold ${
+            likeCount > 0 ? 'text-slate-500 hover:text-cyan-600' : 'text-slate-300'
+          } disabled:cursor-default`}
+        >
+          {likeCount}
+        </button>
+        {likesPreview}
+      </div>
       <button className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
         <MessageSquare size={16} /> {commentCount}
       </button>

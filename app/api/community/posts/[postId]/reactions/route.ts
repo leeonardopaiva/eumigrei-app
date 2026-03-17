@@ -10,6 +10,45 @@ type RouteContext = {
   }>;
 };
 
+const LIKERS_PREVIEW_LIMIT = 8;
+
+const buildReactionPayload = async (postId: string) => {
+  const [reactions, likeCount] = await Promise.all([
+    prisma.postReaction.findMany({
+      where: {
+        postId,
+        type: ReactionType.LIKE,
+      },
+      orderBy: [{ createdAt: 'desc' }],
+      take: LIKERS_PREVIEW_LIMIT,
+      select: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+      },
+    }),
+    prisma.postReaction.count({
+      where: {
+        postId,
+        type: ReactionType.LIKE,
+      },
+    }),
+  ]);
+
+  return {
+    likeCount,
+    likedBy: reactions.map((reaction) => ({
+      id: reaction.author.id,
+      name: reaction.author.name || 'Usuario da comunidade',
+      image: reaction.author.image,
+    })),
+  };
+};
+
 export async function POST(_request: Request, context: RouteContext) {
   const session = await getServerAuthSession();
 
@@ -55,7 +94,10 @@ export async function POST(_request: Request, context: RouteContext) {
       },
     });
 
-    return NextResponse.json({ liked: false });
+    return NextResponse.json({
+      liked: false,
+      ...(await buildReactionPayload(postId)),
+    });
   }
 
   await prisma.postReaction.create({
@@ -66,5 +108,8 @@ export async function POST(_request: Request, context: RouteContext) {
     },
   });
 
-  return NextResponse.json({ liked: true });
+  return NextResponse.json({
+    liked: true,
+    ...(await buildReactionPayload(postId)),
+  });
 }

@@ -33,12 +33,39 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
   const [editingCommentContent, setEditingCommentContent] = useState('');
   const [savingCommentId, setSavingCommentId] = useState<string | null>(null);
   const [openCommentMenuId, setOpenCommentMenuId] = useState<string | null>(null);
+  const [supportsHover, setSupportsHover] = useState(false);
+  const [likesOpen, setLikesOpen] = useState(false);
 
   useEffect(() => {
     setEditingPostContent(post.content);
     setEditingPostImageUrl(post.imageUrl || '');
     setEditingPostExternalUrl(post.externalUrl || '');
   }, [post.content, post.externalUrl, post.imageUrl]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia('(hover: hover)');
+    const syncHoverCapability = () => setSupportsHover(mediaQuery.matches);
+
+    syncHoverCapability();
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', syncHoverCapability);
+      return () => mediaQuery.removeEventListener('change', syncHoverCapability);
+    }
+
+    mediaQuery.addListener(syncHoverCapability);
+    return () => mediaQuery.removeListener(syncHoverCapability);
+  }, []);
+
+  useEffect(() => {
+    if (post.likeCount === 0) {
+      setLikesOpen(false);
+    }
+  }, [post.likeCount]);
 
   const handleCommentSubmit = async () => {
     if (!commentText.trim()) {
@@ -124,6 +151,39 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
     }
   };
 
+  const hiddenLikesCount = Math.max(post.likeCount - post.likedBy.length, 0);
+
+  const likesPreviewContent =
+    post.likeCount > 0 ? (
+      <div className="space-y-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+            Curtiram este post
+          </p>
+          <p className="mt-1 text-sm font-medium text-slate-500">
+            {post.likeCount} {post.likeCount === 1 ? 'curtida' : 'curtidas'}
+          </p>
+        </div>
+        <div className="space-y-2">
+          {post.likedBy.map((likedUser) => (
+            <div key={likedUser.id} className="flex items-center gap-3">
+              <img
+                src={likedUser.image || `https://picsum.photos/seed/${likedUser.id}/80`}
+                alt={likedUser.name}
+                className="h-8 w-8 rounded-full object-cover"
+              />
+              <p className="text-sm font-medium text-slate-700">{likedUser.name}</p>
+            </div>
+          ))}
+          {hiddenLikesCount > 0 ? (
+            <p className="pt-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+              +{hiddenLikesCount} pessoas
+            </p>
+          ) : null}
+        </div>
+      </div>
+    ) : null;
+
   return (
     <PostCard.Root>
       <PostCard.Header
@@ -192,6 +252,30 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
         likeCount={post.likeCount}
         commentCount={post.commentCount}
         onToggleLike={onToggleLike}
+        onOpenLikes={() => {
+          if (post.likeCount === 0) {
+            return;
+          }
+
+          setLikesOpen((current) => (supportsHover ? !current : !current));
+        }}
+        onLikesHoverStart={() => {
+          if (supportsHover && post.likeCount > 0) {
+            setLikesOpen(true);
+          }
+        }}
+        onLikesHoverEnd={() => {
+          if (supportsHover) {
+            setLikesOpen(false);
+          }
+        }}
+        likesPreview={
+          supportsHover && likesOpen && likesPreviewContent ? (
+            <div className="absolute left-0 top-8 z-20 w-[260px] rounded-3xl border border-slate-100 bg-white p-4 shadow-2xl">
+              {likesPreviewContent}
+            </div>
+          ) : null
+        }
       />
 
       {post.comments.map((comment) => (
@@ -274,6 +358,21 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
         onSubmit={() => void handleCommentSubmit()}
         submitting={submittingComment}
       />
+
+      {!supportsHover && likesOpen && likesPreviewContent ? (
+        <div className="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/35 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-[32px] bg-white p-5 shadow-2xl">
+            {likesPreviewContent}
+            <button
+              type="button"
+              onClick={() => setLikesOpen(false)}
+              className="mt-4 w-full rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-bold text-white"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      ) : null}
     </PostCard.Root>
   );
 };

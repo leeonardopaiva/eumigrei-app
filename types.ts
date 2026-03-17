@@ -24,6 +24,12 @@ export interface CommunityAuthor {
   locationLabel?: string | null;
 }
 
+export interface PostLikeUser {
+  id: string;
+  name: string;
+  image?: string | null;
+}
+
 export interface Post {
   id: string;
   author: CommunityAuthor;
@@ -35,6 +41,7 @@ export interface Post {
   likeCount: number;
   commentCount: number;
   viewerHasLiked: boolean;
+  likedBy: PostLikeUser[];
   comments: PostComment[];
   status?: 'PUBLISHED' | 'PENDING_REVIEW' | 'REMOVED';
   canEdit?: boolean;
