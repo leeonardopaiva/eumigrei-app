@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import type { Post } from '@/types';
 import PostCard from '@/components/community/PostCard';
 
@@ -388,14 +389,17 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
       {!supportsHover && likesOpen && likesPreviewContent ? (
         <div className="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/35 p-4 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-[32px] bg-white p-5 shadow-2xl">
+            <div className="mb-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setLikesOpen(false)}
+                className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                aria-label="Fechar lista de curtidas"
+              >
+                <X size={18} />
+              </button>
+            </div>
             {likesPreviewContent}
-            <button
-              type="button"
-              onClick={() => setLikesOpen(false)}
-              className="mt-4 w-full rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-bold text-white"
-            >
-              Fechar
-            </button>
           </div>
         </div>
       ) : null}
