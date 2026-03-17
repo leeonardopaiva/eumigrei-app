@@ -137,6 +137,26 @@ type ManagedUser = {
   updatedAt: string;
 };
 
+type SuggestionCategoryValue = 'FUNCTIONALITY' | 'IMPROVEMENT';
+type SuggestionStatusValue = 'NEW' | 'REVIEWED';
+
+type ManagedSuggestion = {
+  id: string;
+  category: SuggestionCategoryValue;
+  message: string;
+  status: SuggestionStatusValue;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    name: string | null;
+    username: string | null;
+    email: string | null;
+    image: string | null;
+    locationLabel: string | null;
+  };
+};
+
 type AdminDashboardData = {
   stats: {
     totalUsers: number;
@@ -149,6 +169,7 @@ type AdminDashboardData = {
     pendingPosts: number;
     totalRegions: number;
     activeRegions: number;
+    newSuggestions: number;
   };
   pendingBusinesses: PendingBusiness[];
   pendingEvents: PendingEvent[];
@@ -158,6 +179,7 @@ type AdminDashboardData = {
   events: ManagedEvent[];
   users: ManagedUser[];
   regions: ManagedRegion[];
+  suggestions: ManagedSuggestion[];
 };
 
 type RegionFormState = {
@@ -338,6 +360,12 @@ const getEventStatusTone = (status: EventStatus) => {
   }
 };
 
+const getSuggestionStatusTone = (status: SuggestionStatusValue) =>
+  status === 'REVIEWED' ? 'success' : 'warning';
+
+const formatSuggestionCategory = (category: SuggestionCategoryValue) =>
+  category === 'FUNCTIONALITY' ? 'Funcionalidade' : 'Melhoria';
+
 const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
   const { showToast } = useToast();
   const [dashboard, setDashboard] = useState<AdminDashboardData | null>(null);
@@ -358,16 +386,18 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
   const [eventForm, setEventForm] = useState<EventFormState>(emptyEventForm);
   const [eventSearch, setEventSearch] = useState('');
   const [activeSection, setActiveSection] = useState<
-    'moderation' | 'banners' | 'regions' | 'businesses' | 'events' | 'users'
+    'moderation' | 'banners' | 'regions' | 'businesses' | 'events' | 'users' | 'suggestions'
   >('moderation');
 
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [userForm, setUserForm] = useState<UserFormState>(emptyUserForm);
   const [userSearch, setUserSearch] = useState('');
+  const [suggestionSearch, setSuggestionSearch] = useState('');
   const [confirmationDialog, setConfirmationDialog] = useState<ConfirmationDialogState | null>(null);
   const deferredBusinessSearch = useDeferredValue(businessSearch);
   const deferredEventSearch = useDeferredValue(eventSearch);
   const deferredUserSearch = useDeferredValue(userSearch);
+  const deferredSuggestionSearch = useDeferredValue(suggestionSearch);
 
   const loadDashboard = async (showRefreshing = false) => {
     if (showRefreshing) {
@@ -777,6 +807,25 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
     });
   };
 
+  const updateSuggestionStatus = async (
+    suggestion: ManagedSuggestion,
+    status: SuggestionStatusValue,
+  ) => {
+    await runAction(
+      `suggestion:${suggestion.id}:${status.toLowerCase()}`,
+      () =>
+        fetch(`/api/admin/suggestions/${suggestion.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        }),
+      status === 'REVIEWED'
+        ? 'Sugestao marcada como revisada.'
+        : 'Sugestao reaberta para analise.',
+      'Nao foi possivel atualizar a sugestao.',
+    );
+  };
+
   const statsCards = dashboard
     ? [
         { label: 'Usuarios', value: dashboard.stats.totalUsers, icon: <Users size={20} />, accent: 'bg-cyan-50 text-cyan-800', section: 'users' as const },
@@ -825,6 +874,19 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
       ]),
     ) ?? [];
 
+  const filteredSuggestions =
+    dashboard?.suggestions.filter((suggestion) =>
+      matchesAdminSearch(deferredSuggestionSearch, [
+        suggestion.category,
+        suggestion.status,
+        suggestion.message,
+        suggestion.user.name,
+        suggestion.user.username,
+        suggestion.user.email,
+        suggestion.user.locationLabel,
+      ]),
+    ) ?? [];
+
   const sectionTabs = [
     { id: 'moderation' as const, label: 'Moderacao', count: totalPending },
     { id: 'banners' as const, label: 'Banners', count: dashboard?.banners.length ?? 0 },
@@ -832,6 +894,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
     { id: 'businesses' as const, label: 'Negocios', count: filteredBusinesses.length },
     { id: 'events' as const, label: 'Eventos', count: filteredEvents.length },
     { id: 'users' as const, label: 'Usuarios', count: filteredUsers.length },
+    { id: 'suggestions' as const, label: 'Sugestoes', count: dashboard?.stats.newSuggestions ?? 0 },
   ];
 
   return (
@@ -1551,6 +1614,82 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
             </div>
           ) : (
             <EmptyState text="Nenhum evento encontrado para gestao." />
+          )}
+          </section>
+        ) : null}
+
+        {activeSection === 'suggestions' ? (
+          <section className="space-y-3">
+          <SectionHeader title="Sugestoes recebidas" count={filteredSuggestions.length} />
+          <SupportText text="Feedback direto dos usuarios para priorizar novas funcionalidades e melhorias." />
+          <SearchFilterInput
+            value={suggestionSearch}
+            onChange={setSuggestionSearch}
+            placeholder="Filtrar sugestoes por texto, usuario, email ou categoria"
+          />
+          {loading && !dashboard ? (
+            <LoadingCards />
+          ) : dashboard && filteredSuggestions.length > 0 ? (
+            <div className="space-y-3">
+              {filteredSuggestions.map((suggestion) => (
+                <div key={suggestion.id} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                  <div className="flex items-start gap-4">
+                    <img
+                      src={suggestion.user.image || `https://picsum.photos/seed/${suggestion.user.id}/120`}
+                      alt={suggestion.user.name || suggestion.user.email || 'Usuario'}
+                      className="h-14 w-14 rounded-2xl object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-lg font-bold text-[#28B8C7]">
+                            {suggestion.user.name || 'Usuario da plataforma'}
+                          </p>
+                          <p className="text-sm font-medium text-slate-500">
+                            @{suggestion.user.username || 'sem-username'}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <StatusBadge label={formatSuggestionCategory(suggestion.category)} tone="neutral" />
+                          <StatusBadge
+                            label={suggestion.status === 'REVIEWED' ? 'Revisada' : 'Nova'}
+                            tone={getSuggestionStatusTone(suggestion.status)}
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-3 space-y-1 text-sm text-slate-600">
+                        <p>{suggestion.user.email || 'Sem email'}</p>
+                        <p>{suggestion.user.locationLabel || 'Sem regiao definida'}</p>
+                        <p>Recebida em {formatDateTime(suggestion.createdAt)}</p>
+                      </div>
+                      <div className="mt-4 rounded-3xl bg-slate-50 px-4 py-4 text-sm leading-relaxed text-slate-700">
+                        {suggestion.message}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex gap-2">
+                    <ActionButton
+                      label={suggestion.status === 'REVIEWED' ? 'Reabrir' : 'Marcar revisada'}
+                      tone={suggestion.status === 'REVIEWED' ? 'neutral' : 'primary'}
+                      disabled={processingKey !== null}
+                      loading={
+                        processingKey ===
+                        `suggestion:${suggestion.id}:${(suggestion.status === 'REVIEWED' ? 'new' : 'reviewed')}`
+                      }
+                      onClick={() =>
+                        void updateSuggestionStatus(
+                          suggestion,
+                          suggestion.status === 'REVIEWED' ? 'NEW' : 'REVIEWED',
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState text="Nenhuma sugestao encontrada para essa busca." />
           )}
           </section>
         ) : null}

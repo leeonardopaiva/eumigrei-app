@@ -100,6 +100,11 @@ export interface BannerAd {
   scope?: 'global' | 'regional';
 }
 
+export interface ReferralSummary {
+  referralUrl: string | null;
+  registrationCount: number;
+}
+
 export interface Job {
   id: string;
   title: string;

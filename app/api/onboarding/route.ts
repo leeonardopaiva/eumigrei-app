@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { findReferrerByUsername } from '@/lib/referrals';
 import { findRegionByKey } from '@/lib/region-store';
 import { validateUsernameValue } from '@/lib/username';
 import { onboardingSchema } from '@/lib/validators';
@@ -50,6 +51,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Esse nome publico ja esta em uso.' }, { status: 409 });
   }
 
+  const currentUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      referredById: true,
+    },
+  });
+
+  const referrer =
+    !currentUser?.referredById && parsed.data.referralUsername
+      ? await findReferrerByUsername(parsed.data.referralUsername, session.user.id)
+      : null;
+
   const user = await prisma.user.update({
     where: { id: session.user.id },
     data: {
@@ -59,6 +72,7 @@ export async function POST(request: Request) {
       locationLabel: region.label,
       regionKey: region.key,
       onboardingCompleted: true,
+      referredById: currentUser?.referredById || referrer?.id || undefined,
     },
     select: {
       id: true,

@@ -82,6 +82,10 @@ const App: React.FC = () => {
   const [registrationNotice, setRegistrationNotice] = useState<string | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
   const [requestingMagicLink, setRequestingMagicLink] = useState(false);
+  const segments = pathname.split('/').filter(Boolean);
+  const rootSegment = segments[0];
+  const referralUsername =
+    rootSegment === 'convite' && segments.length >= 2 ? decodeURIComponent(segments[1]) : null;
 
   const resolveDevMagicLink = async (email: string) => {
     if (!DEV_AUTH_ENABLED) {
@@ -172,6 +176,7 @@ const App: React.FC = () => {
     email: string;
     phone: string;
     regionKey: string;
+    referralUsername?: string | null;
   }) => {
     setRegistrationError(null);
     setRegistrationNotice(null);
@@ -217,6 +222,7 @@ const App: React.FC = () => {
         submitting={requestingMagicLink}
         error={registrationError}
         notice={registrationNotice}
+        referralUsername={referralUsername}
       />
     );
   }
@@ -232,6 +238,7 @@ const App: React.FC = () => {
         submitting={savingProfile}
         error={registrationError}
         notice={registrationNotice}
+        referralUsername={referralUsername}
         defaultValues={{
           name: session.user.name || '',
           username: session.user.username || '',
@@ -244,8 +251,6 @@ const App: React.FC = () => {
   }
 
   const currentUser = buildCurrentUser(session.user);
-  const segments = pathname.split('/').filter(Boolean);
-  const rootSegment = segments[0];
 
   const content = (() => {
     if (segments.length === 0) {

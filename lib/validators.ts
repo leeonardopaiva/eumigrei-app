@@ -1,4 +1,4 @@
-import { BusinessStatus, EventStatus, UserRole } from '@prisma/client';
+import { BusinessStatus, EventStatus, SuggestionCategory, SuggestionStatus, UserRole } from '@prisma/client';
 import { z } from 'zod';
 import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH, USERNAME_PATTERN, isReservedUsername } from '@/lib/username';
 import { isValidHttpUrl, normalizeHttpUrlInput } from '@/lib/url';
@@ -72,6 +72,7 @@ export const onboardingSchema = z.object({
     message: 'Telefone muito curto',
   }),
   regionKey: z.string().trim().min(2, 'Selecione uma regiao valida'),
+  referralUsername: z.string().trim().optional(),
 });
 
 export const updateRegionSchema = z.object({
@@ -186,6 +187,15 @@ export const communityPostSchema = z.object({
 
 export const commentSchema = z.object({
   content: z.string().trim().min(2).max(240),
+});
+
+export const suggestionSchema = z.object({
+  category: z.nativeEnum(SuggestionCategory),
+  message: z.string().trim().min(8, 'Descreva melhor a sua sugestao').max(600),
+});
+
+export const adminSuggestionSchema = z.object({
+  status: z.nativeEnum(SuggestionStatus),
 });
 
 export const businessReviewSchema = z.object({

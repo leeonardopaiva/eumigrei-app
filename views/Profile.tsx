@@ -8,7 +8,7 @@ import RegionSelector from '../components/RegionSelector';
 import { formatLoosePhoneInput } from '../lib/forms/phone';
 import { normalizeUrlFieldValue } from '../lib/forms/validation';
 import { normalizeUsernameInput } from '../lib/username';
-import { User } from '../types';
+import { ReferralSummary, User } from '../types';
 
 const DEFAULT_AVATAR_URL = 'https://picsum.photos/seed/emigrei-user/200';
 
@@ -34,6 +34,10 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
   const [requestingEmailChange, setRequestingEmailChange] = useState(false);
   const [selectedRegionKey, setSelectedRegionKey] = useState(user.regionKey || '');
   const [savingRegion, setSavingRegion] = useState(false);
+  const [referralSummary, setReferralSummary] = useState<ReferralSummary>({
+    referralUrl: null,
+    registrationCount: 0,
+  });
   const [accountForm, setAccountForm] = useState<ProfileFormState>({
     name: user.name,
     username: user.username || '',
@@ -82,10 +86,47 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
     router.replace('/profile');
   }, [router, searchParams, showToast, update]);
 
-  const publicProfileUrl = useMemo(() => {
+  const referralUrl = useMemo(() => {
     return user.username
-      ? `https://emigrei.com.br/${user.username}`
-      : 'https://emigrei.com.br/seu-nome-publico';
+      ? `https://emigrei.com.br/convite/${user.username}`
+      : 'https://emigrei.com.br/convite/seu-nome-publico';
+  }, [user.username]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadReferralSummary = async () => {
+      try {
+        const response = await fetch('/api/referrals/summary', { cache: 'no-store' });
+        const payload = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(payload?.error ?? 'Nao foi possivel carregar o link de indicacao.');
+        }
+
+        if (!ignore) {
+          setReferralSummary({
+            referralUrl: payload?.referralUrl ?? null,
+            registrationCount: Number(payload?.registrationCount ?? 0),
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load referral summary:', error);
+
+        if (!ignore) {
+          setReferralSummary({
+            referralUrl: null,
+            registrationCount: 0,
+          });
+        }
+      }
+    };
+
+    void loadReferralSummary();
+
+    return () => {
+      ignore = true;
+    };
   }, [user.username]);
 
   const handleAvatarSave = async () => {
@@ -200,11 +241,13 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
   };
 
   const handleCopyPublicUrl = async () => {
+    const nextReferralUrl = referralSummary.referralUrl || referralUrl;
+
     try {
-      await navigator.clipboard.writeText(publicProfileUrl);
-      showToast('Link publico copiado.', 'success');
+      await navigator.clipboard.writeText(nextReferralUrl);
+      showToast('Link de indicacao copiado.', 'success');
     } catch {
-      showToast(publicProfileUrl, 'info', 5000);
+      showToast(nextReferralUrl, 'info', 5000);
     }
   };
 
@@ -344,13 +387,15 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
       <section className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-              Nome publico
-            </p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Indicacoes</p>
             <h2 className="mt-2 text-xl font-bold text-[#28B8C7]">
-              {user.username ? `@${user.username}` : 'Ainda nao definido'}
+              {referralSummary.registrationCount}
+              {' '}
+              {referralSummary.registrationCount === 1 ? 'cadastro confirmado' : 'cadastros confirmados'}
             </h2>
-            <p className="mt-2 break-all text-sm text-slate-500">{publicProfileUrl}</p>
+            <p className="mt-2 break-all text-sm text-slate-500">
+              {referralSummary.referralUrl || referralUrl}
+            </p>
           </div>
           <button
             type="button"

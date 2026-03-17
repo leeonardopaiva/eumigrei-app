@@ -1,13 +1,12 @@
 import React, { startTransition, useEffect, useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Copy, Share2, UserPlus } from 'lucide-react';
 import CommunityComposer from '@/components/community/CommunityComposer';
 import FeedPostCard from '@/components/community/FeedPostCard';
 import type { ComposerMode } from '@/components/community/utils';
 import { isYoutubeUrl } from '@/components/community/utils';
 import { useToast } from '@/components/feedback/ToastProvider';
 import { normalizeUrlFieldValue } from '@/lib/forms/validation';
-import { getImmigrationHelp } from '@/services/geminiService';
-import type { Post, User } from '@/types';
+import type { Post, ReferralSummary, User } from '@/types';
 
 const Community: React.FC<{ user: User }> = ({ user }) => {
   const { showToast } = useToast();
@@ -18,8 +17,10 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
   const [postExternalUrl, setPostExternalUrl] = useState('');
   const [posts, setPosts] = useState<Post[]>([]);
   const [publishing, setPublishing] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [referralSummary, setReferralSummary] = useState<ReferralSummary>({
+    referralUrl: null,
+    registrationCount: 0,
+  });
 
   const loadPosts = async (options?: { silent?: boolean }) => {
     try {
@@ -44,6 +45,43 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
 
   useEffect(() => {
     void loadPosts({ silent: true });
+  }, [user.username]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadReferralSummary = async () => {
+      try {
+        const response = await fetch('/api/referrals/summary', { cache: 'no-store' });
+        const payload = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(payload?.error ?? 'Nao foi possivel carregar seu link de indicacao.');
+        }
+
+        if (!ignore) {
+          setReferralSummary({
+            referralUrl: payload?.referralUrl ?? null,
+            registrationCount: Number(payload?.registrationCount ?? 0),
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load referral summary:', error);
+
+        if (!ignore) {
+          setReferralSummary({
+            referralUrl: null,
+            registrationCount: 0,
+          });
+        }
+      }
+    };
+
+    void loadReferralSummary();
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   const resetComposer = () => {
@@ -65,13 +103,40 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
     }
   };
 
-  const handleAskAi = async () => {
-    setAiLoading(true);
-    const result = await getImmigrationHelp(
-      'Quais os documentos para renovar passaporte brasileiro?',
-    );
-    setAiResponse(result);
-    setAiLoading(false);
+  const handleCopyReferralLink = async () => {
+    if (!referralSummary.referralUrl) {
+      showToast('Seu link de indicacao ainda nao esta disponivel.', 'error');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(referralSummary.referralUrl);
+      showToast('Link de indicacao copiado.', 'success');
+    } catch {
+      showToast(referralSummary.referralUrl, 'info', 5000);
+    }
+  };
+
+  const handleShareReferralLink = async () => {
+    if (!referralSummary.referralUrl) {
+      showToast('Seu link de indicacao ainda nao esta disponivel.', 'error');
+      return;
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Emigrei',
+          text: 'Entre para a comunidade brasileira no exterior pela Emigrei.',
+          url: referralSummary.referralUrl,
+        });
+        return;
+      } catch {
+        // fallback below
+      }
+    }
+
+    await handleCopyReferralLink();
   };
 
   const handlePublish = async () => {
@@ -368,33 +433,55 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
       <div className="px-5">
         <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#28B8C7] to-[#1E96A4] p-4 text-white shadow-lg">
           <div className="relative z-10 flex items-center justify-between">
-            <div className="max-w-[70%]">
+            <div className="max-w-[72%]">
               <div className="mb-1 flex items-center gap-2">
-                <Sparkles size={16} className="animate-pulse text-yellow-400" />
+                <UserPlus size={16} className="text-white/90" />
                 <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">
-                  Emigrei AI
+                  Indique a Emigrei
                 </span>
               </div>
               <h4 className="mb-2 text-sm font-bold">
-                Duvidas sobre passaporte ou visto? Pergunte agora!
+                Compartilhe seu link unico e acompanhe quantos cadastros vieram dele.
               </h4>
-              <button
-                onClick={handleAskAi}
-                disabled={aiLoading}
-                className="rounded-full bg-white px-4 py-1.5 text-[10px] font-bold text-cyan-600 transition-colors hover:bg-slate-100"
-              >
-                {aiLoading ? 'Consultando...' : 'Pedir Ajuda IA'}
-              </button>
+              <p className="text-[11px] font-medium text-white/80">
+                {referralSummary.registrationCount}
+                {' '}
+                {referralSummary.registrationCount === 1
+                  ? 'cadastro confirmado pelo seu link'
+                  : 'cadastros confirmados pelo seu link'}
+              </p>
             </div>
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md">
-              <Sparkles size={32} />
+              <Share2 size={30} />
             </div>
           </div>
-          {aiResponse ? (
-            <div className="mt-4 animate-in rounded-xl bg-white/10 p-3 text-xs leading-relaxed slide-in-from-top-2 duration-300">
-              {aiResponse}
+          <div className="mt-4 rounded-2xl bg-white/12 p-3">
+            <p className="truncate text-xs font-semibold text-white/90">
+              {referralSummary.referralUrl ?? `https://emigrei.com.br/convite/${user.username}`}
+            </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => void handleCopyReferralLink()}
+                className="rounded-full bg-white px-4 py-2 text-[11px] font-bold text-cyan-700 transition-colors hover:bg-slate-100"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Copy size={14} />
+                  Copiar link
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleShareReferralLink()}
+                className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-[11px] font-bold text-white transition-colors hover:bg-white/20"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Share2 size={14} />
+                  Compartilhar
+                </span>
+              </button>
             </div>
-          ) : null}
+          </div>
         </div>
       </div>
 

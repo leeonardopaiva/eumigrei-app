@@ -1,4 +1,4 @@
-import { BusinessStatus, CommunityPostStatus, EventStatus, UserRole } from '@prisma/client';
+import { BusinessStatus, CommunityPostStatus, EventStatus, SuggestionStatus, UserRole } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { ensureRegionCatalog } from '@/lib/region-store';
 import { requireAdminSession } from '@/lib/require-admin';
@@ -29,6 +29,8 @@ export async function GET() {
     totalRegions,
     activeRegions,
     regions,
+    newSuggestions,
+    suggestions,
   ] = await Promise.all([
     prisma.business.findMany({
       where: { status: BusinessStatus.PENDING_REVIEW },
@@ -206,6 +208,29 @@ export async function GET() {
         updatedAt: true,
       },
     }),
+    prisma.suggestion.count({ where: { status: SuggestionStatus.NEW } }),
+    prisma.suggestion.findMany({
+      orderBy: [{ createdAt: 'desc' }],
+      take: 24,
+      select: {
+        id: true,
+        category: true,
+        message: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            email: true,
+            image: true,
+            locationLabel: true,
+          },
+        },
+      },
+    }),
   ]);
 
   return NextResponse.json({
@@ -220,6 +245,7 @@ export async function GET() {
       pendingPosts: pendingPosts.length,
       totalRegions,
       activeRegions,
+      newSuggestions,
     },
     pendingBusinesses,
     pendingEvents,
@@ -229,5 +255,6 @@ export async function GET() {
     events,
     users,
     regions,
+    suggestions,
   });
 }

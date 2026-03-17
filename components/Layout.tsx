@@ -7,11 +7,13 @@ import {
   Calendar,
   Home as HomeIcon,
   Menu,
+  MessageSquarePlus,
   ShieldCheck,
   Store,
   User as UserIcon,
   Users,
 } from 'lucide-react';
+import SuggestionButton from './feedback/SuggestionButton';
 import { User, UserRole } from '../types';
 
 const logoPrimaryUrl = '/assets/logo-emigrei.png';
@@ -120,6 +122,18 @@ const SidebarContent: React.FC<{
         Sair
       </button>
     ) : null}
+
+    <button
+      type="button"
+      onClick={() => {
+        onItemClick?.();
+        window.dispatchEvent(new CustomEvent('emigrei:open-suggestion-modal'));
+      }}
+      className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 shadow-sm"
+    >
+      <MessageSquarePlus size={16} />
+      Enviar sugestao
+    </button>
   </div>
 );
 
@@ -188,6 +202,8 @@ const Layout: React.FC<LayoutWithUserProps> = ({ children, user, onSignOut }) =>
           <main className="scrollbar-hide flex-1 overflow-y-auto">
             <div className="w-full lg:px-8">{children}</div>
           </main>
+
+          <SuggestionButton />
 
           <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-6 lg:hidden">
             <nav className="flex w-full max-w-[360px] items-center justify-between rounded-full border border-white/10 bg-[#28B8C7] px-2 py-2 shadow-2xl">

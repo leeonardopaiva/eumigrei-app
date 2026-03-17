@@ -26,6 +26,7 @@ type RegistrationValues = {
   email: string;
   phone: string;
   regionKey: string;
+  referralUsername?: string | null;
 };
 
 interface RegistrationProps {
@@ -38,6 +39,7 @@ interface RegistrationProps {
   submitting?: boolean;
   error?: string | null;
   notice?: string | null;
+  referralUsername?: string | null;
   defaultValues?: RegistrationValues;
 }
 
@@ -53,6 +55,7 @@ const Registration: React.FC<RegistrationProps> = ({
   submitting = false,
   error,
   notice,
+  referralUsername,
   defaultValues,
 }) => {
   const initialPhoneState = splitPhoneNumber(defaultValues?.phone);
@@ -199,6 +202,12 @@ const Registration: React.FC<RegistrationProps> = ({
                   ? 'Precisamos da sua regiao para liberar comunidade, negocios e eventos locais.'
                   : 'Entre com email ou Google para finalizar seu cadastro em poucos segundos.'}
               </p>
+              {referralUsername ? (
+                <div className="inline-flex rounded-full border border-cyan-100 bg-cyan-50 px-4 py-2 text-xs font-bold text-cyan-700">
+                  Voce esta entrando pelo link de @
+                  {normalizeUsernameInput(referralUsername)}
+                </div>
+              ) : null}
             </div>
 
             {!isOnboarding ? (
@@ -300,6 +309,7 @@ const Registration: React.FC<RegistrationProps> = ({
                   await onCompleteProfile?.({
                     ...formValues,
                     phone: buildInternationalPhone(selectedCountry.iso2, formValues.phone),
+                    referralUsername,
                   });
                 }}
               >
