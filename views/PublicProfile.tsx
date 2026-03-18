@@ -61,6 +61,37 @@ const formatEventDate = (value: string) =>
     timeStyle: 'short',
   }).format(new Date(value));
 
+const formatMembershipDuration = (value: string) => {
+  const joinedAt = new Date(value);
+  const now = new Date();
+  const monthDiff =
+    (now.getFullYear() - joinedAt.getFullYear()) * 12 +
+    (now.getMonth() - joinedAt.getMonth());
+
+  if (monthDiff >= 12) {
+    const years = Math.floor(monthDiff / 12);
+    return `Membro ha ${years} ${years === 1 ? 'ano' : 'anos'}`;
+  }
+
+  if (monthDiff >= 1) {
+    return `Membro ha ${monthDiff} ${monthDiff === 1 ? 'mes' : 'meses'}`;
+  }
+
+  const dayDiff = Math.max(1, Math.floor((now.getTime() - joinedAt.getTime()) / (1000 * 60 * 60 * 24)));
+  return `Membro ha ${dayDiff} ${dayDiff === 1 ? 'dia' : 'dias'}`;
+};
+
+const PROFILE_GRADIENT_CLASS = 'bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.28),_transparent_30%),linear-gradient(135deg,#28B8C7_0%,#1DA7D5_45%,#0D6EFD_100%)]';
+
+const getInitials = (name: string) =>
+  name
+    .split(' ')
+    .map((part) => part.trim()[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
 const uniqueStrings = (values: Array<string | null | undefined>) =>
   Array.from(new Set(values.filter((value): value is string => Boolean(value))));
 
@@ -113,17 +144,13 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
     () =>
       uniqueStrings([
         ...(profile.galleryUrls || []),
-        profile.image,
         ...profile.businesses.map((business) => business.imageUrl),
         ...profile.events.map((event) => event.imageUrl),
         ...profile.posts.map((post) => post.imageUrl),
       ]),
     [profile],
   );
-  const heroImage =
-    profile.coverImageUrl ||
-    photoItems[0] ||
-    `https://picsum.photos/seed/${profile.username || username}/1200/700`;
+  const heroImage = profile.coverImageUrl || null;
   const photoPreview = photoItems.slice(0, 6);
   const extraPhotos = Math.max(photoItems.length - photoPreview.length, 0);
   const interests = useMemo(() => {
@@ -206,12 +233,16 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
             </div>
           ) : null}
 
-          <div className="relative h-72 overflow-hidden rounded-t-[36px] sm:h-80 lg:h-96">
-            <img
-              src={heroImage}
-              className="h-full w-full object-cover"
-              alt={`Capa de ${profile.name}`}
-            />
+          <div className={`relative h-72 overflow-hidden rounded-t-[36px] sm:h-80 lg:h-96 ${heroImage ? 'bg-slate-100' : PROFILE_GRADIENT_CLASS}`}>
+            {heroImage ? (
+              <img
+                src={heroImage}
+                className="h-full w-full object-cover object-center"
+                alt={`Capa de ${profile.name}`}
+              />
+            ) : (
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.28),_transparent_28%)]" />
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-white via-white/15 to-white/10" />
             <div className="absolute right-4 top-4">
               <button
@@ -227,11 +258,17 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
           <div className="-mt-16 rounded-t-[36px] bg-white px-5 pb-8 pt-0 shadow-sm">
             <div className="flex flex-col items-center text-center">
               <div className="-mt-16 h-32 w-32 overflow-hidden rounded-full border-[6px] border-white bg-white shadow-lg sm:h-40 sm:w-40">
-                <img
-                  src={profile.image || `https://picsum.photos/seed/${profile.username}/320`}
-                  alt={profile.name}
-                  className="h-full w-full object-cover"
-                />
+                {profile.image ? (
+                  <img
+                    src={profile.image}
+                    alt={profile.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className={`flex h-full w-full items-center justify-center ${PROFILE_GRADIENT_CLASS} text-4xl font-bold text-white`}>
+                    {getInitials(profile.name)}
+                  </div>
+                )}
               </div>
 
               <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
@@ -242,6 +279,10 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                   <BadgeCheck size={28} className="text-[#0D6EFD]" />
                 ) : null}
               </div>
+
+              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                {formatMembershipDuration(profile.joinedAt)}
+              </p>
 
               <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-700">
                 "{profileQuote}"
@@ -309,6 +350,9 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
             {activeTab === 'about' ? (
               <section className="mt-6 rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
                 <h2 className="text-2xl font-bold text-slate-900">Sobre</h2>
+                {profile.bio ? (
+                  <p className="mt-4 text-base leading-7 text-slate-700">{profile.bio}</p>
+                ) : null}
                 <p className="mt-4 text-sm leading-7 text-slate-600">
                   Membro da comunidade desde {formatJoinedDate(profile.joinedAt)}.
                   {' '}

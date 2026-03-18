@@ -12,7 +12,16 @@ import { normalizeUsernameInput } from '../lib/username';
 import { ReferralSummary, User } from '../types';
 
 const DEFAULT_AVATAR_URL = 'https://picsum.photos/seed/emigrei-user/200';
-const DEFAULT_COVER_URL = 'https://picsum.photos/seed/emigrei-cover/1200/700';
+const PROFILE_GRADIENT_CLASS = 'bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.35),_transparent_32%),linear-gradient(135deg,#28B8C7_0%,#1DA7D5_45%,#0D6EFD_100%)]';
+
+const getInitials = (name: string) =>
+  name
+    .split(' ')
+    .map((part) => part.trim()[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 
 type ProfileState = {
   id: string;
@@ -97,7 +106,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
             username: payload.user.username || user.username || '',
             email: payload.user.email || user.email || '',
             phone: payload.user.phone || '',
-            image: payload.user.image || (user.avatar === DEFAULT_AVATAR_URL ? '' : user.avatar),
+            image: payload.user.image || '',
             coverImageUrl: payload.user.coverImageUrl || '',
             bio: payload.user.bio || '',
             interests: Array.isArray(payload.user.interests) ? payload.user.interests : [],
@@ -203,7 +212,28 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) throw new Error(payload?.error ?? 'Nao foi possivel atualizar seu perfil.');
-      setProfile((current) => ({ ...current, ...patch, username: normalizeUsernameInput(nextProfile.username) }));
+      const persistedProfile: Partial<ProfileState> = {
+        name: payload?.user?.name || nextProfile.name,
+        username: payload?.user?.username || normalizeUsernameInput(nextProfile.username),
+        email: payload?.user?.email || nextProfile.email,
+        phone: payload?.user?.phone || '',
+        bio: payload?.user?.bio || '',
+        coverImageUrl: payload?.user?.coverImageUrl || '',
+        interests: Array.isArray(payload?.user?.interests) ? payload.user.interests : nextProfile.interests,
+        galleryUrls: Array.isArray(payload?.user?.galleryUrls) ? payload.user.galleryUrls : nextProfile.galleryUrls,
+      };
+
+      setProfile((current) => ({ ...current, ...persistedProfile }));
+      setAccountDraft({
+        name: persistedProfile.name || nextProfile.name,
+        username: persistedProfile.username || normalizeUsernameInput(nextProfile.username),
+        email: persistedProfile.email || nextProfile.email,
+        phone: persistedProfile.phone || '',
+        bio: persistedProfile.bio || '',
+      });
+      setCoverDraft(persistedProfile.coverImageUrl || '');
+      setInterestDrafts(persistedProfile.interests || []);
+      setGalleryDraft(persistedProfile.galleryUrls || []);
       await update();
       if (editKey) setEditing((current) => ({ ...current, [editKey]: false }));
       showToast(message, 'success');
@@ -225,7 +255,9 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) throw new Error(payload?.error ?? 'Nao foi possivel atualizar sua foto.');
-      setProfile((current) => ({ ...current, image: payload?.user?.image || avatarDraft || '' }));
+      const nextImage = payload?.user?.image || '';
+      setProfile((current) => ({ ...current, image: nextImage }));
+      setAvatarDraft(nextImage);
       await update();
       setEditing((current) => ({ ...current, avatar: false }));
       showToast('Foto do perfil atualizada.', 'success');
@@ -305,8 +337,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
     setInterestInput('');
   };
 
-  const avatarImage = profile.image || user.avatar || DEFAULT_AVATAR_URL;
-  const coverImage = profile.coverImageUrl || DEFAULT_COVER_URL;
+  const avatarImage = profile.image || '';
   const referralUrl = referralSummary.referralUrl || (profile.username ? `https://emigrei.com.br/convite/${profile.username}` : 'https://emigrei.com.br/convite/seu-nome-publico');
 
   if (loading) {
@@ -322,9 +353,13 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
   return (
     <div className="animate-in space-y-5 px-5 pb-24 pt-6 fade-in duration-500">
       <section className="overflow-hidden rounded-[36px] bg-white shadow-sm">
-        <div className="relative h-56">
-          <img src={coverImage} alt="Capa do perfil" className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-slate-950/10 to-transparent" />
+        <div className={`relative h-56 ${profile.coverImageUrl ? 'bg-slate-100' : PROFILE_GRADIENT_CLASS}`}>
+          {profile.coverImageUrl ? (
+            <img src={profile.coverImageUrl} alt="Capa do perfil" className="h-full w-full object-cover object-center" />
+          ) : (
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.28),_transparent_28%)]" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-slate-950/5 to-transparent" />
           <button type="button" onClick={() => { setEditing((c) => ({ ...c, cover: !c.cover })); setCoverDraft(profile.coverImageUrl); }} className="absolute right-4 top-4 rounded-2xl border border-white/60 bg-white/85 p-3 text-slate-600">
             <PencilLine size={16} />
           </button>
@@ -332,7 +367,13 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
         <div className="-mt-12 px-5 pb-5">
           <div className="flex flex-col items-center text-center">
             <div className="relative h-28 w-28 overflow-hidden rounded-full border-[5px] border-white bg-white shadow-lg">
-              <img src={avatarImage} alt={profile.name} className="h-full w-full object-cover" />
+              {avatarImage ? (
+                <img src={avatarImage} alt={profile.name} className="h-full w-full object-cover" />
+              ) : (
+                <div className={`flex h-full w-full items-center justify-center ${PROFILE_GRADIENT_CLASS} text-3xl font-bold text-white`}>
+                  {getInitials(profile.name)}
+                </div>
+              )}
               <button type="button" onClick={() => { setEditing((c) => ({ ...c, avatar: !c.avatar })); setAvatarDraft(profile.image); }} className="absolute bottom-0 right-0 rounded-full border-2 border-white bg-white p-2 text-[#28B8C7]">
                 <PencilLine size={14} />
               </button>
@@ -350,7 +391,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
               <CloudinaryImageField value={coverDraft} onChange={setCoverDraft} folder="profiles" placeholder="Link da capa do perfil" hint="Use uma imagem horizontal para destacar seu perfil publico." />
               <ActionRow>
                 <PrimaryButton label={savingKey === 'cover' ? 'Salvando...' : 'Salvar capa'} onClick={() => void saveProfile({ coverImageUrl: coverDraft }, 'Capa atualizada com sucesso.', 'cover')} disabled={savingKey === 'cover'} />
-                <SecondaryButton label="Cancelar" onClick={() => setEditing((c) => ({ ...c, cover: false }))} disabled={savingKey === 'cover'} />
+                <SecondaryButton label={coverDraft ? 'Limpar' : 'Cancelar'} onClick={() => { if (coverDraft) { setCoverDraft(''); return; } setEditing((c) => ({ ...c, cover: false })); }} disabled={savingKey === 'cover'} />
               </ActionRow>
             </EditorCard>
           ) : null}
@@ -360,7 +401,7 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
               <CloudinaryImageField value={avatarDraft} onChange={setAvatarDraft} folder="profiles" placeholder="Link da foto do perfil" hint="Envie sua foto pela Cloudinary ou cole uma URL publica." />
               <ActionRow>
                 <PrimaryButton label={savingKey === 'avatar' ? 'Salvando...' : 'Salvar foto'} onClick={() => void saveAvatar()} disabled={savingKey === 'avatar'} />
-                <SecondaryButton label="Remover" onClick={() => setAvatarDraft('')} disabled={savingKey === 'avatar'} />
+                <SecondaryButton label={avatarDraft ? 'Limpar' : 'Cancelar'} onClick={() => { if (avatarDraft) { setAvatarDraft(''); return; } setEditing((c) => ({ ...c, avatar: false })); }} disabled={savingKey === 'avatar'} />
               </ActionRow>
             </EditorCard>
           ) : null}
