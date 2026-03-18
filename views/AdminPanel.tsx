@@ -25,6 +25,7 @@ import RegionSelector from '../components/RegionSelector';
 import { normalizeUrlFieldValue } from '../lib/forms/validation';
 import { formatLoosePhoneInput } from '../lib/forms/phone';
 import { normalizeUsernameInput } from '../lib/username';
+import { formatVisibilityScopeLabel } from '../lib/visibility';
 import type { User } from '../types';
 
 type BusinessAction = 'approve' | 'reject' | 'suspend';
@@ -34,6 +35,7 @@ type PostAction = 'approve' | 'remove';
 type BusinessStatus = 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED' | 'SUSPENDED';
 type EventStatus = 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED' | 'CANCELED';
 type UserRoleValue = 'USER' | 'BUSINESS_OWNER' | 'ADMIN';
+type VisibilityScopeValue = 'GLOBAL' | 'USER_REGION' | 'SPECIFIC_REGION';
 
 type AdminActor = {
   id: string;
@@ -95,11 +97,17 @@ type ManagedBusiness = {
   address: string;
   locationLabel: string;
   regionKey: string;
+  visibilityScope: VisibilityScopeValue;
+  visibilityRegionKey: string | null;
   imageUrl: string | null;
   galleryUrls: string[];
   status: BusinessStatus;
   createdAt: string;
   updatedAt: string;
+  visibilityRegion?: {
+    key: string;
+    label: string;
+  } | null;
   createdBy: AdminActor;
 };
 
@@ -113,12 +121,18 @@ type ManagedEvent = {
   endsAt: string | null;
   locationLabel: string;
   regionKey: string;
+  visibilityScope: VisibilityScopeValue;
+  visibilityRegionKey: string | null;
   externalUrl: string | null;
   imageUrl: string | null;
   galleryUrls: string[];
   status: EventStatus;
   createdAt: string;
   updatedAt: string;
+  visibilityRegion?: {
+    key: string;
+    label: string;
+  } | null;
   createdBy: AdminActor;
 };
 
@@ -203,6 +217,8 @@ type BusinessFormState = {
   instagram: string;
   address: string;
   regionKey: string;
+  visibilityScope: VisibilityScopeValue;
+  visibilityRegionKey: string;
   imageUrl: string;
   galleryUrls: string[];
   status: BusinessStatus;
@@ -215,6 +231,8 @@ type EventFormState = {
   startsAt: string;
   endsAt: string;
   regionKey: string;
+  visibilityScope: VisibilityScopeValue;
+  visibilityRegionKey: string;
   externalUrl: string;
   imageUrl: string;
   galleryUrls: string[];
@@ -253,6 +271,8 @@ const emptyBusinessForm: BusinessFormState = {
   instagram: '',
   address: '',
   regionKey: '',
+  visibilityScope: 'USER_REGION',
+  visibilityRegionKey: '',
   imageUrl: '',
   galleryUrls: [],
   status: 'PENDING_REVIEW',
@@ -265,6 +285,8 @@ const emptyEventForm: EventFormState = {
   startsAt: '',
   endsAt: '',
   regionKey: '',
+  visibilityScope: 'USER_REGION',
+  visibilityRegionKey: '',
   externalUrl: '',
   imageUrl: '',
   galleryUrls: [],
@@ -306,6 +328,7 @@ const eventStatusOptions: EventStatus[] = [
 ];
 
 const userRoleOptions: UserRoleValue[] = ['USER', 'BUSINESS_OWNER', 'ADMIN'];
+const visibilityScopeOptions: VisibilityScopeValue[] = ['USER_REGION', 'SPECIFIC_REGION', 'GLOBAL'];
 
 const formatDateTime = (value: string) =>
   new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
@@ -628,6 +651,8 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
       instagram: business.instagram || '',
       address: business.address,
       regionKey: business.regionKey,
+      visibilityScope: business.visibilityScope,
+      visibilityRegionKey: business.visibilityRegionKey || '',
       imageUrl: business.imageUrl || '',
       galleryUrls: business.galleryUrls || [],
       status: business.status,
@@ -652,6 +677,10 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
             website: normalizeUrlFieldValue(businessForm.website),
             imageUrl: normalizeUrlFieldValue(businessForm.imageUrl),
             galleryUrls: businessForm.galleryUrls,
+            visibilityRegionKey:
+              businessForm.visibilityScope === 'SPECIFIC_REGION'
+                ? businessForm.visibilityRegionKey || undefined
+                : undefined,
           }),
         }),
       'Negocio atualizado.',
@@ -674,6 +703,8 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
       startsAt: toDateTimeInputValue(event.startsAt),
       endsAt: toDateTimeInputValue(event.endsAt),
       regionKey: event.regionKey,
+      visibilityScope: event.visibilityScope,
+      visibilityRegionKey: event.visibilityRegionKey || '',
       externalUrl: event.externalUrl || '',
       imageUrl: event.imageUrl || '',
       galleryUrls: event.galleryUrls || [],
@@ -701,6 +732,10 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
             externalUrl: normalizeUrlFieldValue(eventForm.externalUrl),
             imageUrl: normalizeUrlFieldValue(eventForm.imageUrl),
             galleryUrls: eventForm.galleryUrls,
+            visibilityRegionKey:
+              eventForm.visibilityScope === 'SPECIFIC_REGION'
+                ? eventForm.visibilityRegionKey || undefined
+                : undefined,
           }),
         }),
       'Evento atualizado.',
@@ -1382,6 +1417,10 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                         <p>{business.address}</p>
                         <p>/negocios/{business.slug}</p>
                         <p>
+                          Visibilidade: {formatVisibilityScopeLabel(business.visibilityScope)}
+                          {business.visibilityRegion?.label ? ` (${business.visibilityRegion.label})` : ''}
+                        </p>
+                        <p>
                           Responsavel: {business.createdBy.name || business.createdBy.email || 'Usuario'}
                         </p>
                         <p>Atualizado em {formatDateTime(business.updatedAt)}</p>
@@ -1438,6 +1477,38 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                         }
                         hint="Use somente regioes cadastradas para manter o catalogo padronizado."
                       />
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <FormSelect
+                          value={businessForm.visibilityScope}
+                          onChange={(value) =>
+                            setBusinessForm((current) => ({
+                              ...current,
+                              visibilityScope: value as VisibilityScopeValue,
+                              visibilityRegionKey:
+                                value === 'SPECIFIC_REGION' ? current.visibilityRegionKey : '',
+                            }))
+                          }
+                          options={visibilityScopeOptions}
+                        />
+                        {businessForm.visibilityScope === 'SPECIFIC_REGION' ? (
+                          <RegionSelector
+                            value={businessForm.visibilityRegionKey}
+                            onChange={(region) =>
+                              setBusinessForm((current) => ({
+                                ...current,
+                                visibilityRegionKey: region.key,
+                              }))
+                            }
+                            hint="Defina a regiao exata onde este negocio deve aparecer."
+                          />
+                        ) : (
+                          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+                            {businessForm.visibilityScope === 'GLOBAL'
+                              ? 'Este negocio podera aparecer para usuarios de qualquer regiao.'
+                              : 'Este negocio aparece para usuarios cuja regiao coincide com a regiao cadastrada acima.'}
+                          </div>
+                        )}
+                      </div>
                       <div className="grid grid-cols-2 gap-3">
                         <FormInput
                           value={businessForm.phone}
@@ -1567,6 +1638,10 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                         <p>/eventos/{event.slug}</p>
                         <p>Inicio: {formatDateTime(event.startsAt)}</p>
                         <p>
+                          Visibilidade: {formatVisibilityScopeLabel(event.visibilityScope)}
+                          {event.visibilityRegion?.label ? ` (${event.visibilityRegion.label})` : ''}
+                        </p>
+                        <p>
                           Responsavel: {event.createdBy.name || event.createdBy.email || 'Usuario'}
                         </p>
                         <p>Atualizado em {formatDateTime(event.updatedAt)}</p>
@@ -1638,6 +1713,38 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                         }
                         hint="Use somente regioes do catalogo para padronizar a agenda."
                       />
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <FormSelect
+                          value={eventForm.visibilityScope}
+                          onChange={(value) =>
+                            setEventForm((current) => ({
+                              ...current,
+                              visibilityScope: value as VisibilityScopeValue,
+                              visibilityRegionKey:
+                                value === 'SPECIFIC_REGION' ? current.visibilityRegionKey : '',
+                            }))
+                          }
+                          options={visibilityScopeOptions}
+                        />
+                        {eventForm.visibilityScope === 'SPECIFIC_REGION' ? (
+                          <RegionSelector
+                            value={eventForm.visibilityRegionKey}
+                            onChange={(region) =>
+                              setEventForm((current) => ({
+                                ...current,
+                                visibilityRegionKey: region.key,
+                              }))
+                            }
+                            hint="Defina a regiao exata onde este evento deve aparecer."
+                          />
+                        ) : (
+                          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+                            {eventForm.visibilityScope === 'GLOBAL'
+                              ? 'Este evento podera aparecer para usuarios de qualquer regiao.'
+                              : 'Este evento aparece para usuarios cuja regiao coincide com a regiao cadastrada acima.'}
+                          </div>
+                        )}
+                      </div>
                       <FormInput
                         value={eventForm.externalUrl}
                         onChange={(value) =>

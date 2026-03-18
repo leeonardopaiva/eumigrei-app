@@ -2,9 +2,10 @@ import React, { startTransition, useDeferredValue, useEffect, useState } from 'r
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useToast } from '../components/feedback/ToastProvider';
+import StarRating from '../components/engagement/StarRating';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import FieldErrorMessage from '../components/forms/FieldErrorMessage';
-import { Search, Star, MapPin, Plus } from 'lucide-react';
+import { Search, Heart, MapPin, Plus } from 'lucide-react';
 import RegionSelector from '../components/RegionSelector';
 import { formatLoosePhoneInput } from '../lib/forms/phone';
 import {
@@ -213,6 +214,34 @@ const BusinessList: React.FC = () => {
     }
   };
 
+  const handleFavoriteToggle = async (business: Business) => {
+    try {
+      const response = await fetch(`/api/businesses/${business.slug || business.id}/favorite`, {
+        method: business.isFavorite ? 'DELETE' : 'POST',
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        showToast(payload?.error ?? 'Nao foi possivel atualizar seus favoritos.', 'error');
+        return;
+      }
+
+      setBusinesses((current) =>
+        current.map((item) =>
+          item.id === business.id
+            ? {
+                ...item,
+                isFavorite: Boolean(payload?.isFavorite),
+              }
+            : item,
+        ),
+      );
+    } catch (error) {
+      console.error('Failed to toggle business favorite from list:', error);
+      showToast('Nao foi possivel atualizar seus favoritos.', 'error');
+    }
+  };
+
   return (
     <div className="px-5 space-y-6 animate-in fade-in duration-500">
       <div className="mt-4 space-y-4">
@@ -399,14 +428,25 @@ const BusinessList: React.FC = () => {
             />
             <div className="flex-1 flex flex-col justify-between">
               <div>
-                <h4 className="font-bold text-cyan-900">{business.name}</h4>
-                <div className="flex items-center gap-1 text-yellow-400 text-xs">
-                  {[...Array(5)].map((_, index) => (
-                    <Star key={index} size={12} fill={index < 4 ? 'currentColor' : 'none'} />
-                  ))}
-                  <span className="text-slate-400 text-[10px] font-medium ml-1">
-                    comunidade local
-                  </span>
+                <div className="flex items-start justify-between gap-3">
+                  <h4 className="font-bold text-cyan-900">{business.name}</h4>
+                  <button
+                    type="button"
+                    onClick={() => void handleFavoriteToggle(business)}
+                    className={`rounded-full p-2 ${
+                      business.isFavorite ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'
+                    }`}
+                    aria-label={business.isFavorite ? 'Remover dos favoritos' : 'Favoritar negocio'}
+                  >
+                    <Heart size={14} fill={business.isFavorite ? 'currentColor' : 'none'} />
+                  </button>
+                </div>
+                <div className="mt-2">
+                  <StarRating
+                    average={business.ratingAverage ?? 0}
+                    count={business.ratingCount ?? 0}
+                    compact
+                  />
                 </div>
                 <p className="text-cyan-600 text-[10px] font-bold mt-0.5">{business.category}</p>
                 <div className="flex items-center gap-1 text-slate-500 text-[10px] mt-1">

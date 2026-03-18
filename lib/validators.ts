@@ -1,4 +1,11 @@
-import { BusinessStatus, EventStatus, SuggestionCategory, SuggestionStatus, UserRole } from '@prisma/client';
+import {
+  BusinessStatus,
+  EventStatus,
+  SuggestionCategory,
+  SuggestionStatus,
+  UserRole,
+  VisibilityScope,
+} from '@prisma/client';
 import { z } from 'zod';
 import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH, USERNAME_PATTERN, isReservedUsername } from '@/lib/username';
 import { isValidHttpUrl, normalizeHttpUrlInput } from '@/lib/url';
@@ -139,6 +146,21 @@ export const adminBannerSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
+const visibilitySettingsSchema = z
+  .object({
+    visibilityScope: z.nativeEnum(VisibilityScope).default(VisibilityScope.USER_REGION),
+    visibilityRegionKey: z.string().trim().transform(emptyToUndefined).nullish(),
+  })
+  .superRefine((data, context) => {
+    if (data.visibilityScope === VisibilityScope.SPECIFIC_REGION && !data.visibilityRegionKey) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['visibilityRegionKey'],
+        message: 'Selecione uma regiao para a visibilidade especifica.',
+      });
+    }
+  });
+
 export const businessSchema = z.object({
   name: z.string().trim().min(2).max(80),
   category: z.string().trim().min(2).max(40),
@@ -165,11 +187,11 @@ export const eventSchema = z.object({
   galleryUrls: optionalUrlArray,
 });
 
-export const adminBusinessSchema = businessSchema.extend({
+export const adminBusinessSchema = businessSchema.merge(visibilitySettingsSchema).extend({
   status: z.nativeEnum(BusinessStatus),
 });
 
-export const adminEventSchema = eventSchema.extend({
+export const adminEventSchema = eventSchema.merge(visibilitySettingsSchema).extend({
   status: z.nativeEnum(EventStatus),
 });
 
@@ -215,4 +237,8 @@ export const eventReviewSchema = z.object({
 
 export const postReviewSchema = z.object({
   action: z.enum(['approve', 'remove']),
+});
+
+export const starRatingSchema = z.object({
+  stars: z.coerce.number().int().min(1).max(5),
 });

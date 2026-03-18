@@ -1,4 +1,4 @@
-import { EventStatus } from '@prisma/client';
+import { EventStatus, VisibilityScope } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -6,11 +6,13 @@ import { buildRateLimitHeaders, consumeRateLimit, getRateLimitKey } from '@/lib/
 import { findRegionByKey } from '@/lib/region-store';
 import { slugify, uniqueSlug } from '@/lib/slug';
 import { eventSchema } from '@/lib/validators';
+import { getVisibilityFilter } from '@/lib/visibility';
 
 export async function GET(request: Request) {
   const session = await getServerAuthSession();
   const { searchParams } = new URL(request.url);
-  const regionKey = session?.user?.regionKey ?? searchParams.get('region');
+  const viewerRegionKey = session?.user?.regionKey ?? searchParams.get('region');
+  const viewerId = session?.user?.id;
   const now = new Date();
 
   const baseWhere = {
@@ -18,14 +20,11 @@ export async function GET(request: Request) {
     startsAt: {
       gte: now,
     },
+    ...getVisibilityFilter(viewerRegionKey),
   };
 
-  let scope: 'local' | 'global' = regionKey ? 'local' : 'global';
-  let events = await prisma.event.findMany({
-    where: {
-      ...baseWhere,
-      ...(regionKey ? { regionKey } : {}),
-    },
+  const events = await prisma.event.findMany({
+    where: baseWhere,
     orderBy: [{ startsAt: 'asc' }],
     take: 24,
     select: {
@@ -41,35 +40,31 @@ export async function GET(request: Request) {
       externalUrl: true,
       imageUrl: true,
       galleryUrls: true,
+      ratingAverage: true,
+      ratingCount: true,
+      visibilityScope: true,
       status: true,
+      favorites: {
+        where: { userId: viewerId || '__no-user__' },
+        select: { id: true },
+        take: 1,
+      },
     },
   });
 
-  if (events.length === 0 && regionKey) {
-    events = await prisma.event.findMany({
-      where: baseWhere,
-      orderBy: [{ startsAt: 'asc' }],
-      take: 24,
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        description: true,
-        venueName: true,
-        startsAt: true,
-        endsAt: true,
-        locationLabel: true,
-        regionKey: true,
-        externalUrl: true,
-        imageUrl: true,
-        galleryUrls: true,
-        status: true,
-      },
-    });
-    scope = 'global';
-  }
+  const scope: 'local' | 'global' =
+    viewerRegionKey &&
+    events.some((event) => event.visibilityScope !== VisibilityScope.GLOBAL)
+      ? 'local'
+      : 'global';
 
-  return NextResponse.json({ events, scope });
+  return NextResponse.json({
+    events: events.map(({ favorites, visibilityScope, ...event }) => ({
+      ...event,
+      isFavorite: favorites.length > 0,
+    })),
+    scope,
+  });
 }
 
 export async function POST(request: Request) {
@@ -139,6 +134,7 @@ export async function POST(request: Request) {
       externalUrl: parsed.data.externalUrl,
       imageUrl: parsed.data.imageUrl,
       galleryUrls: parsed.data.galleryUrls,
+      visibilityScope: VisibilityScope.USER_REGION,
       status: EventStatus.PENDING_REVIEW,
       createdById: session.user.id,
     },

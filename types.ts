@@ -17,6 +17,58 @@ export interface User {
   phone?: string | null;
 }
 
+export interface PublicUserProfile {
+  id: string;
+  name: string;
+  username: string;
+  image?: string | null;
+  locationLabel?: string | null;
+  joinedAt: string;
+  publicPath: string;
+  friendFeature: {
+    available: boolean;
+    canRequest: boolean;
+  };
+  stats: {
+    friendCount: number;
+    businessCount: number;
+    eventCount: number;
+    postCount: number;
+  };
+  businesses: Array<{
+    id: string;
+    slug: string;
+    name: string;
+    category: string;
+    imageUrl?: string | null;
+    locationLabel?: string | null;
+    ratingAverage: number;
+    ratingCount: number;
+  }>;
+  events: Array<{
+    id: string;
+    slug: string;
+    title: string;
+    venueName: string;
+    startsAt: string;
+    imageUrl?: string | null;
+    locationLabel?: string | null;
+    ratingAverage: number;
+    ratingCount: number;
+  }>;
+  posts: Array<{
+    id: string;
+    content: string;
+    imageUrl?: string | null;
+    createdAt: string;
+    locationLabel: string;
+    _count: {
+      reactions: number;
+      comments: number;
+    };
+  }>;
+}
+
 export interface CommunityAuthor {
   id: string;
   name: string;
@@ -73,6 +125,10 @@ export interface Business {
   instagram?: string | null;
   status?: string;
   isFavorite?: boolean;
+  ratingAverage?: number;
+  ratingCount?: number;
+  viewerRating?: number | null;
+  canRate?: boolean;
   canEdit?: boolean;
   publicPath?: string;
 }
@@ -91,6 +147,11 @@ export interface EventItem {
   imageUrl?: string | null;
   galleryUrls?: string[];
   status?: string;
+  isFavorite?: boolean;
+  ratingAverage?: number;
+  ratingCount?: number;
+  viewerRating?: number | null;
+  canRate?: boolean;
   canEdit?: boolean;
   publicPath?: string;
   city?: string;

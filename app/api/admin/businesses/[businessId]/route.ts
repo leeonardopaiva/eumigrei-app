@@ -29,9 +29,17 @@ export async function PUT(request: Request, context: RouteContext) {
   }
 
   const region = await findRegionByKey(parsed.data.regionKey);
+  const visibilityRegion =
+    parsed.data.visibilityScope === 'SPECIFIC_REGION' && parsed.data.visibilityRegionKey
+      ? await findRegionByKey(parsed.data.visibilityRegionKey)
+      : null;
 
   if (!region) {
     return NextResponse.json({ error: 'Regiao invalida.' }, { status: 400 });
+  }
+
+  if (parsed.data.visibilityScope === 'SPECIFIC_REGION' && !visibilityRegion) {
+    return NextResponse.json({ error: 'Regiao de visibilidade invalida.' }, { status: 400 });
   }
 
   const { businessId } = await context.params;
@@ -48,6 +56,11 @@ export async function PUT(request: Request, context: RouteContext) {
         whatsapp: parsed.data.whatsapp,
         website: parsed.data.website,
         instagram: parsed.data.instagram,
+        visibilityScope: parsed.data.visibilityScope,
+        visibilityRegionKey:
+          parsed.data.visibilityScope === 'SPECIFIC_REGION'
+            ? parsed.data.visibilityRegionKey || null
+            : null,
         imageUrl: parsed.data.imageUrl,
         galleryUrls: parsed.data.galleryUrls,
         locationLabel: region.label,
@@ -67,11 +80,19 @@ export async function PUT(request: Request, context: RouteContext) {
         address: true,
         locationLabel: true,
         regionKey: true,
+        visibilityScope: true,
+        visibilityRegionKey: true,
         imageUrl: true,
         galleryUrls: true,
         status: true,
         createdAt: true,
         updatedAt: true,
+        visibilityRegion: {
+          select: {
+            key: true,
+            label: true,
+          },
+        },
         createdBy: {
           select: {
             id: true,

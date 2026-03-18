@@ -1,11 +1,12 @@
 import React, { startTransition, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import StarRating from '../components/engagement/StarRating';
 import { useToast } from '../components/feedback/ToastProvider';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import FieldErrorMessage from '../components/forms/FieldErrorMessage';
 import ImageGalleryField from '../components/forms/ImageGalleryField';
-import { MapPin, Plus } from 'lucide-react';
+import { Heart, MapPin, Plus } from 'lucide-react';
 import RegionSelector from '../components/RegionSelector';
 import {
   type FieldErrors,
@@ -209,6 +210,34 @@ const Marketplace: React.FC = () => {
     }
   };
 
+  const handleFavoriteToggle = async (eventItem: EventItem) => {
+    try {
+      const response = await fetch(`/api/events/${eventItem.slug || eventItem.id}/favorite`, {
+        method: eventItem.isFavorite ? 'DELETE' : 'POST',
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        showToast(payload?.error ?? 'Nao foi possivel atualizar seus favoritos.', 'error');
+        return;
+      }
+
+      setEvents((current) =>
+        current.map((item) =>
+          item.id === eventItem.id
+            ? {
+                ...item,
+                isFavorite: Boolean(payload?.isFavorite),
+              }
+            : item,
+        ),
+      );
+    } catch (error) {
+      console.error('Failed to toggle event favorite from list:', error);
+      showToast('Nao foi possivel atualizar seus favoritos.', 'error');
+    }
+  };
+
   return (
     <div className="px-5 space-y-6 animate-in fade-in duration-500 pb-20">
       <div className="mt-4 space-y-4">
@@ -364,12 +393,14 @@ const Marketplace: React.FC = () => {
         {events.map((item) => (
           <EventCard
             key={item.id}
+            item={item}
             href={`/eventos/${item.slug || item.id}`}
             title={item.title}
             date={formatEventDate(item.startsAt)}
             location={item.venueName}
             region={item.locationLabel}
             img={item.imageUrl || `https://picsum.photos/seed/${item.id}/300`}
+            onToggleFavorite={() => void handleFavoriteToggle(item)}
           />
         ))}
       </div>
@@ -385,17 +416,39 @@ const formatEventDate = (value: string) => {
   }).format(date);
 };
 
-const EventCard: React.FC<{ href: string; title: string; date: string; location: string; region: string; img: string }> = ({ href, title, date, location, region, img }) => (
+const EventCard: React.FC<{
+  item: EventItem;
+  href: string;
+  title: string;
+  date: string;
+  location: string;
+  region: string;
+  img: string;
+  onToggleFavorite: () => void;
+}> = ({ item, href, title, date, location, region, img, onToggleFavorite }) => (
     <div className="bg-white rounded-3xl p-4 shadow-sm border border-slate-50 flex gap-4">
         <img src={img} className="w-24 h-24 rounded-2xl object-cover" alt={title} />
         <div className="flex-1 flex flex-col justify-between">
             <div>
-                <h4 className="font-bold text-cyan-900 text-sm leading-tight">{title}</h4>
+                <div className="flex items-start justify-between gap-3">
+                    <h4 className="font-bold text-cyan-900 text-sm leading-tight">{title}</h4>
+                    <button
+                        type="button"
+                        onClick={onToggleFavorite}
+                        className={`rounded-full p-2 ${item.isFavorite ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'}`}
+                        aria-label={item.isFavorite ? 'Remover dos favoritos' : 'Favoritar evento'}
+                    >
+                        <Heart size={14} fill={item.isFavorite ? 'currentColor' : 'none'} />
+                    </button>
+                </div>
                 <p className="text-slate-500 text-[10px] mt-1 font-medium">{date}</p>
                 <div className="flex items-center gap-1 text-cyan-600 text-[10px] font-bold mt-2">
                     <MapPin size={10} fill="currentColor" /> {location}
                 </div>
                 <p className="mt-1 text-[10px] text-slate-400">{region}</p>
+                <div className="mt-2">
+                    <StarRating average={item.ratingAverage ?? 0} count={item.ratingCount ?? 0} compact />
+                </div>
             </div>
             <Link href={href} className="self-end bg-cyan-600 text-white px-4 py-1.5 rounded-xl text-[10px] font-bold shadow-sm">
                 Ver evento

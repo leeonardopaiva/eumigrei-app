@@ -4,11 +4,13 @@ import {
   Clock3,
   Copy,
   Globe2,
+  Heart,
   Images,
   MapPin,
   PencilLine,
   Share2,
 } from 'lucide-react';
+import StarRating from '../components/engagement/StarRating';
 import { useToast } from '../components/feedback/ToastProvider';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import ImageGalleryField from '../components/forms/ImageGalleryField';
@@ -34,6 +36,11 @@ type EventDetailState = {
   externalUrl: string;
   imageUrl: string;
   galleryUrls: string[];
+  ratingAverage: number;
+  ratingCount: number;
+  viewerRating: number | null;
+  isFavorite: boolean;
+  canRate: boolean;
   createdByName: string;
   canEdit: boolean;
   publicPath: string;
@@ -53,6 +60,11 @@ const defaultEvent: EventDetailState = {
   externalUrl: '',
   imageUrl: 'https://picsum.photos/seed/emigrei-event/900/600',
   galleryUrls: [],
+  ratingAverage: 0,
+  ratingCount: 0,
+  viewerRating: null,
+  isFavorite: false,
+  canRate: false,
   createdByName: 'Comunidade Emigrei',
   canEdit: false,
   publicPath: '',
@@ -107,6 +119,11 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
             externalUrl: payload.event.externalUrl || '',
             imageUrl: payload.event.imageUrl || defaultEvent.imageUrl,
             galleryUrls: Array.isArray(payload.event.galleryUrls) ? payload.event.galleryUrls : [],
+            ratingAverage: Number(payload.event.ratingAverage ?? 0),
+            ratingCount: Number(payload.event.ratingCount ?? 0),
+            viewerRating: payload.event.viewerRating ?? null,
+            isFavorite: Boolean(payload.event.isFavorite),
+            canRate: Boolean(payload.event.canRate),
             createdByName: payload.event.createdBy?.name || 'Comunidade Emigrei',
             canEdit: Boolean(payload.event.canEdit),
             publicPath: payload.event.publicPath || `/eventos/${payload.event.slug || payload.event.id}`,
@@ -164,6 +181,68 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
     }
 
     await handleCopyUrl();
+  };
+
+  const handleFavoriteToggle = async () => {
+    try {
+      const response = await fetch(`/api/events/${event.slug || event.id}/favorite`, {
+        method: event.isFavorite ? 'DELETE' : 'POST',
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        showToast(payload?.error ?? 'Nao foi possivel atualizar seus favoritos.', 'error');
+        return;
+      }
+
+      setEvent((current) => ({
+        ...current,
+        isFavorite: Boolean(payload?.isFavorite),
+      }));
+      showToast(
+        payload?.isFavorite ? 'Evento adicionado aos favoritos.' : 'Evento removido dos favoritos.',
+        'success',
+      );
+    } catch (error) {
+      console.error('Failed to toggle event favorite:', error);
+      showToast('Nao foi possivel atualizar seus favoritos.', 'error');
+    }
+  };
+
+  const handleRateEvent = async (stars: number) => {
+    try {
+      const response = await fetch(`/api/events/${event.slug || event.id}/rating`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ stars }),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        if (payload?.viewerRating) {
+          setEvent((current) => ({
+            ...current,
+            viewerRating: payload.viewerRating,
+          }));
+        }
+
+        showToast(payload?.error ?? 'Nao foi possivel registrar sua avaliacao.', 'error');
+        return;
+      }
+
+      setEvent((current) => ({
+        ...current,
+        viewerRating: payload.viewerRating,
+        ratingAverage: payload.ratingAverage,
+        ratingCount: payload.ratingCount,
+      }));
+      showToast('Sua avaliacao foi registrada.', 'success');
+    } catch (error) {
+      console.error('Failed to rate event:', error);
+      showToast('Nao foi possivel registrar sua avaliacao.', 'error');
+    }
   };
 
   const handleSaveMedia = async () => {
@@ -231,6 +310,15 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
         <div className="absolute right-4 top-4 flex gap-2">
           <button
             type="button"
+            onClick={() => void handleFavoriteToggle()}
+            className={`rounded-full p-2 shadow backdrop-blur ${
+              event.isFavorite ? 'bg-rose-500 text-white' : 'bg-white/80 text-cyan-900'
+            }`}
+          >
+            <Heart size={20} fill={event.isFavorite ? 'currentColor' : 'none'} />
+          </button>
+          <button
+            type="button"
             onClick={() => void handleShare()}
             className="rounded-full bg-white/80 p-2 text-cyan-900 shadow backdrop-blur"
           >
@@ -265,6 +353,29 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
               <Copy size={14} />
               Copiar link
             </button>
+          </div>
+          <div className="mt-4 rounded-[24px] border border-white bg-white/80 p-4">
+            <StarRating
+              average={event.ratingAverage}
+              count={event.ratingCount}
+              viewerRating={event.viewerRating}
+              interactive={event.canRate && event.viewerRating === null}
+              disabled={!event.canRate || event.viewerRating !== null}
+              onRate={(stars) => void handleRateEvent(stars)}
+            />
+            {!event.canRate ? (
+              <p className="mt-2 text-xs font-medium text-slate-500">
+                Organizadores e administradores nao podem avaliar este evento.
+              </p>
+            ) : event.viewerRating ? (
+              <p className="mt-2 text-xs font-medium text-slate-500">
+                Sua avaliacao ja foi registrada com {event.viewerRating} estrela{event.viewerRating > 1 ? 's' : ''}.
+              </p>
+            ) : (
+              <p className="mt-2 text-xs font-medium text-slate-500">
+                Cada usuario pode avaliar este evento uma unica vez.
+              </p>
+            )}
           </div>
         </div>
 

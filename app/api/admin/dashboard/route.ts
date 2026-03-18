@@ -127,11 +127,19 @@ export async function GET() {
         address: true,
         locationLabel: true,
         regionKey: true,
+        visibilityScope: true,
+        visibilityRegionKey: true,
         imageUrl: true,
         galleryUrls: true,
         status: true,
         createdAt: true,
         updatedAt: true,
+        visibilityRegion: {
+          select: {
+            key: true,
+            label: true,
+          },
+        },
         createdBy: {
           select: {
             id: true,
@@ -154,12 +162,20 @@ export async function GET() {
         endsAt: true,
         locationLabel: true,
         regionKey: true,
+        visibilityScope: true,
+        visibilityRegionKey: true,
         externalUrl: true,
         imageUrl: true,
         galleryUrls: true,
         status: true,
         createdAt: true,
         updatedAt: true,
+        visibilityRegion: {
+          select: {
+            key: true,
+            label: true,
+          },
+        },
         createdBy: {
           select: {
             id: true,

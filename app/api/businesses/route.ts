@@ -1,4 +1,4 @@
-import { BusinessStatus, BusinessMemberRole, Prisma, UserRole } from '@prisma/client';
+import { BusinessStatus, BusinessMemberRole, Prisma, UserRole, VisibilityScope } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -6,13 +6,15 @@ import { buildRateLimitHeaders, consumeRateLimit, getRateLimitKey } from '@/lib/
 import { findRegionByKey } from '@/lib/region-store';
 import { slugify, uniqueSlug } from '@/lib/slug';
 import { businessSchema } from '@/lib/validators';
+import { getVisibilityFilter } from '@/lib/visibility';
 
 export async function GET(request: Request) {
   const session = await getServerAuthSession();
   const { searchParams } = new URL(request.url);
   const category = searchParams.get('category');
   const search = searchParams.get('search');
-  const regionKey = session?.user?.regionKey ?? searchParams.get('region');
+  const viewerRegionKey = session?.user?.regionKey ?? searchParams.get('region');
+  const viewerId = session?.user?.id;
 
   const baseWhere: Prisma.BusinessWhereInput = {
     status: BusinessStatus.PUBLISHED,
@@ -26,14 +28,11 @@ export async function GET(request: Request) {
           ],
         }
       : {}),
+    ...getVisibilityFilter(viewerRegionKey),
   };
 
-  let scope: 'local' | 'global' = regionKey ? 'local' : 'global';
-  let businesses = await prisma.business.findMany({
-    where: {
-      ...baseWhere,
-      ...(regionKey ? { regionKey } : {}),
-    },
+  const businesses = await prisma.business.findMany({
+    where: baseWhere,
     orderBy: [{ createdAt: 'desc' }],
     take: 24,
     select: {
@@ -44,30 +43,31 @@ export async function GET(request: Request) {
       address: true,
       imageUrl: true,
       locationLabel: true,
+      ratingAverage: true,
+      ratingCount: true,
+      visibilityScope: true,
       status: true,
+      favorites: {
+        where: { userId: viewerId || '__no-user__' },
+        select: { id: true },
+        take: 1,
+      },
     },
   });
 
-  if (businesses.length === 0 && regionKey) {
-    businesses = await prisma.business.findMany({
-      where: baseWhere,
-      orderBy: [{ createdAt: 'desc' }],
-      take: 24,
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        category: true,
-        address: true,
-        imageUrl: true,
-        locationLabel: true,
-        status: true,
-      },
-    });
-    scope = 'global';
-  }
+  const scope: 'local' | 'global' =
+    viewerRegionKey &&
+    businesses.some((business) => business.visibilityScope !== VisibilityScope.GLOBAL)
+      ? 'local'
+      : 'global';
 
-  return NextResponse.json({ businesses, scope });
+  return NextResponse.json({
+    businesses: businesses.map(({ favorites, visibilityScope, ...business }) => ({
+      ...business,
+      isFavorite: favorites.length > 0,
+    })),
+    scope,
+  });
 }
 
 export async function POST(request: Request) {
@@ -140,6 +140,7 @@ export async function POST(request: Request) {
         galleryUrls: parsed.data.galleryUrls,
         locationLabel: region.label,
         regionKey: region.key,
+        visibilityScope: VisibilityScope.USER_REGION,
         status: BusinessStatus.PENDING_REVIEW,
         createdById: session.user.id,
         members: {

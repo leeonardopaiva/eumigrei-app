@@ -14,6 +14,7 @@ import Profile from './views/Profile';
 import BusinessList from './views/BusinessList';
 import BusinessDetail from './views/BusinessDetail';
 import EventDetail from './views/EventDetail';
+import PublicProfile from './views/PublicProfile';
 import Registration from './views/Registration';
 import { UserRole, type User } from './types';
 
@@ -22,6 +23,16 @@ const EMAIL_AUTH_ENABLED = process.env.NEXT_PUBLIC_EMAIL_AUTH_ENABLED !== 'false
 const PASSWORD_AUTH_ENABLED = process.env.NEXT_PUBLIC_PASSWORD_AUTH_ENABLED !== 'false';
 const DEV_AUTH_ENABLED =
   process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_DEV_AUTH_ENABLED === 'true';
+const RESERVED_PUBLIC_ROUTES = new Set([
+  'admin',
+  'community',
+  'marketplace',
+  'eventos',
+  'negocios',
+  'perfil',
+  'profile',
+  'convite',
+]);
 
 const mapUserRole = (role?: string | null): UserRole => {
   switch (role) {
@@ -87,6 +98,12 @@ const App: React.FC = () => {
   const rootSegment = segments[0];
   const referralUsername =
     rootSegment === 'convite' && segments.length >= 2 ? decodeURIComponent(segments[1]) : null;
+  const publicProfileUsername =
+    rootSegment === 'perfil' && segments.length >= 2
+      ? decodeURIComponent(segments[1])
+      : segments.length === 1 && rootSegment && !RESERVED_PUBLIC_ROUTES.has(rootSegment)
+        ? decodeURIComponent(rootSegment)
+        : null;
 
   const resolveDevMagicLink = async (email: string) => {
     if (!DEV_AUTH_ENABLED) {
@@ -299,6 +316,10 @@ const App: React.FC = () => {
     return null;
   }
 
+  if (publicProfileUsername && !session?.user) {
+    return <PublicProfile username={publicProfileUsername} />;
+  }
+
   if (!session?.user) {
     return (
       <Registration
@@ -343,6 +364,14 @@ const App: React.FC = () => {
   }
 
   const currentUser = buildCurrentUser(session.user);
+
+  if (publicProfileUsername) {
+    return (
+      <Layout user={currentUser} onSignOut={() => signOut({ callbackUrl: '/' })}>
+        <PublicProfile username={publicProfileUsername} viewer={currentUser} embedded />
+      </Layout>
+    );
+  }
 
   const content = (() => {
     if (segments.length === 0) {

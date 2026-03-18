@@ -35,6 +35,12 @@ enum EventStatus {
   CANCELED
 }
 
+enum VisibilityScope {
+  GLOBAL
+  USER_REGION
+  SPECIFIC_REGION
+}
+
 enum CommunityPostStatus {
   PUBLISHED
   PENDING_REVIEW
@@ -53,6 +59,12 @@ enum SuggestionCategory {
 enum SuggestionStatus {
   NEW
   REVIEWED
+}
+
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
 }
 
 model User {
@@ -81,9 +93,15 @@ model User {
   postReactions       PostReaction[]  @relation("PostReactionAuthor")
   postReports         PostReport[]    @relation("PostReportAuthor")
   emailChangeTokens   EmailChangeToken[]
-  suggestions        Suggestion[]
-  referredBy         User?           @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
-  referrals          User[]          @relation("UserReferrals")
+  suggestions         Suggestion[]
+  businessFavorites   BusinessFavorite[]
+  eventFavorites      EventFavorite[]
+  businessRatings     BusinessRating[]
+  eventRatings        EventRating[]
+  sentFriendRequests  FriendRequest[] @relation("FriendRequestSender")
+  receivedFriendRequests FriendRequest[] @relation("FriendRequestRecipient")
+  referredBy          User?           @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals           User[]          @relation("UserReferrals")
 
   @@index([referredById, createdAt])
 }
@@ -100,6 +118,8 @@ model Region {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   banners   Banner[]
+  businessVisibilityTargets Business[] @relation("BusinessVisibilityRegion")
+  eventVisibilityTargets Event[] @relation("EventVisibilityRegion")
 
   @@index([isActive, label])
 }
@@ -164,17 +184,25 @@ model Business {
   address       String
   locationLabel String
   regionKey     String
+  visibilityScope VisibilityScope @default(USER_REGION)
+  visibilityRegionKey String?
   imageUrl      String?
   galleryUrls   String[]        @default([])
+  ratingAverage Float           @default(0)
+  ratingCount   Int             @default(0)
   status        BusinessStatus  @default(PENDING_REVIEW)
   createdById   String
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   createdBy     User            @relation("BusinessCreator", fields: [createdById], references: [id], onDelete: Cascade)
   members       BusinessMember[]
+  visibilityRegion Region?      @relation("BusinessVisibilityRegion", fields: [visibilityRegionKey], references: [key], onDelete: SetNull)
+  favorites     BusinessFavorite[]
+  ratings       BusinessRating[]
 
   @@index([status, regionKey])
   @@index([category, regionKey])
+  @@index([visibilityScope, visibilityRegionKey])
 }
 
 model BusinessMember {
@@ -199,16 +227,24 @@ model Event {
   endsAt        DateTime?
   locationLabel String
   regionKey     String
+  visibilityScope VisibilityScope @default(USER_REGION)
+  visibilityRegionKey String?
   externalUrl   String?
   imageUrl      String?
   galleryUrls   String[]    @default([])
+  ratingAverage Float       @default(0)
+  ratingCount   Int         @default(0)
   status        EventStatus @default(PENDING_REVIEW)
   createdById   String
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   createdBy     User        @relation("EventCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  visibilityRegion Region?  @relation("EventVisibilityRegion", fields: [visibilityRegionKey], references: [key], onDelete: SetNull)
+  favorites     EventFavorite[]
+  ratings       EventRating[]
 
   @@index([status, regionKey, startsAt])
+  @@index([visibilityScope, visibilityRegionKey, startsAt])
 }
 
 model CommunityPost {
@@ -279,6 +315,72 @@ model Banner {
   region    Region?  @relation(fields: [regionKey], references: [key], onDelete: SetNull)
 
   @@index([isActive, regionKey, updatedAt])
+}
+
+model BusinessFavorite {
+  id         String   @id @default(cuid())
+  businessId String
+  userId     String
+  createdAt  DateTime @default(now())
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, userId])
+  @@index([userId, createdAt])
+}
+
+model EventFavorite {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([userId, createdAt])
+}
+
+model BusinessRating {
+  id         String   @id @default(cuid())
+  businessId String
+  userId     String
+  stars      Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, userId])
+  @@index([businessId, updatedAt])
+}
+
+model EventRating {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  stars     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId, updatedAt])
+}
+
+model FriendRequest {
+  id          String              @id @default(cuid())
+  requesterId String
+  recipientId String
+  status      FriendRequestStatus @default(PENDING)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  requester   User                @relation("FriendRequestSender", fields: [requesterId], references: [id], onDelete: Cascade)
+  recipient   User                @relation("FriendRequestRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, recipientId])
+  @@index([recipientId, status, createdAt])
 }
 
 model Suggestion {

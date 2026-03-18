@@ -29,9 +29,17 @@ export async function PUT(request: Request, context: RouteContext) {
   }
 
   const region = await findRegionByKey(parsed.data.regionKey);
+  const visibilityRegion =
+    parsed.data.visibilityScope === 'SPECIFIC_REGION' && parsed.data.visibilityRegionKey
+      ? await findRegionByKey(parsed.data.visibilityRegionKey)
+      : null;
 
   if (!region) {
     return NextResponse.json({ error: 'Regiao invalida.' }, { status: 400 });
+  }
+
+  if (parsed.data.visibilityScope === 'SPECIFIC_REGION' && !visibilityRegion) {
+    return NextResponse.json({ error: 'Regiao de visibilidade invalida.' }, { status: 400 });
   }
 
   const { eventId } = await context.params;
@@ -45,6 +53,11 @@ export async function PUT(request: Request, context: RouteContext) {
         venueName: parsed.data.venueName,
         startsAt: new Date(parsed.data.startsAt),
         endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
+        visibilityScope: parsed.data.visibilityScope,
+        visibilityRegionKey:
+          parsed.data.visibilityScope === 'SPECIFIC_REGION'
+            ? parsed.data.visibilityRegionKey || null
+            : null,
         locationLabel: region.label,
         regionKey: region.key,
         externalUrl: parsed.data.externalUrl,
@@ -62,12 +75,20 @@ export async function PUT(request: Request, context: RouteContext) {
         endsAt: true,
         locationLabel: true,
         regionKey: true,
+        visibilityScope: true,
+        visibilityRegionKey: true,
         externalUrl: true,
         imageUrl: true,
         galleryUrls: true,
         status: true,
         createdAt: true,
         updatedAt: true,
+        visibilityRegion: {
+          select: {
+            key: true,
+            label: true,
+          },
+        },
         createdBy: {
           select: {
             id: true,

@@ -11,6 +11,7 @@ import {
   Phone,
   Share2,
 } from 'lucide-react';
+import StarRating from '../components/engagement/StarRating';
 import { useToast } from '../components/feedback/ToastProvider';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import ImageGalleryField from '../components/forms/ImageGalleryField';
@@ -35,6 +36,11 @@ type BusinessDetailState = {
   whatsapp: string;
   website: string;
   instagram: string;
+  ratingAverage: number;
+  ratingCount: number;
+  viewerRating: number | null;
+  isFavorite: boolean;
+  canRate: boolean;
   locationLabel: string;
   createdByName: string;
   canEdit: boolean;
@@ -54,6 +60,11 @@ const defaultBusiness: BusinessDetailState = {
   whatsapp: '',
   website: '',
   instagram: '',
+  ratingAverage: 0,
+  ratingCount: 0,
+  viewerRating: null,
+  isFavorite: false,
+  canRate: false,
   locationLabel: '',
   createdByName: 'Comunidade local',
   canEdit: false,
@@ -112,6 +123,11 @@ const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => 
             whatsapp: payload.business.whatsapp || '',
             website: payload.business.website || '',
             instagram: payload.business.instagram || '',
+            ratingAverage: Number(payload.business.ratingAverage ?? 0),
+            ratingCount: Number(payload.business.ratingCount ?? 0),
+            viewerRating: payload.business.viewerRating ?? null,
+            isFavorite: Boolean(payload.business.isFavorite),
+            canRate: Boolean(payload.business.canRate),
             locationLabel: payload.business.locationLabel || '',
             createdByName: payload.business.createdBy?.name || 'Comunidade local',
             canEdit: Boolean(payload.business.canEdit),
@@ -219,6 +235,68 @@ const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => 
     }
   };
 
+  const handleFavoriteToggle = async () => {
+    try {
+      const response = await fetch(`/api/businesses/${business.slug || business.id}/favorite`, {
+        method: business.isFavorite ? 'DELETE' : 'POST',
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        showToast(payload?.error ?? 'Nao foi possivel atualizar seus favoritos.', 'error');
+        return;
+      }
+
+      setBusiness((current) => ({
+        ...current,
+        isFavorite: Boolean(payload?.isFavorite),
+      }));
+      showToast(
+        payload?.isFavorite ? 'Negocio adicionado aos favoritos.' : 'Negocio removido dos favoritos.',
+        'success',
+      );
+    } catch (error) {
+      console.error('Failed to toggle business favorite:', error);
+      showToast('Nao foi possivel atualizar seus favoritos.', 'error');
+    }
+  };
+
+  const handleRateBusiness = async (stars: number) => {
+    try {
+      const response = await fetch(`/api/businesses/${business.slug || business.id}/rating`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ stars }),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        if (payload?.viewerRating) {
+          setBusiness((current) => ({
+            ...current,
+            viewerRating: payload.viewerRating,
+          }));
+        }
+
+        showToast(payload?.error ?? 'Nao foi possivel registrar sua avaliacao.', 'error');
+        return;
+      }
+
+      setBusiness((current) => ({
+        ...current,
+        viewerRating: payload.viewerRating,
+        ratingAverage: payload.ratingAverage,
+        ratingCount: payload.ratingCount,
+      }));
+      showToast('Sua avaliacao foi registrada.', 'success');
+    } catch (error) {
+      console.error('Failed to rate business:', error);
+      showToast('Nao foi possivel registrar sua avaliacao.', 'error');
+    }
+  };
+
   const publicUrl =
     typeof window === 'undefined'
       ? business.publicPath
@@ -247,8 +325,16 @@ const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => 
         <img src={business.imageUrl} className="h-full w-full object-cover" alt={business.name} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
         <div className="absolute right-4 top-4 flex gap-2">
-          <button className="rounded-full bg-white/80 p-2 text-cyan-900 shadow backdrop-blur">
-            <Heart size={20} />
+          <button
+            type="button"
+            onClick={() => void handleFavoriteToggle()}
+            className={`rounded-full p-2 shadow backdrop-blur ${
+              business.isFavorite
+                ? 'bg-rose-500 text-white'
+                : 'bg-white/80 text-cyan-900'
+            }`}
+          >
+            <Heart size={20} fill={business.isFavorite ? 'currentColor' : 'none'} />
           </button>
           <button
             type="button"
@@ -286,6 +372,29 @@ const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => 
               <Copy size={14} />
               Copiar link
             </button>
+          </div>
+          <div className="mt-4 rounded-[24px] border border-white bg-white/80 p-4">
+            <StarRating
+              average={business.ratingAverage}
+              count={business.ratingCount}
+              viewerRating={business.viewerRating}
+              interactive={business.canRate && business.viewerRating === null}
+              disabled={!business.canRate || business.viewerRating !== null}
+              onRate={(stars) => void handleRateBusiness(stars)}
+            />
+            {!business.canRate ? (
+              <p className="mt-2 text-xs font-medium text-slate-500">
+                Proprietarios e administradores nao podem avaliar este negocio.
+              </p>
+            ) : business.viewerRating ? (
+              <p className="mt-2 text-xs font-medium text-slate-500">
+                Sua avaliacao ja foi registrada com {business.viewerRating} estrela{business.viewerRating > 1 ? 's' : ''}.
+              </p>
+            ) : (
+              <p className="mt-2 text-xs font-medium text-slate-500">
+                Cada usuario pode avaliar este negocio uma unica vez.
+              </p>
+            )}
           </div>
         </div>
 

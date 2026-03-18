@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { updateBusinessMediaSchema } from '@/lib/validators';
+import { isVisibleForRegion } from '@/lib/visibility';
 
 type RouteContext = {
   params: Promise<{
@@ -28,10 +29,15 @@ export async function GET(_request: Request, context: RouteContext) {
       imageUrl: true,
       galleryUrls: true,
       locationLabel: true,
+      regionKey: true,
       phone: true,
       whatsapp: true,
       website: true,
       instagram: true,
+      ratingAverage: true,
+      ratingCount: true,
+      visibilityScope: true,
+      visibilityRegionKey: true,
       status: true,
       createdById: true,
       createdAt: true,
@@ -39,6 +45,16 @@ export async function GET(_request: Request, context: RouteContext) {
         select: {
           name: true,
         },
+      },
+      favorites: {
+        where: { userId: session?.user?.id || '__no-user__' },
+        select: { id: true },
+        take: 1,
+      },
+      ratings: {
+        where: { userId: session?.user?.id || '__no-user__' },
+        select: { stars: true },
+        take: 1,
       },
       members: {
         where: { userId: session?.user?.id || '__no-user__' },
@@ -54,7 +70,15 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const canView =
-    business.status === BusinessStatus.PUBLISHED ||
+    (business.status === BusinessStatus.PUBLISHED &&
+      isVisibleForRegion(
+        {
+          regionKey: business.regionKey,
+          visibilityScope: business.visibilityScope,
+          visibilityRegionKey: business.visibilityRegionKey,
+        },
+        session?.user?.regionKey,
+      )) ||
     session?.user?.role === 'ADMIN' ||
     session?.user?.id === business.createdById;
 
@@ -62,6 +86,8 @@ export async function GET(_request: Request, context: RouteContext) {
     session?.user?.role === 'ADMIN' ||
     session?.user?.id === business.createdById ||
     business.members.length > 0;
+  const canRate =
+    Boolean(session?.user?.id) && session?.user?.role !== 'ADMIN' && business.members.length === 0;
 
   if (!canView) {
     return NextResponse.json({ error: 'Business not available' }, { status: 404 });
@@ -71,7 +97,12 @@ export async function GET(_request: Request, context: RouteContext) {
     business: {
       ...business,
       members: undefined,
+      favorites: undefined,
+      ratings: undefined,
       canEdit,
+      canRate,
+      isFavorite: business.favorites.length > 0,
+      viewerRating: business.ratings[0]?.stars ?? null,
       publicPath: `/negocios/${business.slug}`,
     },
   });

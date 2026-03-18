@@ -4,6 +4,7 @@ import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { findRegionByKey } from '@/lib/region-store';
 import { updateEventMediaSchema } from '@/lib/validators';
+import { isVisibleForRegion } from '@/lib/visibility';
 
 type RouteContext = {
   params: Promise<{
@@ -29,15 +30,29 @@ export async function GET(_request: Request, context: RouteContext) {
       endsAt: true,
       locationLabel: true,
       regionKey: true,
+      visibilityScope: true,
+      visibilityRegionKey: true,
       externalUrl: true,
       imageUrl: true,
       galleryUrls: true,
+      ratingAverage: true,
+      ratingCount: true,
       status: true,
       createdById: true,
       createdBy: {
         select: {
           name: true,
         },
+      },
+      favorites: {
+        where: { userId: session?.user?.id || '__no-user__' },
+        select: { id: true },
+        take: 1,
+      },
+      ratings: {
+        where: { userId: session?.user?.id || '__no-user__' },
+        select: { stars: true },
+        take: 1,
       },
     },
   });
@@ -47,7 +62,15 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const canView =
-    event.status === EventStatus.PUBLISHED ||
+    (event.status === EventStatus.PUBLISHED &&
+      isVisibleForRegion(
+        {
+          regionKey: event.regionKey,
+          visibilityScope: event.visibilityScope,
+          visibilityRegionKey: event.visibilityRegionKey,
+        },
+        session?.user?.regionKey,
+      )) ||
     session?.user?.role === 'ADMIN' ||
     session?.user?.id === event.createdById;
 
@@ -57,13 +80,20 @@ export async function GET(_request: Request, context: RouteContext) {
 
   const region = await findRegionByKey(event.regionKey);
   const canEdit = session?.user?.role === 'ADMIN' || session?.user?.id === event.createdById;
+  const canRate =
+    Boolean(session?.user?.id) && session?.user?.role !== 'ADMIN' && session?.user?.id !== event.createdById;
 
   return NextResponse.json({
     event: {
       ...event,
+      favorites: undefined,
+      ratings: undefined,
       city: region?.city ?? null,
       state: region?.state ?? null,
       canEdit,
+      canRate,
+      isFavorite: event.favorites.length > 0,
+      viewerRating: event.ratings[0]?.stars ?? null,
       publicPath: `/eventos/${event.slug}`,
     },
   });
