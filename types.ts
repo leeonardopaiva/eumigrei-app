@@ -11,6 +11,10 @@ export interface User {
   username?: string | null;
   role: UserRole;
   avatar: string;
+  coverImageUrl?: string | null;
+  bio?: string | null;
+  interests?: string[];
+  galleryUrls?: string[];
   location: string;
   regionKey?: string | null;
   email?: string | null;
@@ -22,6 +26,10 @@ export interface PublicUserProfile {
   name: string;
   username: string;
   image?: string | null;
+  coverImageUrl?: string | null;
+  bio?: string | null;
+  interests: string[];
+  galleryUrls: string[];
   locationLabel?: string | null;
   joinedAt: string;
   publicPath: string;

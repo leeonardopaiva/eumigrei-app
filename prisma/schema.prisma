@@ -75,6 +75,10 @@ model User {
   passwordHash        String?
   emailVerified       DateTime?
   image               String?
+  coverImageUrl       String?
+  bio                 String?
+  interests           String[]        @default([])
+  galleryUrls         String[]        @default([])
   role                UserRole        @default(USER)
   phone               String?
   locationLabel       String?

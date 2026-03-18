@@ -104,6 +104,30 @@ export const updateProfileSchema = z.object({
   phone: optionalString.refine((value) => !value || value.length >= 8, {
     message: 'Telefone muito curto',
   }),
+  bio: z
+    .string()
+    .trim()
+    .max(220, 'Use no maximo 220 caracteres na apresentacao.')
+    .nullish()
+    .transform((value) => {
+      const normalized = value?.trim();
+      return normalized ? normalized : undefined;
+    }),
+  coverImageUrl: optionalUrl,
+  galleryUrls: optionalUrlArray,
+  interests: z
+    .array(z.string().trim().min(2).max(40))
+    .max(8, 'Use no maximo 8 interesses')
+    .transform((values) =>
+      Array.from(
+        new Set(
+          values
+            .map((value) => value.trim())
+            .filter(Boolean),
+        ),
+      ),
+    )
+    .default([]),
 });
 
 export const requestEmailChangeSchema = z.object({

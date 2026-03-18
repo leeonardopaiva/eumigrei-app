@@ -6,6 +6,39 @@ import { buildRateLimitHeaders, consumeRateLimit, getRateLimitKey } from '@/lib/
 import { validateUsernameValue } from '@/lib/username';
 import { updateProfileSchema } from '@/lib/validators';
 
+export async function GET() {
+  const session = await getServerAuthSession();
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      email: true,
+      phone: true,
+      image: true,
+      coverImageUrl: true,
+      bio: true,
+      interests: true,
+      galleryUrls: true,
+      locationLabel: true,
+      regionKey: true,
+      updatedAt: true,
+    },
+  });
+
+  if (!user) {
+    return NextResponse.json({ error: 'Usuario nao encontrado.' }, { status: 404 });
+  }
+
+  return NextResponse.json({ user });
+}
+
 export async function PUT(request: Request) {
   const session = await getServerAuthSession();
 
@@ -83,6 +116,10 @@ export async function PUT(request: Request) {
         name: parsed.data.name,
         username: usernameValidation.normalized,
         phone: parsed.data.phone,
+        bio: parsed.data.bio ?? null,
+        coverImageUrl: parsed.data.coverImageUrl ?? null,
+        interests: parsed.data.interests,
+        galleryUrls: parsed.data.galleryUrls,
       },
       select: {
         id: true,
@@ -90,6 +127,10 @@ export async function PUT(request: Request) {
         username: true,
         email: true,
         phone: true,
+        bio: true,
+        coverImageUrl: true,
+        interests: true,
+        galleryUrls: true,
         updatedAt: true,
       },
     });

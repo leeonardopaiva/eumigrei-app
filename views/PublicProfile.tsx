@@ -28,6 +28,10 @@ const defaultProfile: PublicUserProfile = {
   name: 'Perfil publico',
   username: '',
   image: null,
+  coverImageUrl: null,
+  bio: null,
+  interests: [],
+  galleryUrls: [],
   locationLabel: null,
   joinedAt: new Date().toISOString(),
   publicPath: '/',
@@ -108,6 +112,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
   const photoItems = useMemo(
     () =>
       uniqueStrings([
+        ...(profile.galleryUrls || []),
         profile.image,
         ...profile.businesses.map((business) => business.imageUrl),
         ...profile.events.map((event) => event.imageUrl),
@@ -115,24 +120,30 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
       ]),
     [profile],
   );
-  const heroImage = photoItems[0] || `https://picsum.photos/seed/${profile.username || username}/1200/700`;
+  const heroImage =
+    profile.coverImageUrl ||
+    photoItems[0] ||
+    `https://picsum.photos/seed/${profile.username || username}/1200/700`;
   const photoPreview = photoItems.slice(0, 6);
   const extraPhotos = Math.max(photoItems.length - photoPreview.length, 0);
-  const interests = useMemo(
-    () =>
-      uniqueStrings([
-        ...profile.businesses.map((business) => business.category),
-        profile.stats.businessCount > 0 ? 'Negocios locais' : null,
-        profile.stats.eventCount > 0 ? 'Eventos da comunidade' : null,
-        profile.stats.postCount > 0 ? 'Conversas locais' : null,
-        profile.locationLabel?.split(',')[0],
-      ]).slice(0, 6),
-    [profile],
-  );
+  const interests = useMemo(() => {
+    if (profile.interests.length > 0) {
+      return profile.interests.slice(0, 8);
+    }
+
+    return uniqueStrings([
+      ...profile.businesses.map((business) => business.category),
+      profile.stats.businessCount > 0 ? 'Negocios locais' : null,
+      profile.stats.eventCount > 0 ? 'Eventos da comunidade' : null,
+      profile.stats.postCount > 0 ? 'Conversas locais' : null,
+      profile.locationLabel?.split(',')[0],
+    ]).slice(0, 6);
+  }, [profile]);
   const profileQuote =
-    profile.locationLabel && (profile.stats.businessCount > 0 || profile.stats.eventCount > 0)
+    profile.bio ||
+    (profile.locationLabel && (profile.stats.businessCount > 0 || profile.stats.eventCount > 0)
       ? `Conectando brasileiros e oportunidades em ${profile.locationLabel}.`
-      : 'Compartilhando experiencias e fortalecendo a comunidade brasileira.';
+      : 'Compartilhando experiencias e fortalecendo a comunidade brasileira.');
   const pageContainerClass = embedded
     ? 'animate-in pb-24 fade-in duration-500'
     : 'min-h-screen bg-texture px-4 py-5 sm:px-6 lg:px-8 lg:py-8';
