@@ -1,6 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { CalendarDays, Images, MapPin, MessageSquareText, UserPlus, Users } from 'lucide-react';
+import {
+  BadgeCheck,
+  CalendarDays,
+  Globe2,
+  Images,
+  MapPin,
+  MessageSquareText,
+  MoreHorizontal,
+  UserPlus,
+  Users,
+} from 'lucide-react';
 import StarRating from '../components/engagement/StarRating';
 import { Logo } from '../components/Layout';
 import { PublicUserProfile, User } from '../types';
@@ -11,7 +21,7 @@ type PublicProfileProps = {
   embedded?: boolean;
 };
 
-type PublicTab = 'about' | 'businesses' | 'events' | 'posts';
+type PublicTab = 'about' | 'interests' | 'photos' | 'recommendations';
 
 const defaultProfile: PublicUserProfile = {
   id: '',
@@ -47,11 +57,14 @@ const formatEventDate = (value: string) =>
     timeStyle: 'short',
   }).format(new Date(value));
 
+const uniqueStrings = (values: Array<string | null | undefined>) =>
+  Array.from(new Set(values.filter((value): value is string => Boolean(value))));
+
 const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedded = false }) => {
   const [profile, setProfile] = useState<PublicUserProfile>(defaultProfile);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<PublicTab>('about');
+  const [activeTab, setActiveTab] = useState<PublicTab>('photos');
 
   useEffect(() => {
     let ignore = false;
@@ -92,28 +105,53 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
   }, [username]);
 
   const isOwnProfile = viewer?.username === profile.username;
+  const photoItems = useMemo(
+    () =>
+      uniqueStrings([
+        profile.image,
+        ...profile.businesses.map((business) => business.imageUrl),
+        ...profile.events.map((event) => event.imageUrl),
+        ...profile.posts.map((post) => post.imageUrl),
+      ]),
+    [profile],
+  );
+  const heroImage = photoItems[0] || `https://picsum.photos/seed/${profile.username || username}/1200/700`;
+  const photoPreview = photoItems.slice(0, 6);
+  const extraPhotos = Math.max(photoItems.length - photoPreview.length, 0);
+  const interests = useMemo(
+    () =>
+      uniqueStrings([
+        ...profile.businesses.map((business) => business.category),
+        profile.stats.businessCount > 0 ? 'Negocios locais' : null,
+        profile.stats.eventCount > 0 ? 'Eventos da comunidade' : null,
+        profile.stats.postCount > 0 ? 'Conversas locais' : null,
+        profile.locationLabel?.split(',')[0],
+      ]).slice(0, 6),
+    [profile],
+  );
+  const profileQuote =
+    profile.locationLabel && (profile.stats.businessCount > 0 || profile.stats.eventCount > 0)
+      ? `Conectando brasileiros e oportunidades em ${profile.locationLabel}.`
+      : 'Compartilhando experiencias e fortalecendo a comunidade brasileira.';
   const pageContainerClass = embedded
-    ? 'animate-in px-5 pb-24 pt-6 fade-in duration-500'
+    ? 'animate-in pb-24 fade-in duration-500'
     : 'min-h-screen bg-texture px-4 py-5 sm:px-6 lg:px-8 lg:py-8';
-  const contentClass = embedded
-    ? 'space-y-5'
+  const wrapperClass = embedded
+    ? 'mx-auto w-full max-w-4xl'
     : 'mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-5xl items-start justify-center';
-  const cardClass = embedded
-    ? 'space-y-5'
-    : 'w-full max-w-4xl space-y-5 rounded-[40px] bg-white/90 p-5 shadow-xl backdrop-blur';
 
   if (loading) {
     return (
       <div className={pageContainerClass}>
-        <div className={contentClass}>
-          <div className={cardClass}>
+        <div className={wrapperClass}>
+          <div className="w-full space-y-5">
             {!embedded ? (
-              <div className="mb-6 flex justify-center">
+              <div className="mb-4 flex justify-center">
                 <Logo size="lg" />
               </div>
             ) : null}
-            <div className="h-56 animate-pulse rounded-[36px] bg-white shadow-sm" />
-            <div className="h-48 animate-pulse rounded-[36px] bg-white shadow-sm" />
+            <div className="h-72 animate-pulse rounded-[36px] bg-white shadow-sm" />
+            <div className="h-80 animate-pulse rounded-[36px] bg-white shadow-sm" />
           </div>
         </div>
       </div>
@@ -123,10 +161,10 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
   if (error) {
     return (
       <div className={pageContainerClass}>
-        <div className={contentClass}>
-          <div className={cardClass}>
+        <div className={wrapperClass}>
+          <div className="w-full space-y-5">
             {!embedded ? (
-              <div className="mb-6 flex justify-center">
+              <div className="mb-4 flex justify-center">
                 <Logo size="lg" />
               </div>
             ) : null}
@@ -142,213 +180,290 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
 
   const tabs = [
     { id: 'about' as const, label: 'Sobre' },
-    { id: 'businesses' as const, label: 'Negocios' },
-    { id: 'events' as const, label: 'Eventos' },
-    { id: 'posts' as const, label: 'Comunidade' },
+    { id: 'interests' as const, label: 'Interesses' },
+    { id: 'photos' as const, label: 'Fotos' },
+    { id: 'recommendations' as const, label: 'Recomendacao' },
   ];
 
   return (
     <div className={pageContainerClass}>
-      <div className={contentClass}>
-        <div className={cardClass}>
+      <div className={wrapperClass}>
+        <div className="w-full">
           {!embedded ? (
-            <div className="mb-6 flex justify-center">
+            <div className="mb-4 flex justify-center">
               <Logo size="lg" />
             </div>
           ) : null}
 
-          <section className="overflow-hidden rounded-[36px] bg-white shadow-sm">
-            <div className="h-40 bg-gradient-to-br from-[#28B8C7] via-[#1EA7B6] to-[#6ADDE6]" />
-            <div className="-mt-16 px-5 pb-5">
-              <div className="mx-auto h-32 w-32 overflow-hidden rounded-full border-4 border-white bg-white shadow-lg">
+          <div className="relative h-72 overflow-hidden rounded-t-[36px] sm:h-80 lg:h-96">
+            <img
+              src={heroImage}
+              className="h-full w-full object-cover"
+              alt={`Capa de ${profile.name}`}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-white via-white/15 to-white/10" />
+            <div className="absolute right-4 top-4">
+              <button
+                type="button"
+                className="rounded-[22px] border border-white/70 bg-white/85 p-3 text-slate-600 shadow-sm backdrop-blur"
+                aria-label="Mais opcoes"
+              >
+                <MoreHorizontal size={18} />
+              </button>
+            </div>
+          </div>
+
+          <div className="-mt-16 rounded-t-[36px] bg-white px-5 pb-8 pt-0 shadow-sm">
+            <div className="flex flex-col items-center text-center">
+              <div className="-mt-16 h-32 w-32 overflow-hidden rounded-full border-[6px] border-white bg-white shadow-lg sm:h-40 sm:w-40">
                 <img
                   src={profile.image || `https://picsum.photos/seed/${profile.username}/320`}
                   alt={profile.name}
                   className="h-full w-full object-cover"
                 />
               </div>
-              <div className="mt-4 text-center">
-                <h1 className="text-3xl font-bold text-slate-900">{profile.name}</h1>
-                <p className="mt-2 text-sm font-semibold text-slate-600">@{profile.username}</p>
-                {profile.locationLabel ? (
-                  <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600">
-                    <MapPin size={14} />
-                    {profile.locationLabel}
-                  </p>
+
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                  {profile.name}
+                </h1>
+                {(profile.stats.businessCount > 0 || profile.stats.eventCount > 0) ? (
+                  <BadgeCheck size={28} className="text-[#0D6EFD]" />
                 ) : null}
-                <p className="mt-4 text-sm text-slate-500">
-                  Na comunidade desde {formatJoinedDate(profile.joinedAt)}
-                </p>
               </div>
 
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-                {profile.friendFeature.canRequest && !isOwnProfile ? (
+              <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-700">
+                "{profileQuote}"
+              </p>
+
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-base font-semibold text-slate-700">
+                <span className="inline-flex items-center gap-2">
+                  <Globe2 size={18} />
+                  {profile.username}
+                </span>
+                {profile.locationLabel ? (
+                  <span className="inline-flex items-center gap-2">
+                    <MapPin size={18} />
+                    {profile.locationLabel}
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="mt-6">
+                {isOwnProfile ? (
+                  <div className="inline-flex min-h-12 items-center gap-2 rounded-[22px] border border-slate-200 bg-white px-6 text-sm font-bold text-slate-600 shadow-sm">
+                    Perfil publico ativo
+                  </div>
+                ) : profile.friendFeature.canRequest ? (
                   <button
                     type="button"
                     disabled
-                    className="inline-flex min-h-11 items-center gap-2 rounded-2xl bg-[#28B8C7] px-5 text-sm font-bold text-white opacity-80"
+                    className="inline-flex min-h-12 items-center gap-3 rounded-[22px] bg-[#0D6EFD] px-8 text-base font-bold text-white shadow-lg shadow-[#0D6EFD]/20 opacity-90"
                   >
-                    <UserPlus size={16} />
-                    Adicionar em breve
+                    <UserPlus size={20} />
+                    Adicionar
                   </button>
-                ) : null}
-                {!viewer && !isOwnProfile ? (
+                ) : (
                   <Link
                     href="/"
-                    className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700"
+                    className="inline-flex min-h-12 items-center gap-3 rounded-[22px] bg-[#0D6EFD] px-8 text-base font-bold text-white shadow-lg shadow-[#0D6EFD]/20"
                   >
-                    Entrar para interagir
+                    <UserPlus size={20} />
+                    Adicionar
                   </Link>
-                ) : null}
+                )}
               </div>
             </div>
-          </section>
 
-          <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard icon={<Users size={16} />} value={profile.stats.friendCount} label="Conexoes" />
-            <StatCard icon={<Images size={16} />} value={profile.stats.businessCount} label="Negocios" />
-            <StatCard icon={<CalendarDays size={16} />} value={profile.stats.eventCount} label="Eventos" />
-            <StatCard icon={<MessageSquareText size={16} />} value={profile.stats.postCount} label="Posts visiveis" />
-          </section>
-
-          <section className="overflow-x-auto rounded-[30px] bg-white p-2 shadow-sm">
-            <div className="flex min-w-max gap-2">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`rounded-2xl px-4 py-3 text-sm font-bold transition ${
-                    activeTab === tab.id ? 'bg-[#28B8C7] text-white' : 'bg-slate-100 text-slate-600'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {activeTab === 'about' ? (
-            <section className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Perfil publico</p>
-              <h2 className="mt-2 text-xl font-bold text-[#28B8C7]">Resumo do perfil</h2>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                Este espaco mostra os dados publicos do usuario, negocios e eventos publicados,
-                e ja esta preparado para receber conexoes entre usuarios em uma proxima etapa.
-              </p>
-              <p className="mt-4 text-sm leading-7 text-slate-500">
-                Link publico: <span className="font-semibold text-slate-700">{profile.publicPath}</span>
-              </p>
-            </section>
-          ) : null}
-
-          {activeTab === 'businesses' ? (
-            <section className="space-y-3">
-              {profile.businesses.length === 0 ? (
-                <EmptyPublicState text="Nenhum negocio publico disponivel para este perfil." />
-              ) : (
-                profile.businesses.map((business) => (
-                  <Link
-                    key={business.id}
-                    href={`/negocios/${business.slug}`}
-                    className="flex gap-4 rounded-[32px] border border-slate-100 bg-white p-4 shadow-sm"
+            <div className="mt-8 border-t border-slate-100 pt-5">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative whitespace-nowrap px-4 py-3 text-base font-semibold transition ${
+                      activeTab === tab.id ? 'text-[#0D6EFD]' : 'text-slate-500'
+                    }`}
                   >
-                    <img
-                      src={business.imageUrl || `https://picsum.photos/seed/${business.id}/300`}
-                      alt={business.name}
-                      className="h-24 w-24 rounded-2xl object-cover"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-lg font-bold text-[#28B8C7]">{business.name}</p>
-                      <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-                        {business.category}
-                      </p>
-                      {business.locationLabel ? (
-                        <p className="mt-2 text-sm text-slate-500">{business.locationLabel}</p>
-                      ) : null}
-                      <div className="mt-3">
-                        <StarRating average={business.ratingAverage} count={business.ratingCount} compact />
-                      </div>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </section>
-          ) : null}
-
-          {activeTab === 'events' ? (
-            <section className="space-y-3">
-              {profile.events.length === 0 ? (
-                <EmptyPublicState text="Nenhum evento publico disponivel para este perfil." />
-              ) : (
-                profile.events.map((event) => (
-                  <Link
-                    key={event.id}
-                    href={`/eventos/${event.slug}`}
-                    className="flex gap-4 rounded-[32px] border border-slate-100 bg-white p-4 shadow-sm"
-                  >
-                    <img
-                      src={event.imageUrl || `https://picsum.photos/seed/${event.id}/300`}
-                      alt={event.title}
-                      className="h-24 w-24 rounded-2xl object-cover"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-lg font-bold text-[#28B8C7]">{event.title}</p>
-                      <p className="mt-1 text-sm text-slate-500">{formatEventDate(event.startsAt)}</p>
-                      <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-                        {event.venueName}
-                      </p>
-                      {event.locationLabel ? (
-                        <p className="mt-2 text-sm text-slate-500">{event.locationLabel}</p>
-                      ) : null}
-                      <div className="mt-3">
-                        <StarRating average={event.ratingAverage} count={event.ratingCount} compact />
-                      </div>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </section>
-          ) : null}
-
-          {activeTab === 'posts' ? (
-            <section className="space-y-3">
-              {profile.posts.length === 0 ? (
-                <EmptyPublicState text="Nenhuma publicacao visivel nesta regiao para este perfil." />
-              ) : (
-                profile.posts.map((post) => (
-                  <div key={post.id} className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
-                    <p className="text-sm leading-7 text-slate-700">{post.content}</p>
-                    {post.imageUrl ? (
-                      <img
-                        src={post.imageUrl}
-                        alt="Midia da publicacao"
-                        className="mt-4 h-48 w-full rounded-[24px] object-cover"
-                      />
+                    {tab.label}
+                    {activeTab === tab.id ? (
+                      <span className="absolute inset-x-3 bottom-0 h-1 rounded-full bg-[#0D6EFD]" />
                     ) : null}
-                    <div className="mt-4 flex flex-wrap gap-3 text-xs font-medium text-slate-500">
-                      <span>{post.locationLabel}</span>
-                      <span>{new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(post.createdAt))}</span>
-                      <span>{post._count.reactions} curtidas</span>
-                      <span>{post._count.comments} comentarios</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {activeTab === 'about' ? (
+              <section className="mt-6 rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+                <h2 className="text-2xl font-bold text-slate-900">Sobre</h2>
+                <p className="mt-4 text-sm leading-7 text-slate-600">
+                  Membro da comunidade desde {formatJoinedDate(profile.joinedAt)}.
+                  {' '}
+                  Hoje este perfil tem {profile.stats.businessCount} negocio{profile.stats.businessCount === 1 ? '' : 's'} publico{profile.stats.businessCount === 1 ? '' : 's'},
+                  {' '}
+                  {profile.stats.eventCount} evento{profile.stats.eventCount === 1 ? '' : 's'} e
+                  {' '}
+                  {profile.stats.postCount} publicacao{profile.stats.postCount === 1 ? '' : 'oes'} visive{profile.stats.postCount === 1 ? 'l' : 'is'} na comunidade.
+                </p>
+
+                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <ProfileMetric icon={<Users size={16} />} value={profile.stats.friendCount} label="Conexoes" />
+                  <ProfileMetric icon={<Images size={16} />} value={profile.stats.businessCount} label="Negocios" />
+                  <ProfileMetric icon={<CalendarDays size={16} />} value={profile.stats.eventCount} label="Eventos" />
+                  <ProfileMetric icon={<MessageSquareText size={16} />} value={profile.stats.postCount} label="Posts" />
+                </div>
+              </section>
+            ) : null}
+
+            {activeTab === 'interests' ? (
+              <section className="mt-6 rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+                <h2 className="text-2xl font-bold text-slate-900">Interesses</h2>
+                {interests.length === 0 ? (
+                  <EmptyPublicState text="Ainda nao ha interesses publicos suficientes para este perfil." />
+                ) : (
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    {interests.map((interest) => (
+                      <span
+                        key={interest}
+                        className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600"
+                      >
+                        {interest}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </section>
+            ) : null}
+
+            {activeTab === 'photos' ? (
+              <section className="mt-6 rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-2xl font-bold text-slate-900">Fotos</h2>
+                  <span className="text-sm font-semibold text-slate-400">
+                    {photoItems.length}
+                    {' '}
+                    imagem{photoItems.length === 1 ? '' : 'ns'}
+                  </span>
+                </div>
+
+                {photoPreview.length === 0 ? (
+                  <EmptyPublicState text="Nenhuma foto publica disponivel para este perfil." />
+                ) : (
+                  <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {photoPreview.map((photo, index) => {
+                      const showOverflow = index === photoPreview.length - 1 && extraPhotos > 0;
+
+                      return (
+                        <div
+                          key={`${photo}-${index}`}
+                          className="relative overflow-hidden rounded-[24px] border border-slate-100 bg-slate-50 shadow-sm"
+                        >
+                          <img
+                            src={photo}
+                            alt={`${profile.name} - foto ${index + 1}`}
+                            className="aspect-square w-full object-cover"
+                          />
+                          {showOverflow ? (
+                            <div className="absolute inset-0 flex items-end justify-end bg-slate-950/20 p-3">
+                              <span className="rounded-full bg-slate-950/55 px-3 py-1 text-xl font-bold text-white">
+                                +{extraPhotos}
+                              </span>
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            ) : null}
+
+            {activeTab === 'recommendations' ? (
+              <section className="mt-6 space-y-4">
+                {profile.businesses.length > 0 ? (
+                  <div className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+                    <h2 className="text-2xl font-bold text-slate-900">Negocios em destaque</h2>
+                    <div className="mt-5 space-y-3">
+                      {profile.businesses.slice(0, 3).map((business) => (
+                        <Link
+                          key={business.id}
+                          href={`/negocios/${business.slug}`}
+                          className="flex gap-4 rounded-[28px] border border-slate-100 bg-slate-50 p-4"
+                        >
+                          <img
+                            src={business.imageUrl || `https://picsum.photos/seed/${business.id}/320`}
+                            alt={business.name}
+                            className="h-24 w-24 rounded-2xl object-cover"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-lg font-bold text-[#28B8C7]">{business.name}</p>
+                            <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                              {business.category}
+                            </p>
+                            {business.locationLabel ? (
+                              <p className="mt-2 text-sm text-slate-500">{business.locationLabel}</p>
+                            ) : null}
+                            <div className="mt-3">
+                              <StarRating average={business.ratingAverage} count={business.ratingCount} compact />
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
                     </div>
                   </div>
-                ))
-              )}
-            </section>
-          ) : null}
+                ) : null}
+
+                {profile.events.length > 0 ? (
+                  <div className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+                    <h2 className="text-2xl font-bold text-slate-900">Agenda recomendada</h2>
+                    <div className="mt-5 space-y-3">
+                      {profile.events.slice(0, 3).map((event) => (
+                        <Link
+                          key={event.id}
+                          href={`/eventos/${event.slug}`}
+                          className="flex gap-4 rounded-[28px] border border-slate-100 bg-slate-50 p-4"
+                        >
+                          <img
+                            src={event.imageUrl || `https://picsum.photos/seed/${event.id}/320`}
+                            alt={event.title}
+                            className="h-24 w-24 rounded-2xl object-cover"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-lg font-bold text-[#28B8C7]">{event.title}</p>
+                            <p className="mt-1 text-sm text-slate-500">{formatEventDate(event.startsAt)}</p>
+                            <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                              {event.venueName}
+                            </p>
+                            <div className="mt-3">
+                              <StarRating average={event.ratingAverage} count={event.ratingCount} compact />
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {profile.businesses.length === 0 && profile.events.length === 0 ? (
+                  <EmptyPublicState text="Ainda nao ha negocios ou eventos suficientes para montar recomendacoes." />
+                ) : null}
+              </section>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-const StatCard: React.FC<{ icon: React.ReactNode; value: number; label: string }> = ({
+const ProfileMetric: React.FC<{ icon: React.ReactNode; value: number; label: string }> = ({
   icon,
   value,
   label,
 }) => (
-  <div className="rounded-[28px] border border-slate-100 bg-white p-4 text-center shadow-sm">
+  <div className="rounded-[24px] border border-slate-100 bg-slate-50 p-4 text-center">
     <div className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 text-[#28B8C7]">
       {icon}
     </div>
@@ -358,7 +473,7 @@ const StatCard: React.FC<{ icon: React.ReactNode; value: number; label: string }
 );
 
 const EmptyPublicState: React.FC<{ text: string }> = ({ text }) => (
-  <div className="rounded-[32px] border border-dashed border-slate-200 bg-white px-5 py-8 text-center text-sm font-medium text-slate-500">
+  <div className="mt-5 rounded-[28px] border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center text-sm font-medium text-slate-500">
     {text}
   </div>
 );
