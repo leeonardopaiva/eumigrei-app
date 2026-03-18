@@ -80,6 +80,7 @@ export interface PublicUserProfile {
 export interface CommunityAuthor {
   id: string;
   name: string;
+  username?: string | null;
   image?: string | null;
   locationLabel?: string | null;
 }
@@ -87,6 +88,7 @@ export interface CommunityAuthor {
 export interface PostLikeUser {
   id: string;
   name: string;
+  username?: string | null;
   image?: string | null;
 }
 

@@ -163,6 +163,21 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
   }, [router, searchParams, showToast, update]);
 
   useEffect(() => {
+    const editSection = searchParams.get('edit');
+
+    if (!editSection || loading) {
+      return;
+    }
+
+    if (editSection === 'cover') {
+      setEditing((current) => ({ ...current, cover: true }));
+      setCoverDraft(profile.coverImageUrl);
+    }
+
+    router.replace('/profile', { scroll: false });
+  }, [loading, profile.coverImageUrl, router, searchParams]);
+
+  useEffect(() => {
     let ignore = false;
 
     const loadReferralSummary = async () => {

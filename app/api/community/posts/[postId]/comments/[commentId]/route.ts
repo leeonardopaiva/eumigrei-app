@@ -38,6 +38,7 @@ export async function PUT(request: Request, context: RouteContext) {
         select: {
           id: true,
           name: true,
+          username: true,
           image: true,
         },
       },
@@ -75,6 +76,7 @@ export async function PUT(request: Request, context: RouteContext) {
         select: {
           id: true,
           name: true,
+          username: true,
           image: true,
         },
       },

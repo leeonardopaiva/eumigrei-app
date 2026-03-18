@@ -53,6 +53,7 @@ export async function POST(request: Request, context: RouteContext) {
         select: {
           id: true,
           name: true,
+          username: true,
           image: true,
         },
       },

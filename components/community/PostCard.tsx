@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import {
   Link as LinkIcon,
   MessageSquare,
@@ -20,6 +21,7 @@ type RootProps = {
 type HeaderProps = {
   authorImage: string;
   authorName: string;
+  authorHref?: string;
   createdAt: string;
   locationLabel: string;
   menu?: React.ReactNode;
@@ -66,6 +68,7 @@ type ActionsProps = {
 type CommentItemProps = {
   authorImage: string;
   authorName: string;
+  authorHref?: string;
   content: React.ReactNode;
   menu?: React.ReactNode;
   footer?: React.ReactNode;
@@ -87,20 +90,33 @@ const Root: React.FC<RootProps> = ({ children }) => (
 const Header: React.FC<HeaderProps> = ({
   authorImage,
   authorName,
+  authorHref,
   createdAt,
   locationLabel,
   menu,
 }) => (
   <div className="flex items-center justify-between">
-    <div className="flex items-center gap-3">
-      <img src={authorImage} className="h-10 w-10 rounded-full object-cover" alt={authorName} />
-      <div>
-        <h5 className="text-sm font-bold text-cyan-900">{authorName}</h5>
-        <p className="text-[10px] text-slate-400">
-          {formatRelativeTime(createdAt)} | {locationLabel}
-        </p>
+    {authorHref ? (
+      <Link href={authorHref} className="flex items-center gap-3 transition hover:opacity-90">
+        <img src={authorImage} className="h-10 w-10 rounded-full object-cover" alt={authorName} />
+        <div>
+          <h5 className="text-sm font-bold text-cyan-900">{authorName}</h5>
+          <p className="text-[10px] text-slate-400">
+            {formatRelativeTime(createdAt)} | {locationLabel}
+          </p>
+        </div>
+      </Link>
+    ) : (
+      <div className="flex items-center gap-3">
+        <img src={authorImage} className="h-10 w-10 rounded-full object-cover" alt={authorName} />
+        <div>
+          <h5 className="text-sm font-bold text-cyan-900">{authorName}</h5>
+          <p className="text-[10px] text-slate-400">
+            {formatRelativeTime(createdAt)} | {locationLabel}
+          </p>
+        </div>
       </div>
-    </div>
+    )}
     {menu}
   </div>
 );
@@ -308,17 +324,30 @@ const Actions: React.FC<ActionsProps> = ({
 const CommentItem: React.FC<CommentItemProps> = ({
   authorImage,
   authorName,
+  authorHref,
   content,
   menu,
   footer,
 }) => (
   <div className="rounded-2xl bg-slate-50 p-3">
     <div className="flex gap-3">
-      <img src={authorImage} className="h-8 w-8 rounded-full object-cover" alt={authorName} />
+      {authorHref ? (
+        <Link href={authorHref} className="block transition hover:opacity-90">
+          <img src={authorImage} className="h-8 w-8 rounded-full object-cover" alt={authorName} />
+        </Link>
+      ) : (
+        <img src={authorImage} className="h-8 w-8 rounded-full object-cover" alt={authorName} />
+      )}
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h6 className="mb-1 text-xs font-bold text-cyan-900">{authorName}</h6>
+            {authorHref ? (
+              <Link href={authorHref} className="mb-1 block text-xs font-bold text-cyan-900 transition hover:opacity-90">
+                {authorName}
+              </Link>
+            ) : (
+              <h6 className="mb-1 text-xs font-bold text-cyan-900">{authorName}</h6>
+            )}
             {content}
           </div>
           {menu}

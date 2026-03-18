@@ -20,6 +20,7 @@ const mapCommunityPost = (
     author: {
       id: string;
       name: string | null;
+      username: string | null;
       image: string | null;
       locationLabel: string | null;
     };
@@ -31,6 +32,7 @@ const mapCommunityPost = (
       author: {
         id: string;
         name: string | null;
+        username: string | null;
         image: string | null;
       };
     }>;
@@ -39,6 +41,7 @@ const mapCommunityPost = (
       author: {
         id: string;
         name: string | null;
+        username: string | null;
         image: string | null;
       };
     }>;
@@ -84,6 +87,7 @@ const mapCommunityPost = (
       .map((reaction) => ({
         id: reaction.author.id,
         name: reaction.author.name || 'Usuario da comunidade',
+        username: reaction.author.username,
         image: reaction.author.image,
       })),
     canEdit: isAdmin || isPostOwner,
@@ -108,6 +112,7 @@ export async function GET(request: Request) {
         select: {
           id: true,
           name: true,
+          username: true,
           image: true,
           locationLabel: true,
         },
@@ -120,6 +125,7 @@ export async function GET(request: Request) {
             select: {
               id: true,
               name: true,
+              username: true,
               image: true,
             },
           },
@@ -133,6 +139,7 @@ export async function GET(request: Request) {
             select: {
               id: true,
               name: true,
+              username: true,
               image: true,
             },
           },
@@ -226,6 +233,7 @@ export async function POST(request: Request) {
         select: {
           id: true,
           name: true,
+          username: true,
           image: true,
           locationLabel: true,
         },

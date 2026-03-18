@@ -22,6 +22,7 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
   onUpdateComment,
   onDeleteComment,
 }) => {
+  const authorHref = post.author.username ? `/${post.author.username}` : undefined;
   const [commentText, setCommentText] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [editingPost, setEditingPost] = useState(false);
@@ -202,6 +203,7 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
       <PostCard.Header
         authorImage={post.author.image || `https://picsum.photos/seed/${post.author.id}/100`}
         authorName={post.author.name}
+        authorHref={authorHref}
         createdAt={post.createdAt}
         locationLabel={post.locationLabel}
         menu={
@@ -310,6 +312,7 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
           key={comment.id}
           authorImage={comment.author.image || `https://picsum.photos/seed/${comment.author.id}/100`}
           authorName={comment.author.name}
+          authorHref={comment.author.username ? `/${comment.author.username}` : undefined}
           content={
             editingCommentId === comment.id ? (
               <textarea

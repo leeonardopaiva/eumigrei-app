@@ -233,49 +233,53 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
             </div>
           ) : null}
 
-          <div className={`relative h-72 overflow-hidden rounded-t-[36px] sm:h-80 lg:h-96 ${heroImage ? 'bg-slate-100' : PROFILE_GRADIENT_CLASS}`}>
-            {heroImage ? (
-              <img
-                src={heroImage}
-                className="h-full w-full object-cover object-center"
-                alt={`Capa de ${profile.name}`}
-              />
-            ) : (
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.28),_transparent_28%)]" />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-white via-white/15 to-white/10" />
-            <div className="absolute right-4 top-4">
-              <button
-                type="button"
-                className="rounded-[22px] border border-white/70 bg-white/85 p-3 text-slate-600 shadow-sm backdrop-blur"
-                aria-label="Mais opcoes"
-              >
-                <MoreHorizontal size={18} />
-              </button>
+          <div className="relative">
+            <div className={`relative h-72 overflow-hidden rounded-t-[36px] sm:h-80 lg:h-96 ${heroImage ? 'bg-slate-100' : PROFILE_GRADIENT_CLASS}`}>
+              {heroImage ? (
+                <img
+                  src={heroImage}
+                  className="h-full w-full object-cover object-center"
+                  alt={`Capa de ${profile.name}`}
+                />
+              ) : (
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.28),_transparent_28%)]" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-white via-white/15 to-white/10" />
+              {isOwnProfile ? (
+                <div className="absolute right-4 top-4">
+                  <Link
+                    href="/profile?edit=cover"
+                    className="inline-flex rounded-[22px] border border-white/70 bg-white/85 p-3 text-slate-600 shadow-sm backdrop-blur"
+                    aria-label="Editar capa"
+                  >
+                    <MoreHorizontal size={18} />
+                  </Link>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="absolute left-1/2 top-full z-20 h-32 w-32 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border-[6px] border-white bg-white shadow-lg sm:h-40 sm:w-40">
+              {profile.image ? (
+                <img
+                  src={profile.image}
+                  alt={profile.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className={`flex h-full w-full items-center justify-center ${PROFILE_GRADIENT_CLASS} text-4xl font-bold text-white`}>
+                  {getInitials(profile.name)}
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="-mt-16 rounded-t-[36px] bg-white px-5 pb-8 pt-0 shadow-sm">
+          <div className="-mt-8 rounded-t-[36px] bg-white px-5 pb-8 pt-20 shadow-sm">
             <div className="flex flex-col items-center text-center">
-              <div className="-mt-16 h-32 w-32 overflow-hidden rounded-full border-[6px] border-white bg-white shadow-lg sm:h-40 sm:w-40">
-                {profile.image ? (
-                  <img
-                    src={profile.image}
-                    alt={profile.name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className={`flex h-full w-full items-center justify-center ${PROFILE_GRADIENT_CLASS} text-4xl font-bold text-white`}>
-                    {getInitials(profile.name)}
-                  </div>
-                )}
-              </div>
-
               <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
                 <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
                   {profile.name}
                 </h1>
-                {(profile.stats.businessCount > 0 || profile.stats.eventCount > 0) ? (
+                {profile.stats.businessCount > 0 || profile.stats.eventCount > 0 ? (
                   <BadgeCheck size={28} className="text-[#0D6EFD]" />
                 ) : null}
               </div>
@@ -354,12 +358,9 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                   <p className="mt-4 text-base leading-7 text-slate-700">{profile.bio}</p>
                 ) : null}
                 <p className="mt-4 text-sm leading-7 text-slate-600">
-                  Membro da comunidade desde {formatJoinedDate(profile.joinedAt)}.
-                  {' '}
-                  Hoje este perfil tem {profile.stats.businessCount} negocio{profile.stats.businessCount === 1 ? '' : 's'} publico{profile.stats.businessCount === 1 ? '' : 's'},
-                  {' '}
-                  {profile.stats.eventCount} evento{profile.stats.eventCount === 1 ? '' : 's'} e
-                  {' '}
+                  Membro da comunidade desde {formatJoinedDate(profile.joinedAt)}. Hoje este perfil tem{' '}
+                  {profile.stats.businessCount} negocio{profile.stats.businessCount === 1 ? '' : 's'} publico{profile.stats.businessCount === 1 ? '' : 's'},{' '}
+                  {profile.stats.eventCount} evento{profile.stats.eventCount === 1 ? '' : 's'} e{' '}
                   {profile.stats.postCount} publicacao{profile.stats.postCount === 1 ? '' : 'oes'} visive{profile.stats.postCount === 1 ? 'l' : 'is'} na comunidade.
                 </p>
 
@@ -397,9 +398,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-2xl font-bold text-slate-900">Fotos</h2>
                   <span className="text-sm font-semibold text-slate-400">
-                    {photoItems.length}
-                    {' '}
-                    imagem{photoItems.length === 1 ? '' : 'ns'}
+                    {photoItems.length} imagem{photoItems.length === 1 ? '' : 'ns'}
                   </span>
                 </div>
 

@@ -26,6 +26,7 @@ const buildReactionPayload = async (postId: string) => {
           select: {
             id: true,
             name: true,
+            username: true,
             image: true,
           },
         },
@@ -44,6 +45,7 @@ const buildReactionPayload = async (postId: string) => {
     likedBy: reactions.map((reaction) => ({
       id: reaction.author.id,
       name: reaction.author.name || 'Usuario da comunidade',
+      username: reaction.author.username,
       image: reaction.author.image,
     })),
   };
