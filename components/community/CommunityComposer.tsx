@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { Camera, Link as LinkIcon, Play } from 'lucide-react';
 import CloudinaryImageField from '@/components/forms/CloudinaryImageField';
 import type { ComposerMode } from '@/components/community/utils';
@@ -9,6 +10,7 @@ type RootProps = {
 
 type EditorProps = {
   avatar: string;
+  avatarHref?: string;
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
@@ -42,9 +44,15 @@ const Root: React.FC<RootProps> = ({ children }) => (
   </div>
 );
 
-const Editor: React.FC<EditorProps> = ({ avatar, value, onChange, placeholder }) => (
+const Editor: React.FC<EditorProps> = ({ avatar, avatarHref, value, onChange, placeholder }) => (
   <div className="flex items-start gap-3">
-    <img src={avatar} className="h-10 w-10 rounded-full object-cover" alt="User" />
+    {avatarHref ? (
+      <Link href={avatarHref} className="transition hover:opacity-90">
+        <img src={avatar} className="h-10 w-10 rounded-full object-cover" alt="User" />
+      </Link>
+    ) : (
+      <img src={avatar} className="h-10 w-10 rounded-full object-cover" alt="User" />
+    )}
     <textarea
       rows={3}
       value={value}

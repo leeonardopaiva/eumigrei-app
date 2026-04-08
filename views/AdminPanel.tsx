@@ -22,6 +22,7 @@ import { useToast } from '../components/feedback/ToastProvider';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import ImageGalleryField from '../components/forms/ImageGalleryField';
 import RegionSelector from '../components/RegionSelector';
+import { formatDateTimeInputPtBr, parseDateTimeInputPtBr } from '../lib/forms/datetime';
 import { normalizeUrlFieldValue } from '../lib/forms/validation';
 import { formatLoosePhoneInput } from '../lib/forms/phone';
 import { normalizeUsernameInput } from '../lib/username';
@@ -411,16 +412,6 @@ const matchesAdminSearch = (query: string, values: Array<string | null | undefin
 const sortRegions = (regions: ManagedRegion[]) =>
   [...regions].sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
 
-const toDateTimeInputValue = (value: string | null) => {
-  if (!value) {
-    return '';
-  }
-
-  const date = new Date(value);
-  const localValue = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  return localValue.toISOString().slice(0, 16);
-};
-
 const getBusinessStatusTone = (status: BusinessStatus) => {
   switch (status) {
     case 'PUBLISHED':
@@ -795,8 +786,8 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
       title: event.title,
       description: event.description,
       venueName: event.venueName,
-      startsAt: toDateTimeInputValue(event.startsAt),
-      endsAt: toDateTimeInputValue(event.endsAt),
+      startsAt: formatDateTimeInputPtBr(event.startsAt),
+      endsAt: formatDateTimeInputPtBr(event.endsAt),
       regionKey: event.regionKey,
       visibilityScope: event.visibilityScope,
       visibilityRegionKey: event.visibilityRegionKey || '',
@@ -814,6 +805,24 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
       return;
     }
 
+    const parsedStartsAt = parseDateTimeInputPtBr(eventForm.startsAt);
+    const parsedEndsAt = eventForm.endsAt ? parseDateTimeInputPtBr(eventForm.endsAt) : null;
+
+    if (!parsedStartsAt) {
+      setError('Use o formato dd/mm/aaaa hh:mm para o inicio do evento.');
+      return;
+    }
+
+    if (eventForm.endsAt && !parsedEndsAt) {
+      setError('Use o formato dd/mm/aaaa hh:mm para o encerramento do evento.');
+      return;
+    }
+
+    if (parsedEndsAt && new Date(parsedEndsAt) < new Date(parsedStartsAt)) {
+      setError('O encerramento nao pode ser antes do inicio do evento.');
+      return;
+    }
+
     await runAction(
       `event:${editingEventId}:save`,
       () =>
@@ -822,8 +831,8 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             ...eventForm,
-            startsAt: eventForm.startsAt ? new Date(eventForm.startsAt).toISOString() : '',
-            endsAt: eventForm.endsAt ? new Date(eventForm.endsAt).toISOString() : undefined,
+            startsAt: parsedStartsAt,
+            endsAt: parsedEndsAt || undefined,
             externalUrl: normalizeUrlFieldValue(eventForm.externalUrl),
             imageUrl: normalizeUrlFieldValue(eventForm.imageUrl),
             galleryUrls: eventForm.galleryUrls,
@@ -1793,22 +1802,25 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                       />
                       <div className="grid grid-cols-2 gap-3">
                         <FormInput
-                          type="datetime-local"
+                          type="text"
                           value={eventForm.startsAt}
                           onChange={(value) =>
                             setEventForm((current) => ({ ...current, startsAt: value }))
                           }
-                          placeholder="Inicio"
+                          placeholder="Inicio: dd/mm/aaaa hh:mm"
                         />
                         <FormInput
-                          type="datetime-local"
+                          type="text"
                           value={eventForm.endsAt}
                           onChange={(value) =>
                             setEventForm((current) => ({ ...current, endsAt: value }))
                           }
-                          placeholder="Fim"
+                          placeholder="Fim: dd/mm/aaaa hh:mm"
                         />
                       </div>
+                      <p className="text-xs font-medium text-slate-400">
+                        Use o formato brasileiro: dd/mm/aaaa hh:mm.
+                      </p>
                       <RegionSelector
                         value={eventForm.regionKey}
                         onChange={(region) =>

@@ -15,6 +15,7 @@ import {
   requiredFieldError,
   validateOptionalUrlField,
 } from '../lib/forms/validation';
+import { parseDateTimeInputPtBr } from '../lib/forms/datetime';
 import { EventItem } from '../types';
 
 const SAMPLE_EVENTS: EventItem[] = [
@@ -104,7 +105,10 @@ const Marketplace: React.FC = () => {
 
     const fetchEvents = async () => {
       try {
-        const response = await fetch('/api/events');
+        const query = session?.user?.regionKey
+          ? `?region=${encodeURIComponent(session.user.regionKey)}`
+          : '';
+        const response = await fetch(`/api/events${query}`, { cache: 'no-store' });
         const payload = await response.json().catch(() => null);
 
         if (!response.ok) {
@@ -126,17 +130,23 @@ const Marketplace: React.FC = () => {
       }
     };
 
-    fetchEvents();
+    void fetchEvents();
 
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [session?.user?.regionKey]);
 
   const handleCreateEvent = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const nextErrors: FieldErrors<EventField> = {};
+    const parsedStartsAt = createForm.startsAt.trim()
+      ? parseDateTimeInputPtBr(createForm.startsAt)
+      : null;
+    const parsedEndsAt = createForm.endsAt.trim()
+      ? parseDateTimeInputPtBr(createForm.endsAt)
+      : null;
 
     if (!createForm.title.trim()) {
       nextErrors.title = requiredFieldError('o titulo do evento');
@@ -152,6 +162,12 @@ const Marketplace: React.FC = () => {
 
     if (!createForm.startsAt.trim()) {
       nextErrors.startsAt = requiredFieldError('a data de inicio');
+    } else if (!parsedStartsAt) {
+      nextErrors.startsAt = 'Use o formato dd/mm/aaaa hh:mm.';
+    } else if (createForm.endsAt.trim() && !parsedEndsAt) {
+      nextErrors.startsAt = 'Use o formato dd/mm/aaaa hh:mm.';
+    } else if (parsedEndsAt && new Date(parsedEndsAt) < new Date(parsedStartsAt)) {
+      nextErrors.startsAt = 'O encerramento nao pode ser antes do inicio.';
     }
 
     if (!createForm.regionKey.trim()) {
@@ -184,8 +200,8 @@ const Marketplace: React.FC = () => {
         },
         body: JSON.stringify({
           ...createForm,
-          startsAt: createForm.startsAt ? new Date(createForm.startsAt).toISOString() : '',
-          endsAt: createForm.endsAt ? new Date(createForm.endsAt).toISOString() : undefined,
+          startsAt: parsedStartsAt || '',
+          endsAt: parsedEndsAt || undefined,
           externalUrl: normalizeUrlFieldValue(createForm.externalUrl),
           imageUrl: normalizeUrlFieldValue(createForm.imageUrl),
           galleryUrls: createForm.galleryUrls,
@@ -308,25 +324,32 @@ const Marketplace: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               <input
                 required
-                type="datetime-local"
+                type="text"
+                inputMode="numeric"
                 value={createForm.startsAt}
                 onChange={(event) =>
                   setCreateForm((current) => ({ ...current, startsAt: event.target.value }))
                 }
                 onInput={() => clearFieldError('startsAt')}
                 aria-invalid={Boolean(fieldErrors.startsAt)}
+                placeholder="dd/mm/aaaa hh:mm"
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
               />
               <input
-                type="datetime-local"
+                type="text"
+                inputMode="numeric"
                 value={createForm.endsAt}
                 onChange={(event) =>
                   setCreateForm((current) => ({ ...current, endsAt: event.target.value }))
                 }
+                placeholder="dd/mm/aaaa hh:mm"
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
               />
             </div>
             <FieldErrorMessage message={fieldErrors.startsAt} />
+            <p className="px-2 text-[11px] font-medium text-slate-400">
+              Use o formato brasileiro: dd/mm/aaaa hh:mm.
+            </p>
             <RegionSelector
               value={createForm.regionKey}
               onChange={(region) => {

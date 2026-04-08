@@ -119,6 +119,7 @@ const SidebarContent: React.FC<{
 }) => {
   const { showToast } = useToast();
   const isProfessionalTheme = personaMode === 'professional';
+  const publicProfileHref = user.username ? `/perfil/${encodeURIComponent(user.username)}` : '/profile';
 
   const handleDisabledNavigation = (item: NavigationItem) => {
     onItemClick?.();
@@ -140,13 +141,13 @@ const SidebarContent: React.FC<{
         <div className="mb-8 flex flex-col gap-6">
           <Logo size="md" professional={isProfessionalTheme} />
           <div className="flex items-center gap-3">
-            <div className="relative">
+            <Link href={publicProfileHref} onClick={onItemClick} className="relative transition hover:opacity-90">
               <img
                 src={user.avatar}
                 className="h-14 w-14 rounded-full border-2 border-white object-cover shadow-md"
                 alt="User"
               />
-            </div>
+            </Link>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className={`text-xl font-bold ${accentColorClass}`}>{user.name}</h2>
@@ -230,6 +231,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
   const isProfessionalTheme = canUseProfessionalMode && personaMode === 'professional';
   const accentColorClass = 'theme-text';
   const accentSolidClass = 'theme-bg';
+  const publicProfileHref = user.username ? `/perfil/${encodeURIComponent(user.username)}` : '/profile';
   const panelClass = isProfessionalTheme
     ? 'border-blue-100/80 bg-blue-50/80'
     : 'border-white/50 bg-white/85';
@@ -279,11 +281,13 @@ const Layout: React.FC<LayoutWithUserProps> = ({
             </div>
 
             <div className="hidden items-center gap-3 rounded-full border border-slate-200/80 px-3 py-2 shadow-sm lg:flex">
-              <img
-                src={user.avatar}
-                className="h-10 w-10 rounded-full object-cover"
-                alt={user.name}
-              />
+              <Link href={publicProfileHref} className="transition hover:opacity-90">
+                <img
+                  src={user.avatar}
+                  className="h-10 w-10 rounded-full object-cover"
+                  alt={user.name}
+                />
+              </Link>
               <div className="text-right">
                 <p className="text-sm font-bold text-slate-800">{user.name}</p>
                 <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">

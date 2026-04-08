@@ -440,6 +440,7 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
         <CommunityComposer.Root>
           <CommunityComposer.Editor
             avatar={user.avatar}
+            avatarHref={user.username ? `/perfil/${encodeURIComponent(user.username)}` : undefined}
             value={postContent}
             onChange={setPostContent}
             placeholder={
