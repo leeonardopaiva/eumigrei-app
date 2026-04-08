@@ -27,9 +27,10 @@ const logoFallbackUrl = '/assets/logo26.png';
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  professional?: boolean;
 }
 
-export const Logo: React.FC<LogoProps> = ({ size = 'md', className = '' }) => {
+export const Logo: React.FC<LogoProps> = ({ size = 'md', className = '', professional = false }) => {
   const heightClass = {
     sm: 'h-8',
     md: 'h-12',
@@ -42,6 +43,14 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = '' }) => {
         src={logoPrimaryUrl}
         alt="emigrei"
         className={`${heightClass} w-auto object-contain transition-all duration-300 ${className}`}
+        style={
+          professional
+            ? {
+                filter:
+                  'brightness(0) saturate(100%) invert(23%) sepia(74%) saturate(2108%) hue-rotate(205deg) brightness(92%) contrast(98%)',
+              }
+            : undefined
+        }
         onError={(event) => {
           event.currentTarget.onerror = null;
           event.currentTarget.src = logoFallbackUrl;
@@ -129,7 +138,7 @@ const SidebarContent: React.FC<{
     <div className="space-y-4 p-5 pb-20 pt-10 lg:flex lg:h-full lg:flex-col lg:justify-between lg:p-8">
       <div className="space-y-4">
         <div className="mb-8 flex flex-col gap-6">
-          <Logo size="md" />
+          <Logo size="md" professional={isProfessionalTheme} />
           <div className="flex items-center gap-3">
             <div className="relative">
               <img
@@ -266,7 +275,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
               >
                 <Menu size={28} />
               </button>
-              <Logo size="sm" />
+              <Logo size="sm" professional={isProfessionalTheme} />
             </div>
 
             <div className="hidden items-center gap-3 rounded-full border border-slate-200/80 px-3 py-2 shadow-sm lg:flex">
