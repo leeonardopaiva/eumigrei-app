@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Copy, Globe, Mail, MapPin, PencilLine, Phone, Plus, UserRound, X } from 'lucide-react';
@@ -9,7 +9,9 @@ import RegionSelector from '../components/RegionSelector';
 import { formatLoosePhoneInput } from '../lib/forms/phone';
 import { normalizeUrlFieldValue } from '../lib/forms/validation';
 import { normalizeUsernameInput } from '../lib/username';
-import { ReferralSummary, User } from '../types';
+import PersonaModeSwitch from '../components/profile/PersonaModeSwitch';
+import ProfessionalModePanel from '../components/profile/ProfessionalModePanel';
+import { PersonaMode, ProfessionalProfileSummary, ReferralSummary, User } from '../types';
 
 const DEFAULT_AVATAR_URL = 'https://picsum.photos/seed/emigrei-user/200';
 const PROFILE_GRADIENT_CLASS = 'bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.35),_transparent_32%),linear-gradient(135deg,#28B8C7_0%,#1DA7D5_45%,#0D6EFD_100%)]';
@@ -38,6 +40,13 @@ type ProfileState = {
   regionKey: string;
 };
 
+const emptyProfessionalProfile: ProfessionalProfileSummary = {
+  businessCount: 0,
+  eventCount: 0,
+  businesses: [],
+  events: [],
+};
+
 const buildProfileState = (user: User): ProfileState => ({
   id: user.id,
   name: user.name,
@@ -53,13 +62,19 @@ const buildProfileState = (user: User): ProfileState => ({
   regionKey: user.regionKey || '',
 });
 
-const Profile: React.FC<{ user: User }> = ({ user }) => {
+const Profile: React.FC<{
+  user: User;
+  personaMode: PersonaMode;
+  canUseProfessionalMode: boolean;
+  onPersonaModeChange: (mode: PersonaMode) => void;
+}> = ({ user, personaMode, canUseProfessionalMode, onPersonaModeChange }) => {
   const { update } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileState>(() => buildProfileState(user));
+  const [professionalProfile, setProfessionalProfile] = useState<ProfessionalProfileSummary>(emptyProfessionalProfile);
   const [requestedEmail, setRequestedEmail] = useState(user.email || '');
   const [requestingEmailChange, setRequestingEmailChange] = useState(false);
   const [referralSummary, setReferralSummary] = useState<ReferralSummary>({ referralUrl: null, registrationCount: 0 });
@@ -128,6 +143,16 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
           setInterestDrafts(nextProfile.interests);
           setGalleryDraft(nextProfile.galleryUrls);
           setSelectedRegionKey(nextProfile.regionKey);
+          setProfessionalProfile({
+            businessCount: Number(payload.professionalProfile?.businessCount ?? 0),
+            eventCount: Number(payload.professionalProfile?.eventCount ?? 0),
+            businesses: Array.isArray(payload.professionalProfile?.businesses)
+              ? payload.professionalProfile.businesses
+              : [],
+            events: Array.isArray(payload.professionalProfile?.events)
+              ? payload.professionalProfile.events
+              : [],
+          });
         }
       } catch (error) {
         console.error('Failed to load profile:', error);
@@ -423,6 +448,30 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
         </div>
       </section>
 
+      {canUseProfessionalMode ? (
+        <section className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-[#28B8C7]">Modo do perfil</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {personaMode === 'professional'
+                  ? 'Voce esta no contexto profissional. A gestao do negocio fica separada do seu perfil pessoal.'
+                  : 'Use o modo profissional para focar nos negocios e eventos sem misturar a apresentacao pessoal.'}
+              </p>
+            </div>
+            <PersonaModeSwitch value={personaMode} onChange={onPersonaModeChange} />
+          </div>
+        </section>
+      ) : null}
+
+      {canUseProfessionalMode && personaMode === 'professional' ? (
+        <ProfessionalModePanel
+          professionalProfile={professionalProfile}
+          username={profile.username}
+          onSwitchToPersonal={() => onPersonaModeChange('personal')}
+        />
+      ) : (
+        <>
       <Section title="Sobre voce" description="Edite nome, apresentacao e telefone que aparecem no seu perfil." editing={editing.account} onToggle={() => { setEditing((c) => ({ ...c, account: !c.account })); setAccountDraft({ name: profile.name, username: profile.username, email: profile.email, phone: profile.phone, bio: profile.bio }); }}>
         {editing.account ? (
           <EditorCard>
@@ -536,6 +585,8 @@ const Profile: React.FC<{ user: User }> = ({ user }) => {
           <Meta label="Regiao atual" value={profile.locationLabel} icon={<MapPin size={16} />} />
         )}
       </Section>
+        </>
+      )}
     </div>
   );
 };
@@ -596,3 +647,5 @@ const SecondaryButton: React.FC<{ label: string; onClick: () => void; disabled?:
 );
 
 export default Profile;
+
+

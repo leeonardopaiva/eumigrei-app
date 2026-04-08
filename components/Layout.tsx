@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -18,8 +18,9 @@ import {
 } from 'lucide-react';
 import SuggestionButton from './feedback/SuggestionButton';
 import { useToast } from './feedback/ToastProvider';
+import PersonaModeSwitch from './profile/PersonaModeSwitch';
 import { trackAnalyticsEvent } from '../lib/analytics';
-import { User, UserRole } from '../types';
+import { PersonaMode, User, UserRole } from '../types';
 
 const logoPrimaryUrl = '/assets/logo-emigrei.png';
 const logoFallbackUrl = '/assets/logo26.png';
@@ -54,6 +55,9 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = '' }) => {
 interface LayoutWithUserProps {
   children: React.ReactNode;
   user: User;
+  personaMode?: PersonaMode;
+  canUseProfessionalMode?: boolean;
+  onPersonaModeChange?: (mode: PersonaMode) => void;
   onSignOut?: () => void;
 }
 
@@ -91,10 +95,22 @@ const navigationItems: NavigationItem[] = [
 const SidebarContent: React.FC<{
   user: User;
   sourcePath: string;
+  personaMode: PersonaMode;
+  canUseProfessionalMode: boolean;
+  onPersonaModeChange?: (mode: PersonaMode) => void;
   isActive: (path: string) => boolean;
   onItemClick?: () => void;
   onSignOut?: () => void;
-}> = ({ user, sourcePath, isActive, onItemClick, onSignOut }) => {
+}> = ({
+  user,
+  sourcePath,
+  personaMode,
+  canUseProfessionalMode,
+  onPersonaModeChange,
+  isActive,
+  onItemClick,
+  onSignOut,
+}) => {
   const { showToast } = useToast();
 
   const handleDisabledNavigation = (item: NavigationItem) => {
@@ -131,6 +147,14 @@ const SidebarContent: React.FC<{
               </p>
             </div>
           </div>
+          {canUseProfessionalMode && onPersonaModeChange ? (
+            <div className="space-y-2 rounded-3xl border border-slate-100 bg-white/80 p-3 shadow-sm">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                Contexto ativo
+              </p>
+              <PersonaModeSwitch value={personaMode} onChange={onPersonaModeChange} className="w-full" />
+            </div>
+          ) : null}
         </div>
 
         <div className="divide-y divide-slate-100 rounded-3xl border border-white/50 bg-white/70 p-2 shadow-sm backdrop-blur-md">
@@ -187,7 +211,14 @@ const SidebarContent: React.FC<{
   );
 };
 
-const Layout: React.FC<LayoutWithUserProps> = ({ children, user, onSignOut }) => {
+const Layout: React.FC<LayoutWithUserProps> = ({
+  children,
+  user,
+  personaMode = 'personal',
+  canUseProfessionalMode = false,
+  onPersonaModeChange,
+  onSignOut,
+}) => {
   const pathname = usePathname() || '/';
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -214,6 +245,9 @@ const Layout: React.FC<LayoutWithUserProps> = ({ children, user, onSignOut }) =>
           <SidebarContent
             user={user}
             sourcePath={pathname}
+            personaMode={personaMode}
+            canUseProfessionalMode={canUseProfessionalMode}
+            onPersonaModeChange={onPersonaModeChange}
             isActive={isActive}
             onItemClick={handleMenuItemClick}
             onSignOut={onSignOut}
@@ -334,3 +368,5 @@ const NavItem: React.FC<{ href: string; icon: React.ReactNode; active: boolean }
 );
 
 export default Layout;
+
+

@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+﻿import { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -36,7 +36,61 @@ export async function GET() {
     return NextResponse.json({ error: 'Usuario nao encontrado.' }, { status: 404 });
   }
 
-  return NextResponse.json({ user });
+  const [businesses, events] = await Promise.all([
+    prisma.business.findMany({
+      where: {
+        OR: [
+          { createdById: session.user.id },
+          { members: { some: { userId: session.user.id } } },
+        ],
+      },
+      orderBy: [{ updatedAt: 'desc' }],
+      take: 12,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        category: true,
+        status: true,
+        imageUrl: true,
+        locationLabel: true,
+        updatedAt: true,
+      },
+    }),
+    prisma.event.findMany({
+      where: {
+        createdById: session.user.id,
+      },
+      orderBy: [{ updatedAt: 'desc' }],
+      take: 12,
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        startsAt: true,
+        status: true,
+        imageUrl: true,
+        locationLabel: true,
+        updatedAt: true,
+      },
+    }),
+  ]);
+
+  return NextResponse.json({
+    user,
+    professionalProfile: {
+      businessCount: businesses.length,
+      eventCount: events.length,
+      businesses: businesses.map((business) => ({
+        ...business,
+        publicPath: `/negocios/${business.slug || business.id}`,
+      })),
+      events: events.map((event) => ({
+        ...event,
+        publicPath: `/eventos/${event.slug || event.id}`,
+      })),
+    },
+  });
 }
 
 export async function PUT(request: Request) {
@@ -150,3 +204,4 @@ export async function PUT(request: Request) {
     throw error;
   }
 }
+

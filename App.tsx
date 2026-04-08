@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ShieldAlert } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -16,14 +16,16 @@ import BusinessList from './views/BusinessList';
 import BusinessDetail from './views/BusinessDetail';
 import EventDetail from './views/EventDetail';
 import PublicProfile from './views/PublicProfile';
+import PublicProfessionalProfile from './views/PublicProfessionalProfile';
 import Registration from './views/Registration';
-import { UserRole, type User } from './types';
+import { UserRole, type PersonaMode, type User } from './types';
 
 const GOOGLE_AUTH_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED !== 'false';
 const EMAIL_AUTH_ENABLED = process.env.NEXT_PUBLIC_EMAIL_AUTH_ENABLED !== 'false';
 const PASSWORD_AUTH_ENABLED = process.env.NEXT_PUBLIC_PASSWORD_AUTH_ENABLED !== 'false';
 const DEV_AUTH_ENABLED =
   process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_DEV_AUTH_ENABLED === 'true';
+const PERSONA_MODE_STORAGE_KEY = 'emigrei:persona-mode';
 const RESERVED_PUBLIC_ROUTES = new Set([
   'admin',
   'community',
@@ -98,6 +100,7 @@ const App: React.FC = () => {
   const [registrationNotice, setRegistrationNotice] = useState<string | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
   const [authSubmitting, setAuthSubmitting] = useState(false);
+  const [personaMode, setPersonaMode] = useState<PersonaMode>('personal');
   const segments = pathname.split('/').filter(Boolean);
   const rootSegment = segments[0];
   const referralUsername =
@@ -108,6 +111,38 @@ const App: React.FC = () => {
       : segments.length === 1 && rootSegment && !RESERVED_PUBLIC_ROUTES.has(rootSegment)
         ? decodeURIComponent(rootSegment)
         : null;
+  const professionalProfileUsername =
+    rootSegment === 'profissional' && segments.length >= 2 ? decodeURIComponent(segments[1]) : null;
+  const sessionRole = mapUserRole(session?.user?.role);
+  const canUseProfessionalMode = sessionRole === UserRole.BUSINESS_OWNER;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (!session?.user?.id) {
+      setPersonaMode('personal');
+      return;
+    }
+
+    if (!canUseProfessionalMode) {
+      window.localStorage.removeItem(PERSONA_MODE_STORAGE_KEY);
+      setPersonaMode('personal');
+      return;
+    }
+
+    const storedMode = window.localStorage.getItem(PERSONA_MODE_STORAGE_KEY);
+    setPersonaMode(storedMode === 'professional' ? 'professional' : 'personal');
+  }, [canUseProfessionalMode, session?.user?.id]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !session?.user?.id || !canUseProfessionalMode) {
+      return;
+    }
+
+    window.localStorage.setItem(PERSONA_MODE_STORAGE_KEY, personaMode);
+  }, [canUseProfessionalMode, personaMode, session?.user?.id]);
 
   const resolveDevMagicLink = async (email: string) => {
     if (!DEV_AUTH_ENABLED) {
@@ -320,6 +355,10 @@ const App: React.FC = () => {
     return null;
   }
 
+  if (professionalProfileUsername && !session?.user) {
+    return <PublicProfessionalProfile username={professionalProfileUsername} />;
+  }
+
   if (publicProfileUsername && !session?.user) {
     return <PublicProfile username={publicProfileUsername} />;
   }
@@ -369,9 +408,29 @@ const App: React.FC = () => {
 
   const currentUser = buildCurrentUser(session.user);
 
+  if (professionalProfileUsername) {
+    return (
+      <Layout
+        user={currentUser}
+        personaMode={personaMode}
+        canUseProfessionalMode={canUseProfessionalMode}
+        onPersonaModeChange={setPersonaMode}
+        onSignOut={() => signOut({ callbackUrl: '/' })}
+      >
+        <PublicProfessionalProfile username={professionalProfileUsername} viewer={currentUser} embedded />
+      </Layout>
+    );
+  }
+
   if (publicProfileUsername) {
     return (
-      <Layout user={currentUser} onSignOut={() => signOut({ callbackUrl: '/' })}>
+      <Layout
+        user={currentUser}
+        personaMode={personaMode}
+        canUseProfessionalMode={canUseProfessionalMode}
+        onPersonaModeChange={setPersonaMode}
+        onSignOut={() => signOut({ callbackUrl: '/' })}
+      >
         <PublicProfile username={publicProfileUsername} viewer={currentUser} embedded />
       </Layout>
     );
@@ -409,17 +468,33 @@ const App: React.FC = () => {
       case 'eventos':
         return <Marketplace />;
       case 'profile':
-        return <Profile user={currentUser} />;
+        return (
+          <Profile
+            user={currentUser}
+            personaMode={personaMode}
+            canUseProfessionalMode={canUseProfessionalMode}
+            onPersonaModeChange={setPersonaMode}
+          />
+        );
       default:
         return <Home user={currentUser} />;
     }
   })();
 
   return (
-    <Layout user={currentUser} onSignOut={() => signOut({ callbackUrl: '/' })}>
+    <Layout
+      user={currentUser}
+      personaMode={personaMode}
+      canUseProfessionalMode={canUseProfessionalMode}
+      onPersonaModeChange={setPersonaMode}
+      onSignOut={() => signOut({ callbackUrl: '/' })}
+    >
       {content}
     </Layout>
   );
 };
 
 export default App;
+
+
+

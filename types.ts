@@ -1,9 +1,11 @@
-
+﻿
 export enum UserRole {
   USER = 'USER',
   BUSINESS_OWNER = 'BUSINESS_OWNER',
   ADMIN = 'ADMIN'
 }
+
+export type PersonaMode = 'personal' | 'professional';
 
 export interface User {
   id: string;
@@ -19,6 +21,75 @@ export interface User {
   regionKey?: string | null;
   email?: string | null;
   phone?: string | null;
+}
+
+export interface ProfessionalProfileBusiness {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+  status: string;
+  imageUrl?: string | null;
+  locationLabel?: string | null;
+  updatedAt: string;
+  publicPath: string;
+}
+
+export interface ProfessionalProfileEvent {
+  id: string;
+  slug: string;
+  title: string;
+  startsAt: string;
+  status: string;
+  imageUrl?: string | null;
+  locationLabel?: string | null;
+  updatedAt: string;
+  publicPath: string;
+}
+
+export interface ProfessionalProfileSummary {
+  businessCount: number;
+  eventCount: number;
+  businesses: ProfessionalProfileBusiness[];
+  events: ProfessionalProfileEvent[];
+}
+
+export interface PublicProfessionalProfile {
+  id: string;
+  name: string;
+  username: string;
+  image?: string | null;
+  coverImageUrl?: string | null;
+  locationLabel?: string | null;
+  joinedAt: string;
+  personalPublicPath: string;
+  professionalPublicPath: string;
+  headline: string;
+  stats: {
+    businessCount: number;
+    eventCount: number;
+  };
+  businesses: Array<{
+    id: string;
+    slug: string;
+    name: string;
+    category: string;
+    imageUrl?: string | null;
+    locationLabel?: string | null;
+    ratingAverage: number;
+    ratingCount: number;
+  }>;
+  events: Array<{
+    id: string;
+    slug: string;
+    title: string;
+    venueName: string;
+    startsAt: string;
+    imageUrl?: string | null;
+    locationLabel?: string | null;
+    ratingAverage: number;
+    ratingCount: number;
+  }>;
 }
 
 export interface PublicUserProfile {
@@ -201,3 +272,5 @@ export interface Housing {
   image: string;
   rating: number;
 }
+
+

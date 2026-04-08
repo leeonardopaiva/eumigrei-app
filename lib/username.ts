@@ -1,4 +1,4 @@
-import { slugify } from '@/lib/slug';
+﻿import { slugify } from '@/lib/slug';
 
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MAX_LENGTH = 30;
@@ -89,3 +89,4 @@ export const validateUsernameValue = (value: string) => {
     error: null,
   };
 };
+

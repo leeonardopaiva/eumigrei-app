@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   BadgeCheck,
@@ -305,7 +305,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                 ) : null}
               </div>
 
-              <div className="mt-6">
+              <div className="mt-6 flex flex-wrap justify-center gap-3">
                 {isOwnProfile ? (
                   <div className="inline-flex min-h-12 items-center gap-2 rounded-[22px] border border-slate-200 bg-white px-6 text-sm font-bold text-slate-600 shadow-sm">
                     Perfil publico ativo
@@ -328,6 +328,15 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                     Adicionar
                   </Link>
                 )}
+                {profile.stats.businessCount > 0 || profile.stats.eventCount > 0 ? (
+                  <Link
+                    href={`/profissional/${profile.username}`}
+                    className="inline-flex min-h-12 items-center gap-3 rounded-[22px] border border-slate-200 bg-white px-8 text-base font-bold text-slate-700 shadow-sm"
+                  >
+                    <BadgeCheck size={20} />
+                    Ver vitrine profissional
+                  </Link>
+                ) : null}
               </div>
             </div>
 
@@ -533,3 +542,4 @@ const EmptyPublicState: React.FC<{ text: string }> = ({ text }) => (
 );
 
 export default PublicProfile;
+

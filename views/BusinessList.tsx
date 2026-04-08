@@ -1,4 +1,4 @@
-import React, { startTransition, useDeferredValue, useEffect, useState } from 'react';
+﻿import React, { startTransition, useDeferredValue, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useToast } from '../components/feedback/ToastProvider';
@@ -60,7 +60,7 @@ type BusinessField =
   | 'imageUrl';
 
 const BusinessList: React.FC = () => {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const { showToast } = useToast();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [activeFilter, setActiveFilter] = useState('Todos');
@@ -204,6 +204,7 @@ const BusinessList: React.FC = () => {
       }
 
       showToast('Seu negocio foi enviado para aprovacao.', 'success');
+      await update();
       setCreateForm(emptyForm);
       setShowCreateForm(false);
     } catch (error) {
@@ -468,3 +469,4 @@ const BusinessList: React.FC = () => {
 };
 
 export default BusinessList;
+
