@@ -471,7 +471,7 @@ const Profile: React.FC<{
                 </button>
               ) : null}
               {canUseProfessionalMode && personaMenuOpen ? (
-                <div className="absolute left-1/2 top-[calc(100%+0.6rem)] z-20 w-[220px] -translate-x-1/2 rounded-[24px] border border-slate-200/90 bg-white/98 p-1.5 text-left shadow-[0_18px_45px_rgba(15,23,42,0.16)] backdrop-blur-sm">
+                <div className="absolute left-1/2 top-[calc(100%+0.6rem)] z-20 w-[220px] -translate-x-1/2 rounded-[24px] border border-slate-200 bg-white p-1.5 text-left shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
                   <PersonaMenuOption
                     title="Pessoal"
                     subtitle={`@${profile.username || 'defina-seu-nome'}`}
@@ -499,23 +499,11 @@ const Profile: React.FC<{
                 </div>
               ) : null}
             </div>
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-              <h1 className={`text-3xl font-bold ${isProfessionalView ? 'text-[#0F4C81]' : 'text-slate-900'}`}>
-                {activeHeaderName}
-              </h1>
-              {isProfessionalView ? (
-                <span className="rounded-full bg-[#0F4C81] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
-                  Profissional
-                </span>
-              ) : null}
-            </div>
-            <p className={`mt-2 inline-flex items-center gap-2 text-sm font-semibold ${isProfessionalView ? 'text-[#0F4C81]/70' : 'text-slate-500'}`}>
+            <h1 className={`mt-4 text-3xl font-bold ${isProfessionalView ? 'text-[#0F4C81]' : 'text-slate-900'}`}>
+              {activeHeaderName}
+            </h1>
+            <p className={`mt-2 text-sm font-semibold ${isProfessionalView ? 'text-[#0F4C81]/70' : 'text-slate-500'}`}>
               {activeHeaderHandle}
-              {isProfessionalView ? (
-                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#0F4C81]">
-                  Profissional
-                </span>
-              ) : null}
             </p>
             <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600">
               <MapPin size={14} />
