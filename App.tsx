@@ -11,6 +11,7 @@ import Home from './views/Home';
 import Community from './views/Community';
 import Marketplace from './views/Marketplace';
 import Profile from './views/Profile';
+import SearchResults from './views/SearchResults';
 import BusinessList from './views/BusinessList';
 import BusinessDetail from './views/BusinessDetail';
 import EventDetail from './views/EventDetail';
@@ -27,10 +28,13 @@ const RESERVED_PUBLIC_ROUTES = new Set([
   'admin',
   'community',
   'marketplace',
+  'buscar',
+  'noticias',
   'eventos',
   'negocios',
   'perfil',
   'profile',
+  'vagas',
   'convite',
 ]);
 
@@ -399,6 +403,8 @@ const App: React.FC = () => {
         );
       case 'community':
         return <Community user={currentUser} />;
+      case 'buscar':
+        return <SearchResults />;
       case 'marketplace':
       case 'eventos':
         return <Marketplace />;

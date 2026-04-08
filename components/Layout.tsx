@@ -4,11 +4,14 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  Briefcase,
   Calendar,
   Home as HomeIcon,
   Menu,
   MessageSquarePlus,
+  Newspaper,
   ShieldCheck,
+  ShoppingBag,
   Store,
   User as UserIcon,
   Users,
@@ -52,11 +55,34 @@ interface LayoutWithUserProps {
   onSignOut?: () => void;
 }
 
-const navigationItems = [
+type NavigationItem = {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+  disabled?: boolean;
+  badge?: string;
+};
+
+const navigationItems: NavigationItem[] = [
   { href: '/', label: 'Home', icon: <HomeIcon size={22} /> },
   { href: '/negocios', label: 'Negocios', icon: <Store size={18} /> },
   { href: '/community', label: 'Comunidade', icon: <Users size={18} /> },
   { href: '/eventos', label: 'Eventos', icon: <Calendar size={18} /> },
+  { href: '/vagas', label: 'Vagas', icon: <Briefcase size={18} />, disabled: true, badge: 'Em breve' },
+  {
+    href: '/marketplace',
+    label: 'Marketplace',
+    icon: <ShoppingBag size={18} />,
+    disabled: true,
+    badge: 'Em breve',
+  },
+  {
+    href: '/noticias',
+    label: 'Noticias',
+    icon: <Newspaper size={18} />,
+    disabled: true,
+    badge: 'Em breve',
+  },
   { href: '/profile', label: 'Meu perfil', icon: <UserIcon size={18} /> },
 ];
 
@@ -95,6 +121,8 @@ const SidebarContent: React.FC<{
             label={item.label}
             icon={item.icon}
             active={isActive(item.href)}
+            disabled={item.disabled}
+            badge={item.badge}
             onClick={onItemClick}
           />
         ))}
@@ -225,19 +253,44 @@ const MenuListItem: React.FC<{
   label: string;
   icon: React.ReactNode;
   active?: boolean;
+  disabled?: boolean;
+  badge?: string;
   onClick?: () => void;
-}> = ({ href, label, icon, active = false, onClick }) => (
-  <Link
-    href={href}
-    onClick={onClick}
-    className={`flex items-center gap-3 px-4 py-3.5 transition-colors first:rounded-t-2xl last:rounded-b-2xl hover:bg-white/50 ${
-      active ? 'bg-white/40' : ''
-    }`}
-  >
-    <div className="text-[#28B8C7]">{icon}</div>
-    <span className="text-sm font-bold text-slate-700">{label}</span>
-  </Link>
-);
+}> = ({ href, label, icon, active = false, disabled = false, badge, onClick }) => {
+  const classes = `flex items-center gap-3 px-4 py-3.5 transition-colors first:rounded-t-2xl last:rounded-b-2xl ${
+    disabled
+      ? 'cursor-not-allowed opacity-60'
+      : `hover:bg-white/50 ${active ? 'bg-white/40' : ''}`
+  }`;
+
+  const content = (
+    <>
+      <div className={disabled ? 'text-slate-400' : 'text-[#28B8C7]'}>{icon}</div>
+      <span className={`text-sm font-bold ${disabled ? 'text-slate-400' : 'text-slate-700'}`}>
+        {label}
+      </span>
+      {badge ? (
+        <span className="ml-auto rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+          {badge}
+        </span>
+      ) : null}
+    </>
+  );
+
+  if (disabled) {
+    return (
+      <button type="button" disabled aria-disabled="true" className={classes}>
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={href} onClick={onClick} className={classes}>
+      {content}
+    </Link>
+  );
+};
 
 const NavItem: React.FC<{ href: string; icon: React.ReactNode; active: boolean }> = ({
   href,

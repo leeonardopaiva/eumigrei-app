@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
   MapPin,
@@ -9,8 +10,11 @@ import {
   ArrowRight,
   ChevronDown,
   Building2,
+  Briefcase,
   Users,
   CalendarDays,
+  Newspaper,
+  ShoppingBag,
   type LucideIcon,
 } from 'lucide-react';
 import { useToast } from '../components/feedback/ToastProvider';
@@ -18,12 +22,14 @@ import RegionSelector from '../components/RegionSelector';
 import { BannerAd, User } from '../types';
 
 const Home: React.FC<{ user: User }> = ({ user }) => {
+  const router = useRouter();
   const { update } = useSession();
   const { showToast } = useToast();
   const [editingRegion, setEditingRegion] = useState(false);
   const [selectedRegionKey, setSelectedRegionKey] = useState(user.regionKey || '');
   const [savingRegion, setSavingRegion] = useState(false);
   const [banners, setBanners] = useState<BannerAd[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     setSelectedRegionKey(user.regionKey || '');
@@ -153,19 +159,36 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
 
       </div>
 
-      <div className="relative overflow-hidden rounded-full shadow-sm">
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          const trimmed = searchQuery.trim();
+
+          if (!trimmed) {
+            return;
+          }
+
+          router.push(`/buscar?q=${encodeURIComponent(trimmed)}`);
+        }}
+        className="relative overflow-hidden rounded-full shadow-sm"
+      >
         <input
           type="text"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
           placeholder="Busque negocios, eventos e temas da comunidade"
           className="w-full border-none bg-white py-5 pl-14 pr-6 text-sm placeholder:text-slate-400 focus:ring-0"
         />
         <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={22} />
-      </div>
+      </form>
 
       <div className="grid grid-cols-3 gap-3">
         <ServiceCard href="/negocios" icon={Building2} label="Negocios" />
         <ServiceCard href="/community" icon={Users} label="Comunidade" />
         <ServiceCard href="/eventos" icon={CalendarDays} label="Eventos" />
+        <ServiceCard href="/vagas" icon={Briefcase} label="Vagas" disabled />
+        <ServiceCard href="/marketplace" icon={ShoppingBag} label="Marketplace" disabled />
+        <ServiceCard href="/noticias" icon={Newspaper} label="Noticias" disabled />
       </div>
 
       {banners.length > 0 ? (
@@ -207,20 +230,58 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
   );
 };
 
-const ServiceCard: React.FC<{ href: string; icon: LucideIcon; label: string }> = ({
+const ServiceCard: React.FC<{
+  href: string;
+  icon: LucideIcon;
+  label: string;
+  disabled?: boolean;
+}> = ({
   href,
   icon: Icon,
   label,
-}) => (
-  <Link
-    href={href}
-    className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-slate-50 bg-white p-5 shadow-sm transition-all hover:shadow-md active:scale-95"
-  >
-    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-[#28B8C7]">
-      <Icon size={24} strokeWidth={2.2} />
-    </div>
-    <span className="text-center text-[11px] font-bold leading-tight text-[#333]">{label}</span>
-  </Link>
-);
+  disabled = false,
+}) => {
+  const classes = `flex flex-col items-center justify-center gap-3 rounded-3xl border p-5 shadow-sm transition-all ${
+    disabled
+      ? 'cursor-not-allowed border-slate-200 bg-slate-50/90 opacity-70'
+      : 'border-slate-50 bg-white hover:shadow-md active:scale-95'
+  }`;
+
+  const content = (
+    <>
+      <div
+        className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
+          disabled ? 'bg-slate-200 text-slate-500' : 'bg-cyan-50 text-[#28B8C7]'
+        }`}
+      >
+        <Icon size={24} strokeWidth={2.2} />
+      </div>
+      <div className="space-y-1 text-center">
+        <span className={`block text-[11px] font-bold leading-tight ${disabled ? 'text-slate-500' : 'text-[#333]'}`}>
+          {label}
+        </span>
+        {disabled ? (
+          <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">
+            Em breve
+          </span>
+        ) : null}
+      </div>
+    </>
+  );
+
+  if (disabled) {
+    return (
+      <button type="button" disabled aria-disabled="true" className={classes}>
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={href} className={classes}>
+      {content}
+    </Link>
+  );
+};
 
 export default Home;
