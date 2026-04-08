@@ -21,8 +21,8 @@ import Registration from './views/Registration';
 import { UserRole, type PersonaMode, type User } from './types';
 
 const GOOGLE_AUTH_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED !== 'false';
-const EMAIL_AUTH_ENABLED = process.env.NEXT_PUBLIC_EMAIL_AUTH_ENABLED !== 'false';
-const PASSWORD_AUTH_ENABLED = process.env.NEXT_PUBLIC_PASSWORD_AUTH_ENABLED !== 'false';
+const EMAIL_AUTH_ENABLED = false;
+const PASSWORD_AUTH_ENABLED = false;
 const DEV_AUTH_ENABLED =
   process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_DEV_AUTH_ENABLED === 'true';
 const PERSONA_MODE_STORAGE_KEY = 'emigrei:persona-mode';

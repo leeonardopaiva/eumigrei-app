@@ -338,7 +338,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
         <div className="rounded-[28px] border border-slate-100 bg-slate-50 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 text-sm font-bold text-[#28B8C7]">
+              <div className="theme-text inline-flex items-center gap-2 text-sm font-bold">
                 <Globe2 size={16} />
                 URL publica
               </div>
@@ -381,7 +381,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="flex items-center gap-3 rounded-[28px] border border-slate-100 bg-white p-4 shadow-sm">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-[#28B8C7]">
+            <div className="theme-icon-surface flex h-12 w-12 items-center justify-center rounded-2xl">
               <CalendarDays size={20} />
             </div>
             <div>
@@ -407,7 +407,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
             <MapPin size={16} />
             Local do evento
           </div>
-          <p className="text-base font-bold text-[#28B8C7]">{event.venueName}</p>
+          <p className="theme-text text-base font-bold">{event.venueName}</p>
           <div className="space-y-1 text-sm text-slate-600">
             <p>{event.locationLabel}</p>
             {event.city || event.state ? (
@@ -433,10 +433,10 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
         </div>
 
         {event.canEdit ? (
-          <div className="space-y-3 rounded-[32px] border border-cyan-100 bg-cyan-50/60 p-5">
+          <div className="theme-soft-surface space-y-3 rounded-[32px] border p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="inline-flex items-center gap-2 text-sm font-bold text-[#28B8C7]">
+                <div className="theme-text inline-flex items-center gap-2 text-sm font-bold">
                   <PencilLine size={16} />
                   Gestao de capa e galeria
                 </div>
@@ -479,7 +479,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
                     type="button"
                     onClick={() => void handleSaveMedia()}
                     disabled={savingMedia}
-                    className="flex-1 rounded-2xl bg-[#28B8C7] px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
+                    className="theme-bg theme-shadow flex-1 rounded-2xl px-4 py-3 text-sm font-bold disabled:opacity-60"
                   >
                     {savingMedia ? 'Salvando...' : 'Salvar midia'}
                   </button>

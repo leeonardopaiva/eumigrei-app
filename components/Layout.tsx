@@ -142,12 +142,12 @@ const SidebarContent: React.FC<{
               <div className="flex items-center gap-2">
                 <h2 className={`text-xl font-bold ${accentColorClass}`}>{user.name}</h2>
                 {isProfessionalTheme ? (
-                  <span className="rounded-full bg-[#0F4C81] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
+                  <span className="theme-bg rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em]">
                     Profissional
                   </span>
                 ) : null}
               </div>
-              <p className={`text-[10px] font-medium uppercase tracking-wider ${isProfessionalTheme ? 'text-[#0F4C81]/70' : 'text-slate-500'}`}>
+              <p className={`text-[10px] font-medium uppercase tracking-wider ${isProfessionalTheme ? 'theme-text-soft' : 'text-slate-500'}`}>
                 {user.username ? `@${user.username}` : 'Membro da comunidade'}
               </p>
             </div>
@@ -187,9 +187,7 @@ const SidebarContent: React.FC<{
             onItemClick?.();
             onSignOut();
           }}
-          className={`w-full rounded-2xl px-4 py-3 text-sm font-bold text-white shadow-lg ${
-            isProfessionalTheme ? 'bg-[#0F4C81] shadow-[#0F4C81]/20' : 'bg-[#28B8C7] shadow-[#28B8C7]/20'
-          }`}
+          className="theme-bg theme-shadow w-full rounded-2xl px-4 py-3 text-sm font-bold shadow-lg"
         >
           Sair
         </button>
@@ -201,11 +199,7 @@ const SidebarContent: React.FC<{
           onItemClick?.();
           window.dispatchEvent(new CustomEvent('emigrei:open-suggestion-modal'));
         }}
-        className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-bold shadow-sm ${
-          isProfessionalTheme
-            ? 'border-blue-100 bg-white text-[#0F4C81]'
-            : 'border-cyan-100 bg-cyan-50/70 text-[#28B8C7]'
-        }`}
+        className="theme-soft-surface mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-bold shadow-sm"
       >
         <MessageSquarePlus size={16} />
         Enviar sugestao
@@ -225,8 +219,8 @@ const Layout: React.FC<LayoutWithUserProps> = ({
   const pathname = usePathname() || '/';
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isProfessionalTheme = canUseProfessionalMode && personaMode === 'professional';
-  const accentColorClass = isProfessionalTheme ? 'text-[#0F4C81]' : 'text-[#28B8C7]';
-  const accentSolidClass = isProfessionalTheme ? 'bg-[#0F4C81]' : 'bg-[#28B8C7]';
+  const accentColorClass = 'theme-text';
+  const accentSolidClass = 'theme-bg';
   const panelClass = isProfessionalTheme
     ? 'border-blue-100/80 bg-blue-50/80'
     : 'border-white/50 bg-white/85';
@@ -237,7 +231,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
   const handleMenuItemClick = () => setIsMenuOpen(false);
 
   return (
-    <div className="min-h-screen bg-texture">
+    <div className="app-shell min-h-screen bg-texture" data-persona={isProfessionalTheme ? 'professional' : 'personal'}>
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-texture font-sans shadow-2xl lg:max-w-none lg:bg-transparent lg:shadow-none">
         {isMenuOpen ? (
           <div
@@ -331,7 +325,7 @@ const MenuListItem: React.FC<{
 
   const content = (
     <>
-      <div className={disabled ? 'text-slate-400' : 'text-[#28B8C7]'}>{icon}</div>
+      <div className={disabled ? 'text-slate-400' : 'theme-text'}>{icon}</div>
       <span className={`text-sm font-bold ${disabled ? 'text-slate-400' : 'text-slate-700'}`}>
         {label}
       </span>

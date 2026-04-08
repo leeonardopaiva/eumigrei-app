@@ -156,7 +156,7 @@ const RegionSelector: React.FC<RegionSelectorProps> = ({
           type="button"
           onClick={() => void detectUserRegion()}
           disabled={disabled || isLocating}
-          className="inline-flex items-center gap-2 rounded-2xl border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs font-bold text-[#28B8C7] disabled:opacity-60"
+          className="theme-soft-surface inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-bold disabled:opacity-60"
         >
           <Crosshair size={14} />
           {isLocating ? 'Localizando...' : 'Usar localizacao'}
@@ -170,7 +170,7 @@ const RegionSelector: React.FC<RegionSelectorProps> = ({
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Buscar regiao"
           disabled={disabled}
-          className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#28B8C7]"
+          className="theme-outline-ring w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none"
         />
         <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
       </div>
@@ -189,7 +189,7 @@ const RegionSelector: React.FC<RegionSelectorProps> = ({
           }
         }}
         disabled={disabled}
-        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#28B8C7]"
+        className="theme-outline-ring w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-900 outline-none"
       >
         {allowEmpty ? (
           <option value="">{emptyLabel}</option>
@@ -207,13 +207,13 @@ const RegionSelector: React.FC<RegionSelectorProps> = ({
 
       {selectedRegion ? (
         <div className="inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
-          <MapPin size={16} className="text-[#28B8C7]" />
+          <MapPin size={16} className="theme-text" />
           {selectedRegion.label}
         </div>
       ) : null}
 
       {locationNotice ? (
-        <div className="rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm font-medium text-cyan-700">
+        <div className="theme-soft-surface rounded-2xl border px-4 py-3 text-sm font-medium">
           {locationNotice}
         </div>
       ) : null}

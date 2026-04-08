@@ -112,6 +112,7 @@ const Registration: React.FC<RegistrationProps> = ({
   const normalizedUsername = normalizeUsernameInput(formValues.username);
   const selectedCountry = findCountryByIso2(selectedCountryIso2);
   const passwordIssues = getPasswordValidationIssues(passwordSignUp.password);
+  const showGoogleOnlyAuth = googleEnabled && !emailEnabled && !passwordEnabled;
 
   useEffect(() => {
     const nextPhoneState = splitPhoneNumber(defaultValues?.phone);
@@ -284,7 +285,9 @@ const Registration: React.FC<RegistrationProps> = ({
               <p className="text-sm font-medium text-slate-500">
                 {isOnboarding
                   ? 'Precisamos da sua regiao para liberar comunidade, negocios e eventos locais.'
-                  : 'Entre com email ou Google para finalizar seu cadastro em poucos segundos.'}
+                  : showGoogleOnlyAuth
+                    ? 'Entre com Google para acessar sua conta e finalizar o cadastro em poucos segundos.'
+                    : 'Entre com email ou Google para finalizar seu cadastro em poucos segundos.'}
               </p>
               {referralUsername ? (
                 <div className="inline-flex rounded-full border border-cyan-100 bg-cyan-50 px-4 py-2 text-xs font-bold text-cyan-700">
@@ -627,9 +630,11 @@ const Registration: React.FC<RegistrationProps> = ({
                   </div>
                 ) : null}
                 <p className="text-center text-xs font-medium text-slate-400">
-                  {emailEnabled
-                    ? 'Email envia um magic link. Google cria ou reutiliza sua conta automaticamente.'
-                    : 'Google ou email e senha liberam o acesso, e o perfil e concluido no proximo passo.'}
+                  {showGoogleOnlyAuth
+                    ? 'Google cria ou reutiliza sua conta automaticamente.'
+                    : emailEnabled
+                      ? 'Email envia um magic link. Google cria ou reutiliza sua conta automaticamente.'
+                      : 'Google ou email e senha liberam o acesso, e o perfil e concluido no proximo passo.'}
                 </p>
               </div>
             ) : (

@@ -97,7 +97,7 @@ const SuggestionButton: React.FC = () => {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-28 right-5 z-[70] inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#28B8C7] text-white shadow-2xl shadow-[#28B8C7]/25 transition hover:bg-[#24A9B7] lg:bottom-8 lg:right-8 lg:h-auto lg:w-auto lg:gap-2 lg:px-4 lg:py-3"
+        className="theme-bg theme-bg-hover theme-shadow fixed bottom-28 right-5 z-[70] inline-flex h-14 w-14 items-center justify-center rounded-full transition lg:bottom-8 lg:right-8 lg:h-auto lg:w-auto lg:gap-2 lg:px-4 lg:py-3"
         aria-label="Enviar sugestao"
       >
         <MessageSquarePlus size={18} />
@@ -109,7 +109,7 @@ const SuggestionButton: React.FC = () => {
           <div className="w-full max-w-lg rounded-[32px] bg-white p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-[#28B8C7]">
+                <div className="theme-soft-surface inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em]">
                   <Lightbulb size={14} />
                   Sugestao
                 </div>
@@ -136,7 +136,7 @@ const SuggestionButton: React.FC = () => {
                   onClick={() => setCategory(option.value)}
                   className={`rounded-3xl border px-4 py-4 text-left transition ${
                     category === option.value
-                      ? 'border-[#28B8C7] bg-cyan-50 text-[#28B8C7] shadow-sm'
+                      ? 'theme-soft-surface shadow-sm'
                       : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                   }`}
                 >
@@ -155,7 +155,7 @@ const SuggestionButton: React.FC = () => {
                 onChange={(event) => setMessage(event.target.value)}
                 rows={5}
                 placeholder="Exemplo: seria melhor ter um filtro por tipo de documento na comunidade."
-                className="mt-3 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-cyan-200 focus:ring-2 focus:ring-cyan-100"
+                className="theme-outline-ring mt-3 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition"
               />
               <p className="mt-2 text-right text-xs text-slate-400">{message.trim().length}/600</p>
             </div>
@@ -173,7 +173,7 @@ const SuggestionButton: React.FC = () => {
                 type="button"
                 onClick={() => void submitSuggestion()}
                 disabled={submitting}
-                className="flex-1 rounded-2xl bg-[#28B8C7] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#28B8C7]/20 disabled:opacity-60"
+                className="theme-bg theme-shadow flex-1 rounded-2xl px-4 py-3 text-sm font-bold disabled:opacity-60"
               >
                 {submitting ? 'Enviando...' : 'Enviar sugestao'}
               </button>

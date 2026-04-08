@@ -467,7 +467,7 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
       </div>
 
       <div className="px-5">
-        <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#28B8C7] to-[#1E96A4] p-4 text-white shadow-lg">
+        <div className="theme-gradient theme-shadow group relative overflow-hidden rounded-3xl p-4 text-white shadow-lg">
           <div className="relative z-10 flex items-center justify-between">
             <div className="max-w-[72%]">
               <div className="mb-1 flex items-center gap-2">

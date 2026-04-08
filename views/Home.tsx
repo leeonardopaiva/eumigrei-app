@@ -188,7 +188,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
                 type="button"
                 onClick={handleRegionSave}
                 disabled={savingRegion}
-                className="flex-1 rounded-2xl bg-[#28B8C7] px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
+                className="theme-bg theme-shadow flex-1 rounded-2xl px-4 py-3 text-sm font-bold disabled:opacity-60"
               >
                 {savingRegion ? 'Salvando...' : 'Salvar regiao'}
               </button>
@@ -219,7 +219,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
 
           router.push(`/buscar?q=${encodeURIComponent(trimmed)}`);
         }}
-        className="relative overflow-hidden rounded-full border border-slate-200 bg-white shadow-sm transition-all focus-within:border-cyan-300 focus-within:ring-4 focus-within:ring-cyan-100"
+        className="relative overflow-hidden rounded-full border border-slate-200 bg-white shadow-sm transition-all theme-outline-ring"
       >
         <input
           type="text"
@@ -314,7 +314,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
                   onClick={() => setActiveBannerIndex(index)}
                   aria-label={`Ir para banner ${index + 1}`}
                   className={`h-2.5 rounded-full transition-all ${
-                    index === activeBannerIndex ? 'w-6 bg-[#28B8C7]' : 'w-2.5 bg-slate-300'
+                    index === activeBannerIndex ? 'theme-bg w-6' : 'w-2.5 bg-slate-300'
                   }`}
                 />
               ))}
@@ -351,7 +351,7 @@ const ServiceCard: React.FC<{
     <>
       <div
         className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
-          disabled ? 'bg-slate-200 text-slate-500' : 'bg-cyan-50 text-[#28B8C7]'
+          disabled ? 'bg-slate-200 text-slate-500' : 'theme-icon-surface'
         }`}
       >
         <Icon size={24} strokeWidth={2.2} />
