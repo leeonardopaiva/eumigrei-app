@@ -221,12 +221,23 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
         }}
         className="relative overflow-hidden rounded-full border border-slate-200 bg-white shadow-sm transition-all theme-outline-ring"
       >
+        {!searchQuery ? (
+          <div className="pointer-events-none absolute inset-y-0 left-14 right-6 flex items-center text-sm text-slate-400">
+            <span>Busque por&nbsp;</span>
+            <span
+              key={animatedSearchTerms[searchPlaceholderIndex]}
+              className="theme-text animate-in font-bold fade-in duration-300"
+            >
+              {animatedSearchTerms[searchPlaceholderIndex]}
+            </span>
+          </div>
+        ) : null}
         <input
           type="text"
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder={`Busque por ${animatedSearchTerms[searchPlaceholderIndex]}`}
-          className="w-full bg-transparent py-5 pl-14 pr-6 text-sm text-slate-700 outline-none placeholder:text-slate-400"
+          placeholder=""
+          className="w-full bg-transparent py-5 pl-14 pr-6 text-sm text-slate-700 outline-none"
         />
         <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={22} />
       </form>
