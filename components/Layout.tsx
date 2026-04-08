@@ -94,6 +94,7 @@ const navigationItems: NavigationItem[] = [
 const SidebarContent: React.FC<{
   user: User;
   sourcePath: string;
+  personaMode: PersonaMode;
   accentColorClass: string;
   isActive: (path: string) => boolean;
   onItemClick?: () => void;
@@ -101,12 +102,14 @@ const SidebarContent: React.FC<{
 }> = ({
   user,
   sourcePath,
+  personaMode,
   accentColorClass,
   isActive,
   onItemClick,
   onSignOut,
 }) => {
   const { showToast } = useToast();
+  const isProfessionalTheme = personaMode === 'professional';
 
   const handleDisabledNavigation = (item: NavigationItem) => {
     onItemClick?.();
@@ -136,8 +139,15 @@ const SidebarContent: React.FC<{
               />
             </div>
             <div>
-              <h2 className={`text-xl font-bold ${accentColorClass}`}>{user.name}</h2>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+              <div className="flex items-center gap-2">
+                <h2 className={`text-xl font-bold ${accentColorClass}`}>{user.name}</h2>
+                {isProfessionalTheme ? (
+                  <span className="rounded-full bg-[#0F4C81] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
+                    Profissional
+                  </span>
+                ) : null}
+              </div>
+              <p className={`text-[10px] font-medium uppercase tracking-wider ${isProfessionalTheme ? 'text-[#0F4C81]/70' : 'text-slate-500'}`}>
                 {user.username ? `@${user.username}` : 'Membro da comunidade'}
               </p>
             </div>
@@ -177,7 +187,9 @@ const SidebarContent: React.FC<{
             onItemClick?.();
             onSignOut();
           }}
-          className="w-full rounded-2xl bg-[#28B8C7] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#28B8C7]/20"
+          className={`w-full rounded-2xl px-4 py-3 text-sm font-bold text-white shadow-lg ${
+            isProfessionalTheme ? 'bg-[#0F4C81] shadow-[#0F4C81]/20' : 'bg-[#28B8C7] shadow-[#28B8C7]/20'
+          }`}
         >
           Sair
         </button>
@@ -189,7 +201,11 @@ const SidebarContent: React.FC<{
           onItemClick?.();
           window.dispatchEvent(new CustomEvent('emigrei:open-suggestion-modal'));
         }}
-        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 shadow-sm"
+        className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-bold shadow-sm ${
+          isProfessionalTheme
+            ? 'border-blue-100 bg-white text-[#0F4C81]'
+            : 'border-cyan-100 bg-cyan-50/70 text-[#28B8C7]'
+        }`}
       >
         <MessageSquarePlus size={16} />
         Enviar sugestao
@@ -238,6 +254,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
           <SidebarContent
             user={user}
             sourcePath={pathname}
+            personaMode={personaMode}
             accentColorClass={accentColorClass}
             isActive={isActive}
             onItemClick={handleMenuItemClick}

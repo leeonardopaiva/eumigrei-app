@@ -402,6 +402,13 @@ const Profile: React.FC<{
   const activeHeaderGradientClass = isProfessionalView
     ? PROFESSIONAL_PROFILE_GRADIENT_CLASS
     : PROFILE_GRADIENT_CLASS;
+  const primaryButtonClass = isProfessionalView
+    ? 'bg-[#0F4C81] shadow-[#0F4C81]/20'
+    : 'bg-[#28B8C7] shadow-[#28B8C7]/20';
+  const secondaryButtonClass = isProfessionalView
+    ? 'border-blue-100 bg-blue-50/60 text-[#0F4C81]'
+    : 'border-cyan-100 bg-cyan-50/70 text-[#28B8C7]';
+  const sectionAccentClass = isProfessionalView ? 'text-[#0F4C81]' : 'text-[#28B8C7]';
 
   if (loading) {
     return (
@@ -452,10 +459,10 @@ const Profile: React.FC<{
                 <button
                   type="button"
                   onClick={() => setPersonaMenuOpen((current) => !current)}
-                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] ${
+                  className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.16em] shadow-sm transition ${
                     isProfessionalView
-                      ? 'border-blue-100 bg-blue-50 text-[#0F4C81]'
-                      : 'border-slate-200 bg-white text-slate-600'
+                      ? 'border-blue-100 bg-blue-50/90 text-[#0F4C81]'
+                      : 'border-slate-200 bg-white/95 text-slate-600'
                   }`}
                 >
                   {isProfessionalView ? <BriefcaseBusiness size={14} /> : <UserRound size={14} />}
@@ -464,7 +471,7 @@ const Profile: React.FC<{
                 </button>
               ) : null}
               {canUseProfessionalMode && personaMenuOpen ? (
-                <div className="absolute left-1/2 top-[calc(100%+0.75rem)] z-20 w-[280px] -translate-x-1/2 rounded-[28px] border border-slate-200 bg-white p-2 text-left shadow-2xl">
+                <div className="absolute left-1/2 top-[calc(100%+0.6rem)] z-20 w-[220px] -translate-x-1/2 rounded-[24px] border border-slate-200/90 bg-white/98 p-1.5 text-left shadow-[0_18px_45px_rgba(15,23,42,0.16)] backdrop-blur-sm">
                   <PersonaMenuOption
                     title="Pessoal"
                     subtitle={`@${profile.username || 'defina-seu-nome'}`}
@@ -492,11 +499,23 @@ const Profile: React.FC<{
                 </div>
               ) : null}
             </div>
-            <h1 className={`mt-4 text-3xl font-bold ${isProfessionalView ? 'text-[#0F4C81]' : 'text-slate-900'}`}>
-              {activeHeaderName}
-            </h1>
-            <p className={`mt-1 text-sm font-semibold ${isProfessionalView ? 'text-[#0F4C81]/70' : 'text-slate-500'}`}>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              <h1 className={`text-3xl font-bold ${isProfessionalView ? 'text-[#0F4C81]' : 'text-slate-900'}`}>
+                {activeHeaderName}
+              </h1>
+              {isProfessionalView ? (
+                <span className="rounded-full bg-[#0F4C81] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
+                  Profissional
+                </span>
+              ) : null}
+            </div>
+            <p className={`mt-2 inline-flex items-center gap-2 text-sm font-semibold ${isProfessionalView ? 'text-[#0F4C81]/70' : 'text-slate-500'}`}>
               {activeHeaderHandle}
+              {isProfessionalView ? (
+                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#0F4C81]">
+                  Profissional
+                </span>
+              ) : null}
             </p>
             <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600">
               <MapPin size={14} />
@@ -508,8 +527,8 @@ const Profile: React.FC<{
             <EditorCard>
               <CloudinaryImageField value={coverDraft} onChange={setCoverDraft} folder="profiles" placeholder="Link da capa do perfil" hint="Use uma imagem horizontal para destacar seu perfil publico." />
               <ActionRow>
-                <PrimaryButton label={savingKey === 'cover' ? 'Salvando...' : 'Salvar capa'} onClick={() => void saveProfile({ coverImageUrl: coverDraft }, 'Capa atualizada com sucesso.', 'cover')} disabled={savingKey === 'cover'} />
-                <SecondaryButton label={coverDraft ? 'Limpar' : 'Cancelar'} onClick={() => { if (coverDraft) { setCoverDraft(''); return; } setEditing((c) => ({ ...c, cover: false })); }} disabled={savingKey === 'cover'} />
+                <PrimaryButton className={primaryButtonClass} label={savingKey === 'cover' ? 'Salvando...' : 'Salvar capa'} onClick={() => void saveProfile({ coverImageUrl: coverDraft }, 'Capa atualizada com sucesso.', 'cover')} disabled={savingKey === 'cover'} />
+                <SecondaryButton className={secondaryButtonClass} label={coverDraft ? 'Limpar' : 'Cancelar'} onClick={() => { if (coverDraft) { setCoverDraft(''); return; } setEditing((c) => ({ ...c, cover: false })); }} disabled={savingKey === 'cover'} />
               </ActionRow>
             </EditorCard>
           ) : null}
@@ -518,8 +537,8 @@ const Profile: React.FC<{
             <EditorCard>
               <CloudinaryImageField value={avatarDraft} onChange={setAvatarDraft} folder="profiles" placeholder="Link da foto do perfil" hint="Envie sua foto pela Cloudinary ou cole uma URL publica." />
               <ActionRow>
-                <PrimaryButton label={savingKey === 'avatar' ? 'Salvando...' : 'Salvar foto'} onClick={() => void saveAvatar()} disabled={savingKey === 'avatar'} />
-                <SecondaryButton label={avatarDraft ? 'Limpar' : 'Cancelar'} onClick={() => { if (avatarDraft) { setAvatarDraft(''); return; } setEditing((c) => ({ ...c, avatar: false })); }} disabled={savingKey === 'avatar'} />
+                <PrimaryButton className={primaryButtonClass} label={savingKey === 'avatar' ? 'Salvando...' : 'Salvar foto'} onClick={() => void saveAvatar()} disabled={savingKey === 'avatar'} />
+                <SecondaryButton className={secondaryButtonClass} label={avatarDraft ? 'Limpar' : 'Cancelar'} onClick={() => { if (avatarDraft) { setAvatarDraft(''); return; } setEditing((c) => ({ ...c, avatar: false })); }} disabled={savingKey === 'avatar'} />
               </ActionRow>
             </EditorCard>
           ) : null}
@@ -533,7 +552,7 @@ const Profile: React.FC<{
         />
       ) : (
         <>
-      <Section title="Sobre voce" description="Edite nome, apresentacao e telefone que aparecem no seu perfil." editing={editing.account} onToggle={() => { setEditing((c) => ({ ...c, account: !c.account })); setAccountDraft({ name: profile.name, username: profile.username, email: profile.email, phone: profile.phone, bio: profile.bio }); }}>
+      <Section accentClass={sectionAccentClass} secondaryButtonClass={secondaryButtonClass} title="Sobre voce" description="Edite nome, apresentacao e telefone que aparecem no seu perfil." editing={editing.account} onToggle={() => { setEditing((c) => ({ ...c, account: !c.account })); setAccountDraft({ name: profile.name, username: profile.username, email: profile.email, phone: profile.phone, bio: profile.bio }); }}>
         {editing.account ? (
           <EditorCard>
             <Input value={accountDraft.name} onChange={(value) => setAccountDraft((c) => ({ ...c, name: value }))} placeholder="Nome completo" icon={<UserRound size={16} />} />
@@ -544,8 +563,8 @@ const Profile: React.FC<{
             </div>
             <textarea rows={4} value={accountDraft.bio} onChange={(event) => setAccountDraft((c) => ({ ...c, bio: event.target.value }))} placeholder="Escreva uma frase curta sobre voce" className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200" />
             <ActionRow>
-              <PrimaryButton label={savingKey === 'account' ? 'Salvando...' : 'Salvar dados'} onClick={() => void saveProfile({ name: accountDraft.name, username: accountDraft.username, phone: accountDraft.phone, bio: accountDraft.bio }, 'Seus dados foram atualizados.', 'account')} disabled={savingKey === 'account'} />
-              <SecondaryButton label="Cancelar" onClick={() => setEditing((c) => ({ ...c, account: false }))} disabled={savingKey === 'account'} />
+              <PrimaryButton className={primaryButtonClass} label={savingKey === 'account' ? 'Salvando...' : 'Salvar dados'} onClick={() => void saveProfile({ name: accountDraft.name, username: accountDraft.username, phone: accountDraft.phone, bio: accountDraft.bio }, 'Seus dados foram atualizados.', 'account')} disabled={savingKey === 'account'} />
+              <SecondaryButton className={secondaryButtonClass} label="Cancelar" onClick={() => setEditing((c) => ({ ...c, account: false }))} disabled={savingKey === 'account'} />
             </ActionRow>
           </EditorCard>
         ) : (
@@ -560,12 +579,12 @@ const Profile: React.FC<{
         )}
       </Section>
 
-      <Section title="Interesses" description="Mostre os assuntos, servicos e temas que representam voce." editing={editing.interests} onToggle={() => { setEditing((c) => ({ ...c, interests: !c.interests })); setInterestDrafts(profile.interests); setInterestInput(''); }}>
+      <Section accentClass={sectionAccentClass} secondaryButtonClass={secondaryButtonClass} title="Interesses" description="Mostre os assuntos, servicos e temas que representam voce." editing={editing.interests} onToggle={() => { setEditing((c) => ({ ...c, interests: !c.interests })); setInterestDrafts(profile.interests); setInterestInput(''); }}>
         {editing.interests ? (
           <EditorCard>
             <div className="flex gap-2">
               <input type="text" value={interestInput} onChange={(event) => setInterestInput(event.target.value)} placeholder="Adicionar interesse" className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200" />
-              <button type="button" onClick={addInterest} className="inline-flex min-h-11 items-center gap-2 rounded-2xl bg-[#28B8C7] px-4 text-sm font-bold text-white">
+              <button type="button" onClick={addInterest} className={`inline-flex min-h-11 items-center gap-2 rounded-2xl px-4 text-sm font-bold text-white shadow-md ${primaryButtonClass}`}>
                 <Plus size={16} />
                 Adicionar
               </button>
@@ -581,8 +600,8 @@ const Profile: React.FC<{
               )) : <p className="text-sm text-slate-500">Adicione ate 8 interesses para destacar seu perfil.</p>}
             </div>
             <ActionRow>
-              <PrimaryButton label={savingKey === 'interests' ? 'Salvando...' : 'Salvar interesses'} onClick={() => void saveProfile({ interests: interestDrafts }, 'Interesses atualizados.', 'interests')} disabled={savingKey === 'interests'} />
-              <SecondaryButton label="Cancelar" onClick={() => setEditing((c) => ({ ...c, interests: false }))} disabled={savingKey === 'interests'} />
+              <PrimaryButton className={primaryButtonClass} label={savingKey === 'interests' ? 'Salvando...' : 'Salvar interesses'} onClick={() => void saveProfile({ interests: interestDrafts }, 'Interesses atualizados.', 'interests')} disabled={savingKey === 'interests'} />
+              <SecondaryButton className={secondaryButtonClass} label="Cancelar" onClick={() => setEditing((c) => ({ ...c, interests: false }))} disabled={savingKey === 'interests'} />
             </ActionRow>
           </EditorCard>
         ) : (
@@ -592,13 +611,13 @@ const Profile: React.FC<{
         )}
       </Section>
 
-      <Section title="Galeria da galera" description="Use fotos pessoais, do seu trabalho ou da sua comunidade para enriquecer o perfil." editing={editing.gallery} onToggle={() => { setEditing((c) => ({ ...c, gallery: !c.gallery })); setGalleryDraft(profile.galleryUrls); }}>
+      <Section accentClass={sectionAccentClass} secondaryButtonClass={secondaryButtonClass} title="Galeria da galera" description="Use fotos pessoais, do seu trabalho ou da sua comunidade para enriquecer o perfil." editing={editing.gallery} onToggle={() => { setEditing((c) => ({ ...c, gallery: !c.gallery })); setGalleryDraft(profile.galleryUrls); }}>
         {editing.gallery ? (
           <EditorCard>
             <ImageGalleryField value={galleryDraft} onChange={setGalleryDraft} folder="profiles" hint="Essas imagens aparecem na aba de fotos do seu perfil publico." />
             <ActionRow>
-              <PrimaryButton label={savingKey === 'gallery' ? 'Salvando...' : 'Salvar galeria'} onClick={() => void saveProfile({ galleryUrls: galleryDraft }, 'Galeria atualizada.', 'gallery')} disabled={savingKey === 'gallery'} />
-              <SecondaryButton label="Cancelar" onClick={() => setEditing((c) => ({ ...c, gallery: false }))} disabled={savingKey === 'gallery'} />
+              <PrimaryButton className={primaryButtonClass} label={savingKey === 'gallery' ? 'Salvando...' : 'Salvar galeria'} onClick={() => void saveProfile({ galleryUrls: galleryDraft }, 'Galeria atualizada.', 'gallery')} disabled={savingKey === 'gallery'} />
+              <SecondaryButton className={secondaryButtonClass} label="Cancelar" onClick={() => setEditing((c) => ({ ...c, gallery: false }))} disabled={savingKey === 'gallery'} />
             </ActionRow>
           </EditorCard>
         ) : profile.galleryUrls.length > 0 ? (
@@ -614,32 +633,32 @@ const Profile: React.FC<{
         )}
       </Section>
 
-      <Section title="Troca de email" description="Informe o novo email. Vamos enviar um link para confirmar a alteracao com seguranca." editing={false} onToggle={() => undefined} hideAction>
+      <Section accentClass={sectionAccentClass} secondaryButtonClass={secondaryButtonClass} title="Troca de email" description="Informe o novo email. Vamos enviar um link para confirmar a alteracao com seguranca." editing={false} onToggle={() => undefined} hideAction>
         <EditorCard>
           <Input value={requestedEmail} onChange={setRequestedEmail} placeholder="Novo email" icon={<Mail size={16} />} type="email" />
           <p className="text-xs font-medium text-slate-500">O email atual so muda depois que voce abrir o link enviado para o novo endereco.</p>
-          <PrimaryButton label={requestingEmailChange ? 'Enviando link...' : 'Enviar confirmacao'} onClick={() => void requestEmailChange()} disabled={requestingEmailChange} fullWidth />
+          <PrimaryButton className={primaryButtonClass} label={requestingEmailChange ? 'Enviando link...' : 'Enviar confirmacao'} onClick={() => void requestEmailChange()} disabled={requestingEmailChange} fullWidth />
         </EditorCard>
       </Section>
 
-      <Section title="Indicacoes" description="Compartilhe seu link publico e acompanhe quantos cadastros chegaram por ele." editing={false} onToggle={() => undefined} hideAction>
+      <Section accentClass={sectionAccentClass} secondaryButtonClass={secondaryButtonClass} title="Indicacoes" description="Compartilhe seu link publico e acompanhe quantos cadastros chegaram por ele." editing={false} onToggle={() => undefined} hideAction>
         <div className="rounded-[24px] border border-slate-100 bg-slate-50 p-4">
-          <p className="text-lg font-bold text-[#28B8C7]">{referralSummary.registrationCount} {referralSummary.registrationCount === 1 ? 'cadastro confirmado' : 'cadastros confirmados'}</p>
+          <p className={`text-lg font-bold ${sectionAccentClass}`}>{referralSummary.registrationCount} {referralSummary.registrationCount === 1 ? 'cadastro confirmado' : 'cadastros confirmados'}</p>
           <p className="mt-2 break-all text-sm text-slate-500">{referralUrl}</p>
-          <button type="button" onClick={() => navigator.clipboard.writeText(referralUrl).then(() => showToast('Link de indicacao copiado.', 'success')).catch(() => showToast(referralUrl, 'info', 5000))} className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600">
+          <button type="button" onClick={() => navigator.clipboard.writeText(referralUrl).then(() => showToast('Link de indicacao copiado.', 'success')).catch(() => showToast(referralUrl, 'info', 5000))} className={`mt-4 inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-bold ${secondaryButtonClass}`}>
             <Copy size={14} />
             Copiar
           </button>
         </div>
       </Section>
 
-      <Section title="Regiao ativa" description="Comunidade, negocios e eventos priorizam esta regiao." editing={editing.region} onToggle={() => setEditing((c) => ({ ...c, region: !c.region }))}>
+      <Section accentClass={sectionAccentClass} secondaryButtonClass={secondaryButtonClass} title="Regiao ativa" description="Comunidade, negocios e eventos priorizam esta regiao." editing={editing.region} onToggle={() => setEditing((c) => ({ ...c, region: !c.region }))}>
         {editing.region ? (
           <EditorCard>
             <RegionSelector value={selectedRegionKey} onChange={(region) => setSelectedRegionKey(region.key)} hint="Voce pode manter sua localizacao atual ou trocar manualmente para outra regiao existente." />
             <ActionRow>
-              <PrimaryButton label={savingKey === 'region' ? 'Salvando...' : 'Salvar regiao'} onClick={() => void saveRegion()} disabled={savingKey === 'region'} />
-              <SecondaryButton label="Cancelar" onClick={() => setEditing((c) => ({ ...c, region: false }))} disabled={savingKey === 'region'} />
+              <PrimaryButton className={primaryButtonClass} label={savingKey === 'region' ? 'Salvando...' : 'Salvar regiao'} onClick={() => void saveRegion()} disabled={savingKey === 'region'} />
+              <SecondaryButton className={secondaryButtonClass} label="Cancelar" onClick={() => setEditing((c) => ({ ...c, region: false }))} disabled={savingKey === 'region'} />
             </ActionRow>
           </EditorCard>
         ) : (
@@ -652,15 +671,15 @@ const Profile: React.FC<{
   );
 };
 
-const Section: React.FC<{ title: string; description: string; editing: boolean; onToggle: () => void; children: React.ReactNode; hideAction?: boolean; }> = ({ title, description, editing, onToggle, children, hideAction = false }) => (
+const Section: React.FC<{ title: string; description: string; editing: boolean; onToggle: () => void; children: React.ReactNode; hideAction?: boolean; accentClass?: string; secondaryButtonClass?: string; }> = ({ title, description, editing, onToggle, children, hideAction = false, accentClass = 'text-[#28B8C7]', secondaryButtonClass = 'border-cyan-100 bg-cyan-50/70 text-[#28B8C7]' }) => (
   <section className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
     <div className="flex items-start justify-between gap-3">
       <div>
-        <h2 className="text-xl font-bold text-[#28B8C7]">{title}</h2>
+        <h2 className={`text-xl font-bold ${accentClass}`}>{title}</h2>
         <p className="mt-1 text-sm text-slate-500">{description}</p>
       </div>
       {!hideAction ? (
-        <button type="button" onClick={onToggle} className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
+        <button type="button" onClick={onToggle} className={`inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-bold ${secondaryButtonClass}`}>
           <PencilLine size={14} />
           {editing ? 'Fechar' : 'Editar'}
         </button>
@@ -682,21 +701,22 @@ const PersonaMenuOption: React.FC<{
     type="button"
     onClick={onClick}
     disabled={disabled}
-    className={`flex w-full items-start gap-3 rounded-[22px] px-4 py-3 text-left transition ${
+    className={`flex w-full items-center gap-3 rounded-[18px] px-3 py-2.5 text-left transition ${
       active
-        ? 'bg-blue-50 text-[#0F4C81]'
+        ? 'bg-blue-50/80 text-[#0F4C81]'
         : disabled
           ? 'cursor-not-allowed text-slate-300'
           : 'text-slate-700 hover:bg-slate-50'
     }`}
   >
-    <span className={`mt-1 ${active ? 'text-[#0F4C81]' : disabled ? 'text-slate-300' : 'text-slate-400'}`}>{icon}</span>
-    <span className="min-w-0">
-      <span className="block text-sm font-bold">{title}</span>
-      <span className="mt-1 block truncate text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+    <span className={`flex h-8 w-8 items-center justify-center rounded-full ${active ? 'bg-white text-[#0F4C81]' : disabled ? 'bg-slate-100 text-slate-300' : 'bg-slate-100 text-slate-500'}`}>{icon}</span>
+    <span className="min-w-0 flex-1">
+      <span className="block text-sm font-semibold leading-tight">{title}</span>
+      <span className="mt-0.5 block truncate text-[11px] font-medium text-slate-400">
         {subtitle}
       </span>
     </span>
+    {active ? <span className="h-2 w-2 rounded-full bg-[#0F4C81]" /> : null}
   </button>
 );
 
@@ -725,14 +745,14 @@ const Meta: React.FC<{ label: string; value: string; icon: React.ReactNode }> = 
   </div>
 );
 
-const PrimaryButton: React.FC<{ label: string; onClick: () => void; disabled?: boolean; fullWidth?: boolean }> = ({ label, onClick, disabled = false, fullWidth = false }) => (
-  <button type="button" onClick={onClick} disabled={disabled} className={`inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#28B8C7] px-4 text-sm font-bold text-white shadow-md disabled:opacity-60 ${fullWidth ? 'w-full' : 'flex-1'}`}>
+const PrimaryButton: React.FC<{ label: string; onClick: () => void; disabled?: boolean; fullWidth?: boolean; className?: string }> = ({ label, onClick, disabled = false, fullWidth = false, className = 'bg-[#28B8C7] shadow-[#28B8C7]/20' }) => (
+  <button type="button" onClick={onClick} disabled={disabled} className={`inline-flex min-h-11 items-center justify-center rounded-2xl px-4 text-sm font-bold text-white shadow-md disabled:opacity-60 ${className} ${fullWidth ? 'w-full' : 'flex-1'}`}>
     {label}
   </button>
 );
 
-const SecondaryButton: React.FC<{ label: string; onClick: () => void; disabled?: boolean }> = ({ label, onClick, disabled = false }) => (
-  <button type="button" onClick={onClick} disabled={disabled} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 disabled:opacity-60">
+const SecondaryButton: React.FC<{ label: string; onClick: () => void; disabled?: boolean; className?: string }> = ({ label, onClick, disabled = false, className = 'border-cyan-100 bg-cyan-50/70 text-[#28B8C7]' }) => (
+  <button type="button" onClick={onClick} disabled={disabled} className={`inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl border px-4 text-sm font-bold disabled:opacity-60 ${className}`}>
     {label}
   </button>
 );

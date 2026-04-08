@@ -117,7 +117,7 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
           </Link>
           <Link
             href="/eventos"
-            className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700"
+            className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-blue-100 bg-white px-4 text-sm font-bold text-[#0F4C81]"
           >
             Abrir eventos
           </Link>
@@ -132,7 +132,7 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
               <button
                 type="button"
                 onClick={() => void handleCopyProfessionalUrl()}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 text-sm font-bold text-[#0F4C81]"
               >
                 <Copy size={14} />
                 Copiar link
@@ -140,7 +140,7 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
               <button
                 type="button"
                 onClick={() => void handleShareProfessionalUrl()}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 text-sm font-bold text-[#0F4C81]"
               >
                 <Share2 size={14} />
                 Compartilhar

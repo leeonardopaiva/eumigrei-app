@@ -22,6 +22,8 @@ import RegionSelector from '../components/RegionSelector';
 import { trackAnalyticsEvent } from '../lib/analytics';
 import { BannerAd, User } from '../types';
 
+const animatedSearchTerms = ['restaurantes', 'bares', 'eventos', 'pessoas'];
+
 const Home: React.FC<{ user: User }> = ({ user }) => {
   const router = useRouter();
   const { update } = useSession();
@@ -32,6 +34,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
   const [banners, setBanners] = useState<BannerAd[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+  const [searchPlaceholderIndex, setSearchPlaceholderIndex] = useState(0);
 
   useEffect(() => {
     setSelectedRegionKey(user.regionKey || '');
@@ -89,6 +92,16 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
       ignore = true;
     };
   }, [user.regionKey]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setSearchPlaceholderIndex((current) => (current + 1) % animatedSearchTerms.length);
+    }, 2200);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   const handleRegionSave = async () => {
     if (!selectedRegionKey) {
@@ -206,14 +219,14 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
 
           router.push(`/buscar?q=${encodeURIComponent(trimmed)}`);
         }}
-        className="relative overflow-hidden rounded-full shadow-sm"
+        className="relative overflow-hidden rounded-full border border-slate-200 bg-white shadow-sm transition-all focus-within:border-cyan-300 focus-within:ring-4 focus-within:ring-cyan-100"
       >
         <input
           type="text"
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder="Busque negocios, eventos e temas da comunidade"
-          className="w-full border-none bg-white py-5 pl-14 pr-6 text-sm placeholder:text-slate-400 focus:ring-0"
+          placeholder={`Busque por ${animatedSearchTerms[searchPlaceholderIndex]}`}
+          className="w-full bg-transparent py-5 pl-14 pr-6 text-sm text-slate-700 outline-none placeholder:text-slate-400"
         />
         <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={22} />
       </form>
