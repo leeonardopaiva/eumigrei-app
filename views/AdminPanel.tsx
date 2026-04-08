@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { startTransition, useDeferredValue, useEffect, useState } from 'react';
 import {
@@ -194,6 +194,68 @@ type AdminDashboardData = {
   users: ManagedUser[];
   regions: ManagedRegion[];
   suggestions: ManagedSuggestion[];
+};
+
+type AnalyticsSummary = {
+  totalEvents: number;
+  disabledFeatureClicks: number;
+  bannerClicks: number;
+  trackedUsers: number;
+};
+
+type AnalyticsTopFeature = {
+  targetKey: string;
+  label: string;
+  sourceSection: string | null;
+  count: number;
+};
+
+type AnalyticsTopBanner = {
+  targetKey: string;
+  label: string;
+  count: number;
+};
+
+type AnalyticsTopSource = {
+  sourceSection: string;
+  count: number;
+};
+
+type ManagedAnalyticsEvent = {
+  id: string;
+  type: 'disabled_feature_click' | 'banner_click';
+  targetType: 'feature' | 'banner';
+  targetKey: string;
+  label: string;
+  sourcePath: string | null;
+  sourceSection: string | null;
+  regionKey: string | null;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string | null;
+    username: string | null;
+    email: string | null;
+    image: string | null;
+  } | null;
+};
+
+type AdminAnalyticsData = {
+  windowDays: number;
+  selectedUser: {
+    id: string;
+    name: string | null;
+    username: string | null;
+    email: string | null;
+    image: string | null;
+    locationLabel: string | null;
+    regionKey: string | null;
+  } | null;
+  summary: AnalyticsSummary;
+  topDisabledFeatures: AnalyticsTopFeature[];
+  topBanners: AnalyticsTopBanner[];
+  topSources: AnalyticsTopSource[];
+  recentEvents: ManagedAnalyticsEvent[];
 };
 
 type RegionFormState = {
@@ -412,13 +474,16 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
   const [eventForm, setEventForm] = useState<EventFormState>(emptyEventForm);
   const [eventSearch, setEventSearch] = useState('');
   const [activeSection, setActiveSection] = useState<
-    'moderation' | 'banners' | 'regions' | 'businesses' | 'events' | 'users' | 'suggestions'
+    'moderation' | 'banners' | 'regions' | 'businesses' | 'events' | 'users' | 'suggestions' | 'analytics'
   >('moderation');
 
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [userForm, setUserForm] = useState<UserFormState>(emptyUserForm);
   const [userSearch, setUserSearch] = useState('');
   const [suggestionSearch, setSuggestionSearch] = useState('');
+  const [analytics, setAnalytics] = useState<AdminAnalyticsData | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [selectedAnalyticsUserId, setSelectedAnalyticsUserId] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<Record<ExpandableSectionKey, boolean>>({
     regions: false,
     businesses: false,
@@ -461,6 +526,30 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
     }
   };
 
+  const loadAnalytics = async (userId: string | null = selectedAnalyticsUserId) => {
+    setAnalyticsLoading(true);
+    setError(null);
+
+    try {
+      const query = userId ? `?userId=${encodeURIComponent(userId)}` : '';
+      const response = await fetch(`/api/admin/analytics${query}`, { cache: 'no-store' });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? 'Nao foi possivel carregar os analytics.');
+      }
+
+      startTransition(() => {
+        setAnalytics(payload);
+      });
+    } catch (loadError) {
+      console.error('Failed to load admin analytics:', loadError);
+      setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar os analytics.');
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
   useEffect(() => {
     void loadDashboard();
   }, []);
@@ -476,6 +565,12 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
       showToast(message, 'success');
     }
   }, [message, showToast]);
+
+  useEffect(() => {
+    if (activeSection === 'analytics') {
+      void loadAnalytics(selectedAnalyticsUserId);
+    }
+  }, [activeSection, selectedAnalyticsUserId]);
 
   const totalPending = dashboard
     ? dashboard.stats.pendingBusinesses + dashboard.stats.pendingEvents + dashboard.stats.pendingPosts
@@ -871,6 +966,11 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
     );
   };
 
+  const openUserAnalytics = (managedUserId: string) => {
+    setSelectedAnalyticsUserId(managedUserId);
+    setActiveSection('analytics');
+  };
+
   const statsCards = dashboard
     ? [
         { label: 'Usuarios', value: dashboard.stats.totalUsers, icon: <Users size={20} />, accent: 'bg-cyan-50 text-cyan-800', section: 'users' as const },
@@ -958,6 +1058,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
     { id: 'events' as const, label: 'Eventos', count: filteredEvents.length },
     { id: 'users' as const, label: 'Usuarios', count: filteredUsers.length },
     { id: 'suggestions' as const, label: 'Sugestoes', count: dashboard?.stats.newSuggestions ?? 0 },
+    { id: 'analytics' as const, label: 'Analytics', count: analytics?.summary.totalEvents ?? 0 },
   ];
 
   return (
@@ -977,12 +1078,14 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
             </div>
             <button
               type="button"
-              onClick={() => void loadDashboard(true)}
-              disabled={refreshing || loading}
+              onClick={() =>
+                void (activeSection === 'analytics' ? loadAnalytics(selectedAnalyticsUserId) : loadDashboard(true))
+              }
+              disabled={refreshing || loading || analyticsLoading}
               className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-white transition hover:bg-white/20 disabled:opacity-60"
               aria-label="Atualizar painel admin"
             >
-              <RefreshCcw size={18} className={refreshing ? 'animate-spin' : ''} />
+              <RefreshCcw size={18} className={refreshing || analyticsLoading ? 'animate-spin' : ''} />
             </button>
           </div>
           <div className="mt-5 grid grid-cols-2 gap-3">
@@ -1885,6 +1988,152 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
           </section>
         ) : null}
 
+        {activeSection === 'analytics' ? (
+          <section className="space-y-4">
+            <SectionHeader title="Analytics" count={analytics?.summary.totalEvents ?? 0} />
+            <SupportText text="Mapeie cliques nos recursos desativados e banners dos ultimos 30 dias para entender demanda real antes de abrir novas frentes." />
+
+            {analytics?.selectedUser ? (
+              <div className="rounded-3xl border border-cyan-100 bg-cyan-50/70 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-cyan-700">Filtro ativo</p>
+                    <p className="mt-1 text-lg font-bold text-slate-900">
+                      {analytics.selectedUser.name || analytics.selectedUser.email || 'Usuario sem nome'}
+                    </p>
+                    <p className="text-sm text-slate-600">
+                      @{analytics.selectedUser.username || 'sem-username'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAnalyticsUserId(null)}
+                    className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-100"
+                  >
+                    Ver analytics geral
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {analyticsLoading && !analytics ? (
+              <LoadingCards />
+            ) : analytics ? (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Eventos rastreados</p>
+                    <p className="mt-2 text-3xl font-bold text-slate-900">{analytics.summary.totalEvents}</p>
+                  </div>
+                  <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Cliques em breve</p>
+                    <p className="mt-2 text-3xl font-bold text-slate-900">{analytics.summary.disabledFeatureClicks}</p>
+                  </div>
+                  <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Cliques em banners</p>
+                    <p className="mt-2 text-3xl font-bold text-slate-900">{analytics.summary.bannerClicks}</p>
+                  </div>
+                  <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Usuarios mapeados</p>
+                    <p className="mt-2 text-3xl font-bold text-slate-900">{analytics.summary.trackedUsers}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Recursos mais clicados</p>
+                    {analytics.topDisabledFeatures.length > 0 ? (
+                      <div className="mt-4 space-y-3">
+                        {analytics.topDisabledFeatures.map((feature) => (
+                          <div key={`${feature.targetKey}-${feature.sourceSection || 'unknown'}`} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+                            <div>
+                              <p className="text-sm font-bold text-slate-900">{feature.label}</p>
+                              <p className="text-xs text-slate-500">{feature.sourceSection || 'origem desconhecida'}</p>
+                            </div>
+                            <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600 shadow-sm">{feature.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-4 text-sm text-slate-500">Ainda nao houve cliques suficientes nos recursos desativados.</p>
+                    )}
+                  </div>
+
+                  <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Banners com mais cliques</p>
+                    {analytics.topBanners.length > 0 ? (
+                      <div className="mt-4 space-y-3">
+                        {analytics.topBanners.map((banner) => (
+                          <div key={banner.targetKey} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+                            <p className="text-sm font-bold text-slate-900">{banner.label}</p>
+                            <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600 shadow-sm">{banner.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-4 text-sm text-slate-500">Nenhum banner recebeu clique no periodo analisado.</p>
+                    )}
+                  </div>
+
+                  <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Origens com maior interacao</p>
+                    {analytics.topSources.length > 0 ? (
+                      <div className="mt-4 space-y-3">
+                        {analytics.topSources.map((source) => (
+                          <div key={source.sourceSection} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+                            <p className="text-sm font-bold text-slate-900">{source.sourceSection}</p>
+                            <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600 shadow-sm">{source.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-4 text-sm text-slate-500">Sem distribuicao de origem para exibir ainda.</p>
+                    )}
+                  </div>
+
+                  <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Eventos recentes</p>
+                      <span className="text-xs font-medium text-slate-400">Ultimos {analytics.windowDays} dias</span>
+                    </div>
+                    {analytics.recentEvents.length > 0 ? (
+                      <div className="mt-4 space-y-3">
+                        {analytics.recentEvents.map((event) => (
+                          <div key={event.id} className="rounded-2xl bg-slate-50 px-4 py-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-bold text-slate-900">{event.label}</p>
+                                <p className="text-xs text-slate-500">
+                                  {event.type === 'banner_click' ? 'Clique em banner' : 'Clique em recurso desativado'}
+                                  {' · '}
+                                  {event.sourceSection || 'origem desconhecida'}
+                                </p>
+                              </div>
+                              <span className="text-xs font-medium text-slate-400">{formatDateTime(event.createdAt)}</span>
+                            </div>
+                            <div className="mt-3 space-y-1 text-xs text-slate-500">
+                              <p>Destino: {event.targetKey}</p>
+                              <p>Pagina: {event.sourcePath || 'nao informada'}</p>
+                              <p>
+                                Usuario: {event.user?.name || event.user?.email || 'Anonimo'}
+                                {event.user?.username ? ` (@${event.user.username})` : ''}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <EmptyState text="Nenhum evento rastreado no periodo selecionado." />
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <EmptyState text="Nenhum dado de analytics disponivel ainda." />
+            )}
+          </section>
+        ) : null}
+
         {activeSection === 'users' ? (
           <section className="space-y-3">
           <SectionHeader title="Usuarios" count={filteredUsers.length} />
@@ -1943,12 +2192,18 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                     </div>
                   </div>
 
-                  <div className="mt-4 flex gap-2">
+                  <div className="mt-4 flex flex-wrap gap-2">
                     <ActionButton
                       label={editingUserId === managedUser.id ? 'Fechar' : 'Editar'}
                       tone="neutral"
                       disabled={processingKey !== null}
                       onClick={() => (editingUserId === managedUser.id ? resetUserForm() : startUserEdit(managedUser))}
+                    />
+                    <ActionButton
+                      label="Analytics"
+                      tone="primary"
+                      disabled={processingKey !== null}
+                      onClick={() => openUserAnalytics(managedUser.id)}
                     />
                     <ActionButton
                       label="Excluir"
@@ -2321,3 +2576,4 @@ const ActionButton: React.FC<{
 );
 
 export default AdminPanel;
+

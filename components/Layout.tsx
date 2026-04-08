@@ -17,6 +17,8 @@ import {
   Users,
 } from 'lucide-react';
 import SuggestionButton from './feedback/SuggestionButton';
+import { useToast } from './feedback/ToastProvider';
+import { trackAnalyticsEvent } from '../lib/analytics';
 import { User, UserRole } from '../types';
 
 const logoPrimaryUrl = '/assets/logo-emigrei.png';
@@ -88,82 +90,102 @@ const navigationItems: NavigationItem[] = [
 
 const SidebarContent: React.FC<{
   user: User;
+  sourcePath: string;
   isActive: (path: string) => boolean;
   onItemClick?: () => void;
   onSignOut?: () => void;
-}> = ({ user, isActive, onItemClick, onSignOut }) => (
-  <div className="space-y-4 p-5 pb-20 pt-10 lg:flex lg:h-full lg:flex-col lg:justify-between lg:p-8">
-    <div className="space-y-4">
-      <div className="mb-8 flex flex-col gap-6">
-        <Logo size="md" />
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <img
-              src={user.avatar}
-              className="h-14 w-14 rounded-full border-2 border-white object-cover shadow-md"
-              alt="User"
+}> = ({ user, sourcePath, isActive, onItemClick, onSignOut }) => {
+  const { showToast } = useToast();
+
+  const handleDisabledNavigation = (item: NavigationItem) => {
+    onItemClick?.();
+    showToast(`${item.label} chega em breve.`, 'info');
+    trackAnalyticsEvent({
+      type: 'disabled_feature_click',
+      targetType: 'feature',
+      targetKey: item.href.replace(/^\//, ''),
+      label: item.label,
+      sourcePath,
+      sourceSection: 'sidebar_navigation',
+      regionKey: user.regionKey,
+    });
+  };
+
+  return (
+    <div className="space-y-4 p-5 pb-20 pt-10 lg:flex lg:h-full lg:flex-col lg:justify-between lg:p-8">
+      <div className="space-y-4">
+        <div className="mb-8 flex flex-col gap-6">
+          <Logo size="md" />
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <img
+                src={user.avatar}
+                className="h-14 w-14 rounded-full border-2 border-white object-cover shadow-md"
+                alt="User"
+              />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-[#28B8C7]">{user.name}</h2>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+                {user.username ? `@${user.username}` : 'Membro da comunidade'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="divide-y divide-slate-100 rounded-3xl border border-white/50 bg-white/70 p-2 shadow-sm backdrop-blur-md">
+          {navigationItems.map((item) => (
+            <MenuListItem
+              key={item.href}
+              href={item.href}
+              label={item.label}
+              icon={item.icon}
+              active={isActive(item.href)}
+              disabled={item.disabled}
+              badge={item.badge}
+              onClick={onItemClick}
+              onDisabledClick={() => handleDisabledNavigation(item)}
             />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-[#28B8C7]">{user.name}</h2>
-            <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
-              {user.username ? `@${user.username}` : 'Membro da comunidade'}
-            </p>
-          </div>
+          ))}
+          {user.role === UserRole.ADMIN ? (
+            <MenuListItem
+              href="/admin"
+              label="Admin"
+              icon={<ShieldCheck size={18} />}
+              active={isActive('/admin')}
+              onClick={onItemClick}
+            />
+          ) : null}
         </div>
       </div>
 
-      <div className="divide-y divide-slate-100 rounded-3xl border border-white/50 bg-white/70 p-2 shadow-sm backdrop-blur-md">
-        {navigationItems.map((item) => (
-          <MenuListItem
-            key={item.href}
-            href={item.href}
-            label={item.label}
-            icon={item.icon}
-            active={isActive(item.href)}
-            disabled={item.disabled}
-            badge={item.badge}
-            onClick={onItemClick}
-          />
-        ))}
-        {user.role === UserRole.ADMIN ? (
-          <MenuListItem
-            href="/admin"
-            label="Admin"
-            icon={<ShieldCheck size={18} />}
-            active={isActive('/admin')}
-            onClick={onItemClick}
-          />
-        ) : null}
-      </div>
-    </div>
+      {onSignOut ? (
+        <button
+          type="button"
+          onClick={() => {
+            onItemClick?.();
+            onSignOut();
+          }}
+          className="w-full rounded-2xl bg-[#28B8C7] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#28B8C7]/20"
+        >
+          Sair
+        </button>
+      ) : null}
 
-    {onSignOut ? (
       <button
         type="button"
         onClick={() => {
           onItemClick?.();
-          onSignOut();
+          window.dispatchEvent(new CustomEvent('emigrei:open-suggestion-modal'));
         }}
-        className="w-full rounded-2xl bg-[#28B8C7] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#28B8C7]/20"
+        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 shadow-sm"
       >
-        Sair
+        <MessageSquarePlus size={16} />
+        Enviar sugestao
       </button>
-    ) : null}
-
-    <button
-      type="button"
-      onClick={() => {
-        onItemClick?.();
-        window.dispatchEvent(new CustomEvent('emigrei:open-suggestion-modal'));
-      }}
-      className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 shadow-sm"
-    >
-      <MessageSquarePlus size={16} />
-      Enviar sugestao
-    </button>
-  </div>
-);
+    </div>
+  );
+};
 
 const Layout: React.FC<LayoutWithUserProps> = ({ children, user, onSignOut }) => {
   const pathname = usePathname() || '/';
@@ -191,6 +213,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({ children, user, onSignOut }) =>
         >
           <SidebarContent
             user={user}
+            sourcePath={pathname}
             isActive={isActive}
             onItemClick={handleMenuItemClick}
             onSignOut={onSignOut}
@@ -256,10 +279,11 @@ const MenuListItem: React.FC<{
   disabled?: boolean;
   badge?: string;
   onClick?: () => void;
-}> = ({ href, label, icon, active = false, disabled = false, badge, onClick }) => {
+  onDisabledClick?: () => void;
+}> = ({ href, label, icon, active = false, disabled = false, badge, onClick, onDisabledClick }) => {
   const classes = `flex items-center gap-3 px-4 py-3.5 transition-colors first:rounded-t-2xl last:rounded-b-2xl ${
     disabled
-      ? 'cursor-not-allowed opacity-60'
+      ? 'cursor-pointer opacity-60 hover:bg-white/30'
       : `hover:bg-white/50 ${active ? 'bg-white/40' : ''}`
   }`;
 
@@ -279,7 +303,7 @@ const MenuListItem: React.FC<{
 
   if (disabled) {
     return (
-      <button type="button" disabled aria-disabled="true" className={classes}>
+      <button type="button" aria-disabled="true" onClick={onDisabledClick} className={classes}>
         {content}
       </button>
     );

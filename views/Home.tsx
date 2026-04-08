@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../components/feedback/ToastProvider';
 import RegionSelector from '../components/RegionSelector';
+import { trackAnalyticsEvent } from '../lib/analytics';
 import { BannerAd, User } from '../types';
 
 const Home: React.FC<{ user: User }> = ({ user }) => {
@@ -124,6 +125,19 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
     }
   };
 
+  const handleDisabledFeatureClick = (targetKey: string, label: string) => {
+    showToast(`${label} chega em breve.`, 'info');
+    trackAnalyticsEvent({
+      type: 'disabled_feature_click',
+      targetType: 'feature',
+      targetKey,
+      label,
+      sourcePath: '/',
+      sourceSection: 'home_services',
+      regionKey: user.regionKey,
+    });
+  };
+
   return (
     <div className="animate-in space-y-6 px-6 fade-in slide-in-from-bottom-4 duration-500">
       <div className="mt-4">
@@ -179,7 +193,6 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
             </div>
           </div>
         ) : null}
-
       </div>
 
       <form
@@ -209,9 +222,27 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
         <ServiceCard href="/negocios" icon={Building2} label="Negocios" />
         <ServiceCard href="/community" icon={Users} label="Comunidade" />
         <ServiceCard href="/eventos" icon={CalendarDays} label="Eventos" />
-        <ServiceCard href="/vagas" icon={Briefcase} label="Vagas" disabled />
-        <ServiceCard href="/marketplace" icon={ShoppingBag} label="Marketplace" disabled />
-        <ServiceCard href="/noticias" icon={Newspaper} label="Noticias" disabled />
+        <ServiceCard
+          href="/vagas"
+          icon={Briefcase}
+          label="Vagas"
+          disabled
+          onDisabledClick={() => handleDisabledFeatureClick('vagas', 'Vagas')}
+        />
+        <ServiceCard
+          href="/marketplace"
+          icon={ShoppingBag}
+          label="Marketplace"
+          disabled
+          onDisabledClick={() => handleDisabledFeatureClick('marketplace', 'Marketplace')}
+        />
+        <ServiceCard
+          href="/noticias"
+          icon={Newspaper}
+          label="Noticias"
+          disabled
+          onDisabledClick={() => handleDisabledFeatureClick('noticias', 'Noticias')}
+        />
       </div>
 
       {banners.length > 0 ? (
@@ -227,6 +258,17 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
                   href={banner.targetUrl}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() =>
+                    trackAnalyticsEvent({
+                      type: 'banner_click',
+                      targetType: 'banner',
+                      targetKey: banner.id,
+                      label: banner.name,
+                      sourcePath: '/',
+                      sourceSection: 'home_banner',
+                      regionKey: user.regionKey,
+                    })
+                  }
                   className="group relative h-[240px] w-full flex-none overflow-hidden rounded-[40px] shadow-lg"
                 >
                   <img
@@ -278,15 +320,17 @@ const ServiceCard: React.FC<{
   icon: LucideIcon;
   label: string;
   disabled?: boolean;
+  onDisabledClick?: () => void;
 }> = ({
   href,
   icon: Icon,
   label,
   disabled = false,
+  onDisabledClick,
 }) => {
   const classes = `flex flex-col items-center justify-center gap-3 rounded-3xl border p-5 shadow-sm transition-all ${
     disabled
-      ? 'cursor-not-allowed border-slate-200 bg-slate-50/90 opacity-70'
+      ? 'cursor-pointer border-slate-200 bg-slate-50/90 opacity-70'
       : 'border-slate-50 bg-white hover:shadow-md active:scale-95'
   }`;
 
@@ -314,7 +358,7 @@ const ServiceCard: React.FC<{
 
   if (disabled) {
     return (
-      <button type="button" disabled aria-disabled="true" className={classes}>
+      <button type="button" aria-disabled="true" onClick={onDisabledClick} className={classes}>
         {content}
       </button>
     );

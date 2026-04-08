@@ -102,6 +102,7 @@ model User {
   eventFavorites      EventFavorite[]
   businessRatings     BusinessRating[]
   eventRatings        EventRating[]
+  analyticsEvents     AnalyticsEvent[]
   sentFriendRequests  FriendRequest[] @relation("FriendRequestSender")
   receivedFriendRequests FriendRequest[] @relation("FriendRequestRecipient")
   referredBy          User?           @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
@@ -399,4 +400,23 @@ model Suggestion {
 
   @@index([status, createdAt])
   @@index([userId, createdAt])
+}
+
+model AnalyticsEvent {
+  id            String   @id @default(cuid())
+  type          String
+  targetType    String
+  targetKey     String
+  label         String
+  sourcePath    String?
+  sourceSection String?
+  regionKey     String?
+  userId        String?
+  createdAt     DateTime @default(now())
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([type, createdAt])
+  @@index([targetType, targetKey, createdAt])
+  @@index([userId, createdAt])
+  @@index([sourceSection, createdAt])
 }

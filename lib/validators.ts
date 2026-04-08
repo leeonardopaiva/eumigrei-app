@@ -266,3 +266,13 @@ export const postReviewSchema = z.object({
 export const starRatingSchema = z.object({
   stars: z.coerce.number().int().min(1).max(5),
 });
+
+export const analyticsEventSchema = z.object({
+  type: z.enum(['disabled_feature_click', 'banner_click']),
+  targetType: z.enum(['feature', 'banner']),
+  targetKey: z.string().trim().min(2).max(80),
+  label: z.string().trim().min(2).max(120),
+  sourcePath: z.string().trim().max(160).optional(),
+  sourceSection: z.string().trim().max(80).optional(),
+  regionKey: z.string().trim().max(80).optional(),
+});
