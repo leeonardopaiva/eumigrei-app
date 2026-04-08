@@ -8,6 +8,17 @@ import { useToast } from '@/components/feedback/ToastProvider';
 import { normalizeUrlFieldValue } from '@/lib/forms/validation';
 import type { Post, ReferralSummary, User } from '@/types';
 
+const getPostTimestamp = (post: Post) => new Date(post.createdAt).getTime() || 0;
+
+const getPostEngagementScore = (post: Post) => post.likeCount * 2 + post.commentCount * 3;
+
+const getPostHighlightScore = (post: Post) => {
+  const ageInHours = Math.max(0, (Date.now() - getPostTimestamp(post)) / (1000 * 60 * 60));
+  const freshnessBoost = Math.max(0, 72 - ageInHours);
+
+  return getPostEngagementScore(post) * 10 + freshnessBoost;
+};
+
 const Community: React.FC<{ user: User }> = ({ user }) => {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('Destaques');
@@ -382,6 +393,30 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
     }
   };
 
+  const displayedPosts = [...posts].sort((left, right) => {
+    if (activeTab === 'Recente') {
+      return getPostTimestamp(right) - getPostTimestamp(left);
+    }
+
+    if (activeTab === 'Populares') {
+      const engagementDelta = getPostEngagementScore(right) - getPostEngagementScore(left);
+
+      if (engagementDelta !== 0) {
+        return engagementDelta;
+      }
+
+      return getPostTimestamp(right) - getPostTimestamp(left);
+    }
+
+    const highlightDelta = getPostHighlightScore(right) - getPostHighlightScore(left);
+
+    if (highlightDelta !== 0) {
+      return highlightDelta;
+    }
+
+    return getPostTimestamp(right) - getPostTimestamp(left);
+  });
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="mt-4 px-5">
@@ -398,11 +433,6 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
               {tab}
             </button>
           ))}
-        </div>
-
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          <CategoryPill label="Ajuda" />
-          <CategoryPill label="Dicas" />
         </div>
       </div>
 
@@ -492,12 +522,12 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
       </div>
 
       <div className="space-y-4 px-5 pb-20">
-        {posts.length === 0 ? (
+        {displayedPosts.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-200 bg-white px-5 py-8 text-center text-sm font-medium text-slate-500">
             Ninguem publicou por aqui ainda. Seja o primeiro da sua regiao.
           </div>
         ) : null}
-        {posts.map((post) => (
+        {displayedPosts.map((post) => (
           <FeedPostCard
             key={post.id}
             post={post}
@@ -517,11 +547,5 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
     </div>
   );
 };
-
-const CategoryPill: React.FC<{ label: string }> = ({ label }) => (
-  <button className="whitespace-nowrap rounded-2xl border border-slate-50 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50">
-    {label}
-  </button>
-);
 
 export default Community;
