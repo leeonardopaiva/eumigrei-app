@@ -37,6 +37,26 @@ const SAMPLE_EVENTS: EventItem[] = [
   },
 ];
 
+const isSameLocalDay = (left: Date, right: Date) =>
+  left.getFullYear() === right.getFullYear() &&
+  left.getMonth() === right.getMonth() &&
+  left.getDate() === right.getDate();
+
+const startOfLocalDay = (value: Date) => {
+  const date = new Date(value);
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const endOfLocalWeek = (value: Date) => {
+  const date = startOfLocalDay(value);
+  const dayOfWeek = date.getDay();
+  const daysUntilSunday = (7 - dayOfWeek) % 7;
+  date.setDate(date.getDate() + daysUntilSunday);
+  date.setHours(23, 59, 59, 999);
+  return date;
+};
+
 const emptyForm: {
   title: string;
   description: string;
@@ -58,7 +78,6 @@ const emptyForm: {
   imageUrl: '',
   galleryUrls: [],
 };
-
 type EventField =
   | 'title'
   | 'description'
@@ -254,6 +273,33 @@ const Marketplace: React.FC = () => {
     }
   };
 
+  const now = new Date();
+  const todayStart = startOfLocalDay(now);
+  const weekEnd = endOfLocalWeek(now);
+  const displayedEvents = events.filter((item) => {
+    const eventDate = new Date(item.startsAt);
+
+    if (Number.isNaN(eventDate.getTime())) {
+      return false;
+    }
+
+    if (activeTab === 'Hoje') {
+      return isSameLocalDay(eventDate, now);
+    }
+
+    if (activeTab === 'Esta semana') {
+      return eventDate >= todayStart && eventDate <= weekEnd;
+    }
+
+    return eventDate >= now || isSameLocalDay(eventDate, now);
+  });
+
+  const sectionTitle =
+    activeTab === 'Hoje'
+      ? 'Eventos de hoje'
+      : activeTab === 'Esta semana'
+        ? 'Eventos desta semana'
+        : 'Eventos proximos';
   return (
     <div className="px-5 space-y-6 animate-in fade-in duration-500 pb-20">
       <div className="mt-4 space-y-4">
@@ -402,18 +448,18 @@ const Marketplace: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        <h2 className="font-bold text-cyan-900">Eventos proximos</h2>
+        <h2 className="font-bold text-cyan-900">{sectionTitle}</h2>
         {resultScope === 'global' && events.length > 0 ? (
           <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
             Ainda nao ha eventos publicados na sua regiao. Mostrando eventos de outras regioes.
           </div>
         ) : null}
-        {events.length === 0 ? (
+        {displayedEvents.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-200 bg-white px-5 py-8 text-center text-sm font-medium text-slate-500">
-            Nenhum evento aprovado nesta regiao ainda.
+            Nenhum evento encontrado para este filtro.
           </div>
         ) : null}
-        {events.map((item) => (
+        {displayedEvents.map((item) => (
           <EventCard
             key={item.id}
             item={item}
@@ -481,3 +527,10 @@ const EventCard: React.FC<{
 );
 
 export default Marketplace;
+
+
+
+
+
+
+

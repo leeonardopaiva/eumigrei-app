@@ -13,12 +13,12 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const viewerRegionKey = session?.user?.regionKey ?? searchParams.get('region');
   const viewerId = session?.user?.id;
-  const now = new Date();
+  const recentCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   const baseWhere = {
     status: EventStatus.PUBLISHED,
     startsAt: {
-      gte: now,
+      gte: recentCutoff,
     },
     ...getVisibilityFilter(viewerRegionKey),
   };
@@ -151,3 +151,4 @@ export async function POST(request: Request) {
     message: 'Event submitted for review',
   });
 }
+
