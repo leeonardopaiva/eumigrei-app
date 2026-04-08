@@ -30,10 +30,33 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
   const [savingRegion, setSavingRegion] = useState(false);
   const [banners, setBanners] = useState<BannerAd[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeBannerIndex, setActiveBannerIndex] = useState(0);
 
   useEffect(() => {
     setSelectedRegionKey(user.regionKey || '');
   }, [user.regionKey]);
+
+  useEffect(() => {
+    if (activeBannerIndex <= Math.max(banners.length - 1, 0)) {
+      return;
+    }
+
+    setActiveBannerIndex(0);
+  }, [activeBannerIndex, banners.length]);
+
+  useEffect(() => {
+    if (banners.length <= 1) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setActiveBannerIndex((current) => (current + 1) % banners.length);
+    }, 3000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [banners.length]);
 
   useEffect(() => {
     let ignore = false;
@@ -193,35 +216,55 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
 
       {banners.length > 0 ? (
         <div className="space-y-3">
-          <div className="flex snap-x gap-4 overflow-x-auto pb-2 scrollbar-hide">
-            {banners.map((banner) => (
-              <a
-                key={banner.id}
-                href={banner.targetUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="group relative h-[240px] min-w-full snap-center overflow-hidden rounded-[40px] shadow-lg"
-              >
-                <img
-                  src={banner.imageUrl}
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  alt={banner.name}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
-                <div className="absolute left-8 top-8 right-8">
-                  <div className="inline-flex rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-white backdrop-blur-sm">
-                    {banner.regionLabel || 'Toda a comunidade'}
+          <div className="overflow-hidden rounded-[40px]">
+            <div
+              className="flex transition-transform duration-700 ease-out"
+              style={{ transform: `translateX(-${activeBannerIndex * 100}%)` }}
+            >
+              {banners.map((banner) => (
+                <a
+                  key={banner.id}
+                  href={banner.targetUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group relative h-[240px] w-full flex-none overflow-hidden rounded-[40px] shadow-lg"
+                >
+                  <img
+                    src={banner.imageUrl}
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    alt={banner.name}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+                  <div className="absolute left-8 top-8 right-8">
+                    <div className="inline-flex rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-white backdrop-blur-sm">
+                      {banner.regionLabel || 'Toda a comunidade'}
+                    </div>
+                    <h3 className="mt-4 text-3xl font-bold leading-tight text-white drop-shadow-md">
+                      {banner.name}
+                    </h3>
                   </div>
-                  <h3 className="mt-4 text-3xl font-bold leading-tight text-white drop-shadow-md">
-                    {banner.name}
-                  </h3>
-                </div>
-                <div className="absolute bottom-8 left-8 flex h-14 w-14 items-center justify-center rounded-full bg-[#FF8C00] text-white shadow-2xl transition-colors group-hover:bg-[#E07B00]">
-                  <ArrowRight size={24} strokeWidth={3} />
-                </div>
-              </a>
-            ))}
+                  <div className="absolute bottom-8 left-8 flex h-14 w-14 items-center justify-center rounded-full bg-[#FF8C00] text-white shadow-2xl transition-colors group-hover:bg-[#E07B00]">
+                    <ArrowRight size={24} strokeWidth={3} />
+                  </div>
+                </a>
+              ))}
+            </div>
           </div>
+          {banners.length > 1 ? (
+            <div className="flex items-center justify-center gap-2">
+              {banners.map((banner, index) => (
+                <button
+                  key={banner.id}
+                  type="button"
+                  onClick={() => setActiveBannerIndex(index)}
+                  aria-label={`Ir para banner ${index + 1}`}
+                  className={`h-2.5 rounded-full transition-all ${
+                    index === activeBannerIndex ? 'w-6 bg-[#28B8C7]' : 'w-2.5 bg-slate-300'
+                  }`}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
 
