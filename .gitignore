@@ -24,4 +24,5 @@ out
 *.njsproj
 *.sln
 *.sw?
+.env
 .env.vercel*

@@ -47,9 +47,19 @@ export interface ProfessionalProfileEvent {
   publicPath: string;
 }
 
+export interface ProfessionalProfileIdentity {
+  id: string;
+  name: string;
+  slug: string;
+  imageUrl?: string | null;
+  locationLabel?: string | null;
+  publicPath: string;
+}
+
 export interface ProfessionalProfileSummary {
   businessCount: number;
   eventCount: number;
+  identity: ProfessionalProfileIdentity | null;
   businesses: ProfessionalProfileBusiness[];
   events: ProfessionalProfileEvent[];
 }

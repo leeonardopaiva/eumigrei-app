@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Copy, Globe, Mail, MapPin, PencilLine, Phone, Plus, UserRound, X } from 'lucide-react';
+import { BriefcaseBusiness, ChevronDown, Copy, Globe, Mail, MapPin, PencilLine, Phone, Plus, UserRound, X } from 'lucide-react';
 import { useToast } from '../components/feedback/ToastProvider';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import ImageGalleryField from '../components/forms/ImageGalleryField';
@@ -9,12 +9,12 @@ import RegionSelector from '../components/RegionSelector';
 import { formatLoosePhoneInput } from '../lib/forms/phone';
 import { normalizeUrlFieldValue } from '../lib/forms/validation';
 import { normalizeUsernameInput } from '../lib/username';
-import PersonaModeSwitch from '../components/profile/PersonaModeSwitch';
 import ProfessionalModePanel from '../components/profile/ProfessionalModePanel';
 import { PersonaMode, ProfessionalProfileSummary, ReferralSummary, User } from '../types';
 
 const DEFAULT_AVATAR_URL = 'https://picsum.photos/seed/emigrei-user/200';
 const PROFILE_GRADIENT_CLASS = 'bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.35),_transparent_32%),linear-gradient(135deg,#28B8C7_0%,#1DA7D5_45%,#0D6EFD_100%)]';
+const PROFESSIONAL_PROFILE_GRADIENT_CLASS = 'bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.2),_transparent_28%),linear-gradient(135deg,#0F4C81_0%,#145DA0_48%,#0D6EFD_100%)]';
 
 const getInitials = (name: string) =>
   name
@@ -43,6 +43,7 @@ type ProfileState = {
 const emptyProfessionalProfile: ProfessionalProfileSummary = {
   businessCount: 0,
   eventCount: 0,
+  identity: null,
   businesses: [],
   events: [],
 };
@@ -91,6 +92,7 @@ const Profile: React.FC<{
   const [interestInput, setInterestInput] = useState('');
   const [galleryDraft, setGalleryDraft] = useState<string[]>(user.galleryUrls || []);
   const [selectedRegionKey, setSelectedRegionKey] = useState(user.regionKey || '');
+  const [personaMenuOpen, setPersonaMenuOpen] = useState(false);
   const [editing, setEditing] = useState({
     avatar: false,
     cover: false,
@@ -146,6 +148,7 @@ const Profile: React.FC<{
           setProfessionalProfile({
             businessCount: Number(payload.professionalProfile?.businessCount ?? 0),
             eventCount: Number(payload.professionalProfile?.eventCount ?? 0),
+            identity: payload.professionalProfile?.identity ?? null,
             businesses: Array.isArray(payload.professionalProfile?.businesses)
               ? payload.professionalProfile.businesses
               : [],
@@ -186,6 +189,10 @@ const Profile: React.FC<{
 
     router.replace('/profile');
   }, [router, searchParams, showToast, update]);
+
+  useEffect(() => {
+    setPersonaMenuOpen(false);
+  }, [personaMode]);
 
   useEffect(() => {
     const editSection = searchParams.get('edit');
@@ -379,6 +386,22 @@ const Profile: React.FC<{
 
   const avatarImage = profile.image || '';
   const referralUrl = referralSummary.referralUrl || (profile.username ? `https://emigrei.com.br/convite/${profile.username}` : 'https://emigrei.com.br/convite/seu-nome-publico');
+  const professionalIdentity = professionalProfile.identity;
+  const isProfessionalView =
+    canUseProfessionalMode && personaMode === 'professional' && Boolean(professionalIdentity);
+  const activeHeaderName = isProfessionalView && professionalIdentity ? professionalIdentity.name : profile.name;
+  const activeHeaderHandle = isProfessionalView && professionalIdentity
+    ? `@${professionalIdentity.slug}`
+    : `@${profile.username || 'defina-seu-nome'}`;
+  const activeHeaderLocation =
+    isProfessionalView && professionalIdentity?.locationLabel
+      ? professionalIdentity.locationLabel
+      : profile.locationLabel;
+  const activeHeaderImage =
+    isProfessionalView && professionalIdentity?.imageUrl ? professionalIdentity.imageUrl : avatarImage;
+  const activeHeaderGradientClass = isProfessionalView
+    ? PROFESSIONAL_PROFILE_GRADIENT_CLASS
+    : PROFILE_GRADIENT_CLASS;
 
   if (loading) {
     return (
@@ -393,40 +416,95 @@ const Profile: React.FC<{
   return (
     <div className="animate-in space-y-5 px-5 pb-24 pt-6 fade-in duration-500">
       <section className="overflow-hidden rounded-[36px] bg-white shadow-sm">
-        <div className={`relative h-56 ${profile.coverImageUrl ? 'bg-slate-100' : PROFILE_GRADIENT_CLASS}`}>
-          {profile.coverImageUrl ? (
+        <div className={`relative h-56 ${
+          !isProfessionalView && profile.coverImageUrl ? 'bg-slate-100' : activeHeaderGradientClass
+        }`}>
+          {!isProfessionalView && profile.coverImageUrl ? (
             <img src={profile.coverImageUrl} alt="Capa do perfil" className="h-full w-full object-cover object-center" />
           ) : (
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.28),_transparent_28%)]" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-slate-950/5 to-transparent" />
-          <button type="button" onClick={() => { setEditing((c) => ({ ...c, cover: !c.cover })); setCoverDraft(profile.coverImageUrl); }} className="absolute right-4 top-4 rounded-2xl border border-white/60 bg-white/85 p-3 text-slate-600">
-            <PencilLine size={16} />
-          </button>
+          {!isProfessionalView ? (
+            <button type="button" onClick={() => { setEditing((c) => ({ ...c, cover: !c.cover })); setCoverDraft(profile.coverImageUrl); }} className="absolute right-4 top-4 rounded-2xl border border-white/60 bg-white/85 p-3 text-slate-600">
+              <PencilLine size={16} />
+            </button>
+          ) : null}
         </div>
         <div className="-mt-12 px-5 pb-5">
           <div className="flex flex-col items-center text-center">
             <div className="relative h-28 w-28 overflow-hidden rounded-full border-[5px] border-white bg-white shadow-lg">
-              {avatarImage ? (
-                <img src={avatarImage} alt={profile.name} className="h-full w-full object-cover" />
+              {activeHeaderImage ? (
+                <img src={activeHeaderImage} alt={activeHeaderName} className="h-full w-full object-cover" />
               ) : (
-                <div className={`flex h-full w-full items-center justify-center ${PROFILE_GRADIENT_CLASS} text-3xl font-bold text-white`}>
-                  {getInitials(profile.name)}
+                <div className={`flex h-full w-full items-center justify-center ${activeHeaderGradientClass} text-3xl font-bold text-white`}>
+                  {getInitials(activeHeaderName)}
                 </div>
               )}
-              <button type="button" onClick={() => { setEditing((c) => ({ ...c, avatar: !c.avatar })); setAvatarDraft(profile.image); }} className="absolute bottom-0 right-0 rounded-full border-2 border-white bg-white p-2 text-[#28B8C7]">
-                <PencilLine size={14} />
-              </button>
+              {!isProfessionalView ? (
+                <button type="button" onClick={() => { setEditing((c) => ({ ...c, avatar: !c.avatar })); setAvatarDraft(profile.image); }} className="absolute bottom-0 right-0 rounded-full border-2 border-white bg-white p-2 text-[#28B8C7]">
+                  <PencilLine size={14} />
+                </button>
+              ) : null}
             </div>
-            <h1 className="mt-4 text-3xl font-bold text-slate-900">{profile.name}</h1>
-            <p className="mt-1 text-sm font-semibold text-slate-500">@{profile.username || 'defina-seu-nome'}</p>
+            <div className="relative mt-4">
+              {canUseProfessionalMode ? (
+                <button
+                  type="button"
+                  onClick={() => setPersonaMenuOpen((current) => !current)}
+                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] ${
+                    isProfessionalView
+                      ? 'border-blue-100 bg-blue-50 text-[#0F4C81]'
+                      : 'border-slate-200 bg-white text-slate-600'
+                  }`}
+                >
+                  {isProfessionalView ? <BriefcaseBusiness size={14} /> : <UserRound size={14} />}
+                  {isProfessionalView ? 'Profissional' : 'Pessoal'}
+                  <ChevronDown size={14} className={`transition-transform ${personaMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+              ) : null}
+              {canUseProfessionalMode && personaMenuOpen ? (
+                <div className="absolute left-1/2 top-[calc(100%+0.75rem)] z-20 w-[280px] -translate-x-1/2 rounded-[28px] border border-slate-200 bg-white p-2 text-left shadow-2xl">
+                  <PersonaMenuOption
+                    title="Pessoal"
+                    subtitle={`@${profile.username || 'defina-seu-nome'}`}
+                    active={!isProfessionalView}
+                    icon={<UserRound size={16} />}
+                    onClick={() => {
+                      onPersonaModeChange('personal');
+                      setPersonaMenuOpen(false);
+                    }}
+                  />
+                  <PersonaMenuOption
+                    title="Profissional"
+                    subtitle={professionalIdentity ? `@${professionalIdentity.slug}` : 'Cadastre um negocio'}
+                    active={isProfessionalView}
+                    disabled={!professionalIdentity}
+                    icon={<BriefcaseBusiness size={16} />}
+                    onClick={() => {
+                      if (!professionalIdentity) {
+                        return;
+                      }
+                      onPersonaModeChange('professional');
+                      setPersonaMenuOpen(false);
+                    }}
+                  />
+                </div>
+              ) : null}
+            </div>
+            <h1 className={`mt-4 text-3xl font-bold ${isProfessionalView ? 'text-[#0F4C81]' : 'text-slate-900'}`}>
+              {activeHeaderName}
+            </h1>
+            <p className={`mt-1 text-sm font-semibold ${isProfessionalView ? 'text-[#0F4C81]/70' : 'text-slate-500'}`}>
+              {activeHeaderHandle}
+            </p>
             <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600">
               <MapPin size={14} />
-              {profile.locationLabel}
+              {activeHeaderLocation}
             </p>
           </div>
 
-          {editing.cover ? (
+          {!isProfessionalView && editing.cover ? (
             <EditorCard>
               <CloudinaryImageField value={coverDraft} onChange={setCoverDraft} folder="profiles" placeholder="Link da capa do perfil" hint="Use uma imagem horizontal para destacar seu perfil publico." />
               <ActionRow>
@@ -436,7 +514,7 @@ const Profile: React.FC<{
             </EditorCard>
           ) : null}
 
-          {editing.avatar ? (
+          {!isProfessionalView && editing.avatar ? (
             <EditorCard>
               <CloudinaryImageField value={avatarDraft} onChange={setAvatarDraft} folder="profiles" placeholder="Link da foto do perfil" hint="Envie sua foto pela Cloudinary ou cole uma URL publica." />
               <ActionRow>
@@ -448,27 +526,10 @@ const Profile: React.FC<{
         </div>
       </section>
 
-      {canUseProfessionalMode ? (
-        <section className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-[#28B8C7]">Modo do perfil</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                {personaMode === 'professional'
-                  ? 'Voce esta no contexto profissional. A gestao do negocio fica separada do seu perfil pessoal.'
-                  : 'Use o modo profissional para focar nos negocios e eventos sem misturar a apresentacao pessoal.'}
-              </p>
-            </div>
-            <PersonaModeSwitch value={personaMode} onChange={onPersonaModeChange} />
-          </div>
-        </section>
-      ) : null}
-
-      {canUseProfessionalMode && personaMode === 'professional' ? (
+      {isProfessionalView ? (
         <ProfessionalModePanel
           professionalProfile={professionalProfile}
           username={profile.username}
-          onSwitchToPersonal={() => onPersonaModeChange('personal')}
         />
       ) : (
         <>
@@ -607,6 +668,36 @@ const Section: React.FC<{ title: string; description: string; editing: boolean; 
     </div>
     <div className="mt-5">{children}</div>
   </section>
+);
+
+const PersonaMenuOption: React.FC<{
+  title: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  active?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}> = ({ title, subtitle, icon, active = false, disabled = false, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    className={`flex w-full items-start gap-3 rounded-[22px] px-4 py-3 text-left transition ${
+      active
+        ? 'bg-blue-50 text-[#0F4C81]'
+        : disabled
+          ? 'cursor-not-allowed text-slate-300'
+          : 'text-slate-700 hover:bg-slate-50'
+    }`}
+  >
+    <span className={`mt-1 ${active ? 'text-[#0F4C81]' : disabled ? 'text-slate-300' : 'text-slate-400'}`}>{icon}</span>
+    <span className="min-w-0">
+      <span className="block text-sm font-bold">{title}</span>
+      <span className="mt-1 block truncate text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+        {subtitle}
+      </span>
+    </span>
+  </button>
 );
 
 const EditorCard: React.FC<{ children: React.ReactNode }> = ({ children }) => (

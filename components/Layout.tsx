@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import SuggestionButton from './feedback/SuggestionButton';
 import { useToast } from './feedback/ToastProvider';
-import PersonaModeSwitch from './profile/PersonaModeSwitch';
 import { trackAnalyticsEvent } from '../lib/analytics';
 import { PersonaMode, User, UserRole } from '../types';
 
@@ -95,18 +94,14 @@ const navigationItems: NavigationItem[] = [
 const SidebarContent: React.FC<{
   user: User;
   sourcePath: string;
-  personaMode: PersonaMode;
-  canUseProfessionalMode: boolean;
-  onPersonaModeChange?: (mode: PersonaMode) => void;
+  accentColorClass: string;
   isActive: (path: string) => boolean;
   onItemClick?: () => void;
   onSignOut?: () => void;
 }> = ({
   user,
   sourcePath,
-  personaMode,
-  canUseProfessionalMode,
-  onPersonaModeChange,
+  accentColorClass,
   isActive,
   onItemClick,
   onSignOut,
@@ -141,20 +136,12 @@ const SidebarContent: React.FC<{
               />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-[#28B8C7]">{user.name}</h2>
+              <h2 className={`text-xl font-bold ${accentColorClass}`}>{user.name}</h2>
               <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
                 {user.username ? `@${user.username}` : 'Membro da comunidade'}
               </p>
             </div>
           </div>
-          {canUseProfessionalMode && onPersonaModeChange ? (
-            <div className="space-y-2 rounded-3xl border border-slate-100 bg-white/80 p-3 shadow-sm">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                Contexto ativo
-              </p>
-              <PersonaModeSwitch value={personaMode} onChange={onPersonaModeChange} className="w-full" />
-            </div>
-          ) : null}
         </div>
 
         <div className="divide-y divide-slate-100 rounded-3xl border border-white/50 bg-white/70 p-2 shadow-sm backdrop-blur-md">
@@ -221,6 +208,12 @@ const Layout: React.FC<LayoutWithUserProps> = ({
 }) => {
   const pathname = usePathname() || '/';
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const isProfessionalTheme = canUseProfessionalMode && personaMode === 'professional';
+  const accentColorClass = isProfessionalTheme ? 'text-[#0F4C81]' : 'text-[#28B8C7]';
+  const accentSolidClass = isProfessionalTheme ? 'bg-[#0F4C81]' : 'bg-[#28B8C7]';
+  const panelClass = isProfessionalTheme
+    ? 'border-blue-100/80 bg-blue-50/80'
+    : 'border-white/50 bg-white/85';
 
   const isActive = (path: string) =>
     path === '/' ? pathname === path : pathname === path || pathname.startsWith(`${path}/`);
@@ -240,14 +233,12 @@ const Layout: React.FC<LayoutWithUserProps> = ({
         <div
           className={`fixed inset-y-0 left-0 z-[60] w-[85%] max-w-[380px] overflow-y-auto border-r border-white/50 bg-white/85 shadow-2xl backdrop-blur-xl transition-transform duration-300 ease-out ${
             isMenuOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
+          } ${panelClass}`}
         >
           <SidebarContent
             user={user}
             sourcePath={pathname}
-            personaMode={personaMode}
-            canUseProfessionalMode={canUseProfessionalMode}
-            onPersonaModeChange={onPersonaModeChange}
+            accentColorClass={accentColorClass}
             isActive={isActive}
             onItemClick={handleMenuItemClick}
             onSignOut={onSignOut}
@@ -260,7 +251,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
               <button
                 type="button"
                 onClick={() => setIsMenuOpen(true)}
-                className="p-1 text-[#28B8C7]"
+                className={`p-1 ${accentColorClass}`}
               >
                 <Menu size={28} />
               </button>
@@ -291,12 +282,12 @@ const Layout: React.FC<LayoutWithUserProps> = ({
           <SuggestionButton />
 
           <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-6 lg:hidden">
-            <nav className="flex w-full max-w-[360px] items-center justify-between rounded-full border border-white/10 bg-[#28B8C7] px-2 py-2 shadow-2xl">
-              <NavItem href="/" icon={<HomeIcon size={20} />} active={isActive('/')} />
-              <NavItem href="/negocios" icon={<Store size={20} />} active={isActive('/negocios')} />
-              <NavItem href="/community" icon={<Users size={20} />} active={isActive('/community')} />
-              <NavItem href="/eventos" icon={<Calendar size={20} />} active={isActive('/eventos')} />
-              <NavItem href="/profile" icon={<UserIcon size={20} />} active={isActive('/profile')} />
+            <nav className={`flex w-full max-w-[360px] items-center justify-between rounded-full border border-white/10 px-2 py-2 shadow-2xl ${accentSolidClass}`}>
+              <NavItem href="/" icon={<HomeIcon size={20} />} active={isActive('/')} accentColorClass={accentColorClass} />
+              <NavItem href="/negocios" icon={<Store size={20} />} active={isActive('/negocios')} accentColorClass={accentColorClass} />
+              <NavItem href="/community" icon={<Users size={20} />} active={isActive('/community')} accentColorClass={accentColorClass} />
+              <NavItem href="/eventos" icon={<Calendar size={20} />} active={isActive('/eventos')} accentColorClass={accentColorClass} />
+              <NavItem href="/profile" icon={<UserIcon size={20} />} active={isActive('/profile')} accentColorClass={accentColorClass} />
             </nav>
           </div>
         </div>
@@ -350,16 +341,17 @@ const MenuListItem: React.FC<{
   );
 };
 
-const NavItem: React.FC<{ href: string; icon: React.ReactNode; active: boolean }> = ({
+const NavItem: React.FC<{ href: string; icon: React.ReactNode; active: boolean; accentColorClass: string }> = ({
   href,
   icon,
   active,
+  accentColorClass,
 }) => (
   <Link
     href={href}
     className={`flex items-center justify-center transition-all duration-300 ${
       active
-        ? 'h-12 w-12 scale-105 rounded-full bg-white text-[#28B8C7] shadow-lg'
+        ? `h-12 w-12 scale-105 rounded-full bg-white ${accentColorClass} shadow-lg`
         : 'h-11 w-11 text-white/70 hover:text-white'
     }`}
   >

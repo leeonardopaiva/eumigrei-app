@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { BriefcaseBusiness, CalendarDays, Copy, ExternalLink, Share2, Sparkles } from 'lucide-react';
+import { BriefcaseBusiness, CalendarDays, Copy, ExternalLink, Share2 } from 'lucide-react';
 import { useToast } from '../feedback/ToastProvider';
 import type { ProfessionalProfileSummary } from '../../types';
 
@@ -46,13 +46,11 @@ const formatDateTime = (value: string) =>
 type ProfessionalModePanelProps = {
   professionalProfile: ProfessionalProfileSummary;
   username?: string | null;
-  onSwitchToPersonal?: () => void;
 };
 
 const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
   professionalProfile,
   username,
-  onSwitchToPersonal,
 }) => {
   const { showToast } = useToast();
 
@@ -98,44 +96,22 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
 
   return (
     <div className="space-y-5">
-      <section className="rounded-[32px] border border-cyan-100 bg-cyan-50/70 p-5 shadow-sm">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#28B8C7] shadow-sm">
-              <Sparkles size={14} />
-              Modo profissional
-            </div>
-            <h2 className="mt-4 text-2xl font-bold text-slate-900">Contexto focado no negocio</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              Aqui voce acompanha a sua presenca profissional sem misturar bio, interesses e ajustes pessoais.
-            </p>
-          </div>
-          {onSwitchToPersonal ? (
-            <button
-              type="button"
-              onClick={onSwitchToPersonal}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm"
-            >
-              Voltar ao perfil pessoal
-            </button>
-          ) : null}
-        </div>
-
+      <section className="rounded-[32px] border border-blue-100 bg-[linear-gradient(135deg,rgba(15,76,129,0.08)_0%,rgba(13,110,253,0.04)_100%)] p-5 shadow-sm">
         <div className="mt-5 grid grid-cols-2 gap-3">
           <div className="rounded-[24px] border border-white/80 bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Negocios vinculados</p>
-            <p className="mt-2 text-3xl font-bold text-slate-900">{professionalProfile.businessCount}</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Negocios</p>
+            <p className="mt-2 text-3xl font-bold text-[#0F4C81]">{professionalProfile.businessCount}</p>
           </div>
           <div className="rounded-[24px] border border-white/80 bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Eventos criados</p>
-            <p className="mt-2 text-3xl font-bold text-slate-900">{professionalProfile.eventCount}</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Eventos</p>
+            <p className="mt-2 text-3xl font-bold text-[#0F4C81]">{professionalProfile.eventCount}</p>
           </div>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
             href="/negocios"
-            className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#28B8C7] px-4 text-sm font-bold text-white shadow-md"
+            className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#0F4C81] px-4 text-sm font-bold text-white shadow-md shadow-[#0F4C81]/20"
           >
             Abrir negocios
           </Link>
@@ -149,7 +125,7 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
             <>
               <Link
                 href={`/profissional/${username}`}
-                className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700"
+                className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-blue-100 bg-white px-4 text-sm font-bold text-[#0F4C81]"
               >
                 Ver vitrine publica
               </Link>
@@ -182,7 +158,7 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
         {professionalProfile.businesses.length > 0 ? (
           <div className="mt-4 space-y-3">
             {professionalProfile.businesses.map((business) => (
-              <div key={business.id} className="flex items-start gap-4 rounded-[24px] border border-slate-100 bg-slate-50 p-4">
+              <div key={business.id} className="flex items-start gap-4 rounded-[24px] border border-blue-100/70 bg-blue-50/40 p-4">
                 <img
                   src={business.imageUrl || `https://picsum.photos/seed/${business.id}/160`}
                   alt={business.name}
@@ -191,7 +167,7 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-base font-bold text-slate-900">{business.name}</p>
+                      <p className="text-base font-bold text-[#0F4C81]">{business.name}</p>
                       <p className="mt-1 text-sm text-slate-500">{business.category}</p>
                     </div>
                     <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-slate-600 shadow-sm">
@@ -202,7 +178,7 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
                   <p className="mt-1 text-xs text-slate-400">Atualizado em {formatDateTime(business.updatedAt)}</p>
                   <Link
                     href={business.publicPath}
-                    className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700"
+                    className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-white px-3 py-2 text-xs font-bold text-[#0F4C81]"
                   >
                     Gerenciar negocio
                     <ExternalLink size={14} />
@@ -226,7 +202,7 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
         {professionalProfile.events.length > 0 ? (
           <div className="mt-4 space-y-3">
             {professionalProfile.events.map((event) => (
-              <div key={event.id} className="flex items-start gap-4 rounded-[24px] border border-slate-100 bg-slate-50 p-4">
+              <div key={event.id} className="flex items-start gap-4 rounded-[24px] border border-blue-100/70 bg-blue-50/40 p-4">
                 <img
                   src={event.imageUrl || `https://picsum.photos/seed/${event.id}/160`}
                   alt={event.title}
@@ -235,7 +211,7 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-base font-bold text-slate-900">{event.title}</p>
+                      <p className="text-base font-bold text-[#0F4C81]">{event.title}</p>
                       <p className="mt-1 text-sm text-slate-500">{event.locationLabel || 'Sem regiao definida'}</p>
                     </div>
                     <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-slate-600 shadow-sm">
@@ -245,7 +221,7 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
                   <p className="mt-3 text-sm text-slate-500">Comeca em {formatDateTime(event.startsAt)}</p>
                   <Link
                     href={event.publicPath}
-                    className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700"
+                    className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-white px-3 py-2 text-xs font-bold text-[#0F4C81]"
                   >
                     Abrir evento
                     <ExternalLink size={14} />

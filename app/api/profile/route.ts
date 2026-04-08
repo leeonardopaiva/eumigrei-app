@@ -81,6 +81,16 @@ export async function GET() {
     professionalProfile: {
       businessCount: businesses.length,
       eventCount: events.length,
+      identity: businesses[0]
+        ? {
+            id: businesses[0].id,
+            name: businesses[0].name,
+            slug: businesses[0].slug || businesses[0].id,
+            imageUrl: businesses[0].imageUrl,
+            locationLabel: businesses[0].locationLabel,
+            publicPath: `/negocios/${businesses[0].slug || businesses[0].id}`,
+          }
+        : null,
       businesses: businesses.map((business) => ({
         ...business,
         publicPath: `/negocios/${business.slug || business.id}`,

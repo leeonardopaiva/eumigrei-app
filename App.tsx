@@ -36,6 +36,7 @@ const RESERVED_PUBLIC_ROUTES = new Set([
   'negocios',
   'perfil',
   'profile',
+  'profissional',
   'vagas',
   'convite',
 ]);
