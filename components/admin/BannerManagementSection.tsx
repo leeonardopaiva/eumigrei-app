@@ -240,7 +240,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
         Cadastre um ou mais banners e limite a exibicao por regiao ou para toda a plataforma.
       </p>
 
-      <div className="space-y-3 rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+      <div className="space-y-5 rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-bold text-slate-700">
@@ -261,74 +261,106 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
           ) : null}
         </div>
 
-        <input
-          value={bannerForm.name}
-          onChange={(event) => {
-            clearFieldError('name');
-            setBannerForm((current) => ({ ...current, name: event.target.value }));
-          }}
-          placeholder="Nome do banner"
-          aria-invalid={Boolean(fieldErrors.name)}
-          className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
-        />
-        <FieldErrorMessage message={fieldErrors.name} />
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-            <span className="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
-              Tipo de banner
-            </span>
-            <select
-              value={bannerForm.type}
-              onChange={(event) => {
-                clearFieldError('targetUrl');
-                setBannerForm((current) => ({
-                  ...current,
-                  type: event.target.value as BannerFormState['type'],
-                  targetUrl: event.target.value === 'LINK' ? current.targetUrl : '',
-                }));
-              }}
-              className="mt-2 w-full bg-transparent text-sm font-bold text-slate-700 outline-none"
-            >
-              <option value="LINK">Link externo</option>
-              <option value="REGISTRATION">Cadastro de interesse</option>
-            </select>
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+            Nome
           </label>
-          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-500">
-            {bannerForm.type === 'LINK'
-              ? 'O usuario clica no icone e abre o destino em nova aba.'
-              : 'O usuario clica no botao e os dados do perfil sao salvos como lead do banner.'}
+          <input
+            value={bannerForm.name}
+            onChange={(event) => {
+              clearFieldError('name');
+              setBannerForm((current) => ({ ...current, name: event.target.value }));
+            }}
+            placeholder="Nome do banner"
+            aria-invalid={Boolean(fieldErrors.name)}
+            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+          />
+          <FieldErrorMessage message={fieldErrors.name} />
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Tipo</p>
+            <div className="mt-2 grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1">
+              {[
+                { value: 'LINK' as const, label: 'Link' },
+                { value: 'REGISTRATION' as const, label: 'Cadastro' },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    clearFieldError('targetUrl');
+                    setBannerForm((current) => ({
+                      ...current,
+                      type: option.value,
+                      targetUrl: option.value === 'LINK' ? current.targetUrl : '',
+                    }));
+                  }}
+                  className={`rounded-xl px-3 py-2 text-sm font-bold transition ${
+                    bannerForm.type === option.value
+                      ? 'bg-white text-[#28B8C7] shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-xs leading-5 text-slate-500">
+              {bannerForm.type === 'LINK'
+                ? 'Abre um destino externo pelo botao do banner.'
+                : 'Salva os dados do perfil como lead do banner.'}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Exibicao</p>
+            <div className="mt-2 grid grid-cols-3 gap-2 rounded-2xl bg-slate-100 p-1">
+              {[
+                { value: 'HOME' as const, label: 'Home' },
+                { value: 'FEED' as const, label: 'Feed' },
+                { value: 'BOTH' as const, label: 'Ambos' },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() =>
+                    setBannerForm((current) => ({
+                      ...current,
+                      placement: option.value,
+                    }))
+                  }
+                  className={`rounded-xl px-2 py-2 text-xs font-bold transition sm:text-sm ${
+                    bannerForm.placement === option.value
+                      ? 'bg-white text-[#28B8C7] shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-        <label className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-          <span className="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
-            Local de exibicao
-          </span>
-          <select
-            value={bannerForm.placement}
-            onChange={(event) =>
-              setBannerForm((current) => ({
-                ...current,
-                placement: event.target.value as BannerFormState['placement'],
-              }))
-            }
-            className="mt-2 w-full bg-transparent text-sm font-bold text-slate-700 outline-none"
-          >
-            <option value="HOME">Home</option>
-            <option value="FEED">Feed da comunidade</option>
-            <option value="BOTH">Home e feed</option>
-          </select>
-        </label>
-        <CloudinaryImageField
-          value={bannerForm.imageUrl}
-          onChange={(value) => setBannerForm((current) => ({ ...current, imageUrl: value }))}
-          onClearError={() => clearFieldError('imageUrl')}
-          error={fieldErrors.imageUrl}
-          folder="banners"
-          placeholder="Link da imagem do banner"
-          hint="Envie o banner via Cloudinary ou cole uma URL publica."
-        />
+
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Imagem</p>
+          <CloudinaryImageField
+            value={bannerForm.imageUrl}
+            onChange={(value) => setBannerForm((current) => ({ ...current, imageUrl: value }))}
+            onClearError={() => clearFieldError('imageUrl')}
+            error={fieldErrors.imageUrl}
+            folder="banners"
+            placeholder="Link da imagem do banner"
+            hint="Envie o banner via Cloudinary ou cole uma URL publica."
+          />
+        </div>
         {bannerForm.type === 'LINK' ? (
-          <>
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+              Link de destino
+            </label>
             <input
               value={bannerForm.targetUrl}
               onChange={(event) => {
@@ -346,29 +378,32 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
               className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
             />
             <FieldErrorMessage message={fieldErrors.targetUrl} />
-          </>
+          </div>
         ) : null}
-        <RegionSelector
-          value={bannerForm.regionKey}
-          onChange={(region) =>
-            setBannerForm((current) => ({ ...current, regionKey: region.key }))
-          }
-          onClear={() => setBannerForm((current) => ({ ...current, regionKey: '' }))}
-          allowEmpty
-          emptyLabel="Todas as regioes"
-          hint="Alcance: deixe vazio para global. Escolha uma regiao para exibir apenas para usuarios daquela area."
-        />
-        <label className="inline-flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
-          <input
-            type="checkbox"
-            checked={bannerForm.isActive}
-            onChange={(event) =>
-              setBannerForm((current) => ({ ...current, isActive: event.target.checked }))
+
+        <div className="space-y-3 rounded-3xl bg-slate-50 p-4">
+          <RegionSelector
+            value={bannerForm.regionKey}
+            onChange={(region) =>
+              setBannerForm((current) => ({ ...current, regionKey: region.key }))
             }
-            className="h-4 w-4 rounded border-slate-300 text-[#28B8C7] focus:ring-[#28B8C7]"
+            onClear={() => setBannerForm((current) => ({ ...current, regionKey: '' }))}
+            allowEmpty
+            emptyLabel="Global"
+            hint="Deixe global para todas as regioes ou escolha uma regiao especifica."
           />
-          Banner ativo para exibicao
-        </label>
+          <label className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-600">
+            <span>Banner ativo</span>
+            <input
+              type="checkbox"
+              checked={bannerForm.isActive}
+              onChange={(event) =>
+                setBannerForm((current) => ({ ...current, isActive: event.target.checked }))
+              }
+              className="h-4 w-4 rounded border-slate-300 text-[#28B8C7] focus:ring-[#28B8C7]"
+            />
+          </label>
+        </div>
         <button
           type="button"
           onClick={() => void submitBanner()}
