@@ -67,6 +67,17 @@ enum FriendRequestStatus {
   DECLINED
 }
 
+enum BannerType {
+  LINK
+  REGISTRATION
+}
+
+enum BannerPlacement {
+  HOME
+  FEED
+  BOTH
+}
+
 model User {
   id                  String          @id @default(cuid())
   name                String?
@@ -103,6 +114,7 @@ model User {
   businessRatings     BusinessRating[]
   eventRatings        EventRating[]
   analyticsEvents     AnalyticsEvent[]
+  bannerRegistrations BannerRegistration[]
   sentFriendRequests  FriendRequest[] @relation("FriendRequestSender")
   receivedFriendRequests FriendRequest[] @relation("FriendRequestRecipient")
   referredBy          User?           @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
@@ -312,14 +324,35 @@ model Banner {
   id        String   @id @default(cuid())
   name      String
   imageUrl  String
-  targetUrl String
+  type      BannerType @default(LINK)
+  placement BannerPlacement @default(HOME)
+  targetUrl String?
   regionKey String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   region    Region?  @relation(fields: [regionKey], references: [key], onDelete: SetNull)
+  registrations BannerRegistration[]
 
   @@index([isActive, regionKey, updatedAt])
+}
+
+model BannerRegistration {
+  id            String   @id @default(cuid())
+  bannerId      String
+  userId        String
+  name          String?
+  email         String?
+  phone         String?
+  regionKey     String?
+  locationLabel String?
+  createdAt     DateTime @default(now())
+  banner        Banner   @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([bannerId, userId])
+  @@index([bannerId, createdAt])
+  @@index([userId, createdAt])
 }
 
 model BusinessFavorite {

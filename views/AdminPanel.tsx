@@ -227,7 +227,7 @@ type AnalyticsTopSource = {
 
 type ManagedAnalyticsEvent = {
   id: string;
-  type: 'disabled_feature_click' | 'banner_click';
+  type: 'disabled_feature_click' | 'banner_click' | 'banner_registration';
   targetType: 'feature' | 'banner';
   targetKey: string;
   label: string;
@@ -2339,7 +2339,11 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                               <div>
                                 <p className="text-sm font-bold text-slate-900">{event.label}</p>
                                 <p className="text-xs text-slate-500">
-                                  {event.type === 'banner_click' ? 'Clique em banner' : 'Clique em recurso desativado'}
+                                  {event.type === 'banner_click'
+                                    ? 'Clique em banner'
+                                    : event.type === 'banner_registration'
+                                      ? 'Cadastro em banner'
+                                      : 'Clique em recurso desativado'}
                                   {' · '}
                                   {event.sourceSection || 'origem desconhecida'}
                                 </p>

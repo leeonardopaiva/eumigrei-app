@@ -2,26 +2,38 @@ import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+const getPlacementFilter = (placement: string | null) => {
+  if (placement === 'feed') {
+    return [{ placement: 'FEED' as const }, { placement: 'BOTH' as const }];
+  }
+
+  return [{ placement: 'HOME' as const }, { placement: 'BOTH' as const }];
+};
+
 export async function GET(request: Request) {
   const session = await getServerAuthSession();
   const { searchParams } = new URL(request.url);
   const regionKey = session?.user?.regionKey ?? searchParams.get('region');
+  const placementFilter = getPlacementFilter(searchParams.get('placement'));
 
   const banners = await prisma.banner.findMany({
     where: regionKey
       ? {
           isActive: true,
-          OR: [{ regionKey }, { regionKey: null }],
+          AND: [{ OR: [{ regionKey }, { regionKey: null }] }, { OR: placementFilter }],
         }
       : {
           isActive: true,
           regionKey: null,
+          OR: placementFilter,
         },
     orderBy: [{ updatedAt: 'desc' }],
     select: {
       id: true,
       name: true,
       imageUrl: true,
+      type: true,
+      placement: true,
       targetUrl: true,
       regionKey: true,
       updatedAt: true,
@@ -47,6 +59,8 @@ export async function GET(request: Request) {
       id: banner.id,
       name: banner.name,
       imageUrl: banner.imageUrl,
+      type: banner.type,
+      placement: banner.placement,
       targetUrl: banner.targetUrl,
       regionKey: banner.regionKey,
       regionLabel: banner.region?.label ?? null,

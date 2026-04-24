@@ -253,7 +253,9 @@ export interface BannerAd {
   id: string;
   name: string;
   imageUrl: string;
-  targetUrl: string;
+  type?: 'LINK' | 'REGISTRATION';
+  placement?: 'HOME' | 'FEED' | 'BOTH';
+  targetUrl?: string | null;
   regionKey?: string | null;
   regionLabel?: string | null;
   scope?: 'global' | 'regional';

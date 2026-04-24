@@ -98,6 +98,8 @@ export async function GET() {
         id: true,
         name: true,
         imageUrl: true,
+        type: true,
+        placement: true,
         targetUrl: true,
         regionKey: true,
         isActive: true,
@@ -107,6 +109,23 @@ export async function GET() {
           select: {
             key: true,
             label: true,
+          },
+        },
+        _count: {
+          select: {
+            registrations: true,
+          },
+        },
+        registrations: {
+          orderBy: [{ createdAt: 'desc' }],
+          take: 5,
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            locationLabel: true,
+            createdAt: true,
           },
         },
       },

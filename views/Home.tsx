@@ -7,14 +7,15 @@ import { useSession } from 'next-auth/react';
 import {
   MapPin,
   Search,
-  ArrowRight,
   ChevronDown,
+  ExternalLink,
   Building2,
   Briefcase,
   Users,
   CalendarDays,
   Newspaper,
   ShoppingBag,
+  UserPlus,
   type LucideIcon,
 } from 'lucide-react';
 import { useToast } from '../components/feedback/ToastProvider';
@@ -34,6 +35,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
   const [banners, setBanners] = useState<BannerAd[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+  const [submittingBannerId, setSubmittingBannerId] = useState<string | null>(null);
   const [searchPlaceholderIndex, setSearchPlaceholderIndex] = useState(0);
 
   useEffect(() => {
@@ -67,7 +69,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
 
     const fetchBanners = async () => {
       try {
-        const response = await fetch('/api/banners', { cache: 'no-store' });
+        const response = await fetch('/api/banners?placement=home', { cache: 'no-store' });
         const payload = await response.json().catch(() => null);
 
         if (!response.ok) {
@@ -149,6 +151,49 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
       sourceSection: 'home_services',
       regionKey: user.regionKey,
     });
+  };
+
+  const handleBannerLinkClick = (banner: BannerAd) => {
+    if (!banner.targetUrl) {
+      showToast('Esse banner ainda nao tem um link configurado.', 'error');
+      return;
+    }
+
+    trackAnalyticsEvent({
+      type: 'banner_click',
+      targetType: 'banner',
+      targetKey: banner.id,
+      label: banner.name,
+      sourcePath: '/',
+      sourceSection: 'home_banner',
+      regionKey: user.regionKey,
+    });
+
+    window.open(banner.targetUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleBannerRegistration = async (banner: BannerAd) => {
+    setSubmittingBannerId(banner.id);
+
+    try {
+      const response = await fetch(`/api/banners/${banner.id}/registration`, {
+        method: 'POST',
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? 'Nao foi possivel registrar seu interesse.');
+      }
+
+      showToast(payload?.message ?? 'Cadastro registrado.', 'success');
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : 'Nao foi possivel registrar seu interesse.',
+        'error',
+      );
+    } finally {
+      setSubmittingBannerId(null);
+    }
   };
 
   return (
@@ -277,22 +322,8 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
               style={{ transform: `translateX(-${activeBannerIndex * 100}%)` }}
             >
               {banners.map((banner) => (
-                <a
+                <div
                   key={banner.id}
-                  href={banner.targetUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={() =>
-                    trackAnalyticsEvent({
-                      type: 'banner_click',
-                      targetType: 'banner',
-                      targetKey: banner.id,
-                      label: banner.name,
-                      sourcePath: '/',
-                      sourceSection: 'home_banner',
-                      regionKey: user.regionKey,
-                    })
-                  }
                   className="group relative h-[240px] w-full flex-none overflow-hidden rounded-[40px] shadow-lg"
                 >
                   <img
@@ -309,10 +340,27 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
                       {banner.name}
                     </h3>
                   </div>
-                  <div className="absolute bottom-8 left-8 flex h-14 w-14 items-center justify-center rounded-full bg-[#FF8C00] text-white shadow-2xl transition-colors group-hover:bg-[#E07B00]">
-                    <ArrowRight size={24} strokeWidth={3} />
-                  </div>
-                </a>
+                  {banner.type === 'REGISTRATION' ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleBannerRegistration(banner)}
+                      disabled={submittingBannerId === banner.id}
+                      className="absolute bottom-8 left-8 inline-flex min-h-14 items-center gap-3 rounded-full bg-[#FF8C00] px-5 text-sm font-bold text-white shadow-2xl transition-colors hover:bg-[#E07B00] disabled:opacity-70"
+                    >
+                      <UserPlus size={20} strokeWidth={2.8} />
+                      {submittingBannerId === banner.id ? 'Registrando...' : 'Tenho interesse'}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleBannerLinkClick(banner)}
+                      className="absolute bottom-8 left-8 flex h-14 w-14 items-center justify-center rounded-full bg-[#FF8C00] text-white shadow-2xl transition-colors hover:bg-[#E07B00]"
+                      aria-label={`Abrir ${banner.name}`}
+                    >
+                      <ExternalLink size={22} strokeWidth={3} />
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           </div>

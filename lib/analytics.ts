@@ -1,5 +1,5 @@
 export type TrackAnalyticsPayload = {
-  type: 'disabled_feature_click' | 'banner_click';
+  type: 'disabled_feature_click' | 'banner_click' | 'banner_registration';
   targetType: 'feature' | 'banner';
   targetKey: string;
   label: string;

@@ -17,7 +17,9 @@ export type ManagedBanner = {
   id: string;
   name: string;
   imageUrl: string;
-  targetUrl: string;
+  type: 'LINK' | 'REGISTRATION';
+  placement: 'HOME' | 'FEED' | 'BOTH';
+  targetUrl: string | null;
   regionKey: string | null;
   isActive: boolean;
   createdAt: string;
@@ -26,11 +28,24 @@ export type ManagedBanner = {
     key: string;
     label: string;
   } | null;
+  _count?: {
+    registrations: number;
+  };
+  registrations?: Array<{
+    id: string;
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    locationLabel: string | null;
+    createdAt: string;
+  }>;
 };
 
 type BannerFormState = {
   name: string;
   imageUrl: string;
+  type: 'LINK' | 'REGISTRATION';
+  placement: 'HOME' | 'FEED' | 'BOTH';
   targetUrl: string;
   regionKey: string;
   isActive: boolean;
@@ -41,6 +56,8 @@ type BannerField = 'name' | 'imageUrl' | 'targetUrl';
 const emptyBannerForm: BannerFormState = {
   name: '',
   imageUrl: '',
+  type: 'LINK',
+  placement: 'HOME',
   targetUrl: '',
   regionKey: '',
   isActive: true,
@@ -95,7 +112,9 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
     setBannerForm({
       name: banner.name,
       imageUrl: banner.imageUrl,
-      targetUrl: banner.targetUrl,
+      type: banner.type,
+      placement: banner.placement,
+      targetUrl: banner.targetUrl || '',
       regionKey: banner.regionKey || '',
       isActive: banner.isActive,
     });
@@ -147,15 +166,21 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
       nextErrors.imageUrl = imageUrlError;
     }
 
-    const targetUrlError = validateRequiredUrlField(bannerForm.targetUrl, 'o link de destino');
-    if (targetUrlError) {
-      nextErrors.targetUrl = targetUrlError;
+    if (bannerForm.type === 'LINK') {
+      const targetUrlError = validateRequiredUrlField(bannerForm.targetUrl, 'o link de destino');
+      if (targetUrlError) {
+        nextErrors.targetUrl = targetUrlError;
+      }
     }
 
     setFieldErrors(nextErrors);
 
     if (hasFieldErrors(nextErrors)) {
-      onError('Preencha nome, imagem e link do banner.');
+      onError(
+        bannerForm.type === 'LINK'
+          ? 'Preencha nome, imagem e link do banner.'
+          : 'Preencha nome e imagem do banner.',
+      );
       return;
     }
 
@@ -170,7 +195,9 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
           body: JSON.stringify({
             name: bannerForm.name.trim(),
             imageUrl: normalizeUrlFieldValue(bannerForm.imageUrl),
-            targetUrl: normalizeUrlFieldValue(bannerForm.targetUrl),
+            type: bannerForm.type,
+            placement: bannerForm.placement,
+            targetUrl: bannerForm.type === 'LINK' ? normalizeUrlFieldValue(bannerForm.targetUrl) : undefined,
             regionKey: bannerForm.regionKey || undefined,
             isActive: bannerForm.isActive,
           }),
@@ -190,7 +217,9 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
           body: JSON.stringify({
             name: banner.name,
             imageUrl: banner.imageUrl,
-            targetUrl: banner.targetUrl,
+            type: banner.type,
+            placement: banner.placement,
+            targetUrl: banner.type === 'LINK' ? banner.targetUrl : undefined,
             regionKey: banner.regionKey || undefined,
             isActive: !banner.isActive,
           }),
@@ -218,7 +247,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
               {editingBannerId ? 'Editar banner' : 'Novo banner'}
             </p>
             <p className="text-xs text-slate-400">
-              Defina nome, imagem, link de destino e se ele sera global ou regional.
+              Defina nome, imagem, tipo de acao e se ele sera global ou regional.
             </p>
           </div>
           {editingBannerId ? (
@@ -243,6 +272,52 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
           className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
         />
         <FieldErrorMessage message={fieldErrors.name} />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <span className="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+              Tipo de banner
+            </span>
+            <select
+              value={bannerForm.type}
+              onChange={(event) => {
+                clearFieldError('targetUrl');
+                setBannerForm((current) => ({
+                  ...current,
+                  type: event.target.value as BannerFormState['type'],
+                  targetUrl: event.target.value === 'LINK' ? current.targetUrl : '',
+                }));
+              }}
+              className="mt-2 w-full bg-transparent text-sm font-bold text-slate-700 outline-none"
+            >
+              <option value="LINK">Link externo</option>
+              <option value="REGISTRATION">Cadastro de interesse</option>
+            </select>
+          </label>
+          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-500">
+            {bannerForm.type === 'LINK'
+              ? 'O usuario clica no icone e abre o destino em nova aba.'
+              : 'O usuario clica no botao e os dados do perfil sao salvos como lead do banner.'}
+          </div>
+        </div>
+        <label className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+          <span className="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            Local de exibicao
+          </span>
+          <select
+            value={bannerForm.placement}
+            onChange={(event) =>
+              setBannerForm((current) => ({
+                ...current,
+                placement: event.target.value as BannerFormState['placement'],
+              }))
+            }
+            className="mt-2 w-full bg-transparent text-sm font-bold text-slate-700 outline-none"
+          >
+            <option value="HOME">Home</option>
+            <option value="FEED">Feed da comunidade</option>
+            <option value="BOTH">Home e feed</option>
+          </select>
+        </label>
         <CloudinaryImageField
           value={bannerForm.imageUrl}
           onChange={(value) => setBannerForm((current) => ({ ...current, imageUrl: value }))}
@@ -252,23 +327,27 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
           placeholder="Link da imagem do banner"
           hint="Envie o banner via Cloudinary ou cole uma URL publica."
         />
-        <input
-          value={bannerForm.targetUrl}
-          onChange={(event) => {
-            clearFieldError('targetUrl');
-            setBannerForm((current) => ({ ...current, targetUrl: event.target.value }));
-          }}
-          onBlur={() =>
-            setBannerForm((current) => ({
-              ...current,
-              targetUrl: normalizeUrlFieldValue(current.targetUrl),
-            }))
-          }
-          placeholder="Link de destino"
-          aria-invalid={Boolean(fieldErrors.targetUrl)}
-          className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
-        />
-        <FieldErrorMessage message={fieldErrors.targetUrl} />
+        {bannerForm.type === 'LINK' ? (
+          <>
+            <input
+              value={bannerForm.targetUrl}
+              onChange={(event) => {
+                clearFieldError('targetUrl');
+                setBannerForm((current) => ({ ...current, targetUrl: event.target.value }));
+              }}
+              onBlur={() =>
+                setBannerForm((current) => ({
+                  ...current,
+                  targetUrl: normalizeUrlFieldValue(current.targetUrl),
+                }))
+              }
+              placeholder="Link de destino"
+              aria-invalid={Boolean(fieldErrors.targetUrl)}
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+            />
+            <FieldErrorMessage message={fieldErrors.targetUrl} />
+          </>
+        ) : null}
         <RegionSelector
           value={bannerForm.regionKey}
           onChange={(region) =>
@@ -277,7 +356,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
           onClear={() => setBannerForm((current) => ({ ...current, regionKey: '' }))}
           allowEmpty
           emptyLabel="Todas as regioes"
-          hint="Banners sem regiao aparecem para toda a plataforma. Com regiao, so para usuarios daquela area."
+          hint="Alcance: deixe vazio para global. Escolha uma regiao para exibir apenas para usuarios daquela area."
         />
         <label className="inline-flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
           <input
@@ -288,7 +367,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
             }
             className="h-4 w-4 rounded border-slate-300 text-[#28B8C7] focus:ring-[#28B8C7]"
           />
-          Banner visivel na Home
+          Banner ativo para exibicao
         </label>
         <button
           type="button"
@@ -350,6 +429,12 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                       <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
                         {banner.region?.label || 'Todas as regioes'}
                       </p>
+                      <p className="mt-1 text-xs font-bold text-slate-500">
+                        {banner.type === 'LINK' ? 'Tipo: link externo' : 'Tipo: cadastro de interesse'}
+                      </p>
+                      <p className="mt-1 text-xs font-bold text-slate-500">
+                        Local: {banner.placement === 'HOME' ? 'Home' : banner.placement === 'FEED' ? 'Feed' : 'Home e Feed'}
+                      </p>
                     </div>
                     <span
                       className={`rounded-full px-3 py-1 text-[11px] font-bold ${
@@ -361,15 +446,32 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                       {banner.isActive ? 'Ativo' : 'Oculto'}
                     </span>
                   </div>
-                  <a
-                    href={banner.targetUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-cyan-600 hover:text-cyan-700"
-                  >
-                    <ImagePlus size={14} />
-                    Abrir destino
-                  </a>
+                  {banner.type === 'LINK' && banner.targetUrl ? (
+                    <a
+                      href={banner.targetUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-cyan-600 hover:text-cyan-700"
+                    >
+                      <ImagePlus size={14} />
+                      Abrir destino
+                    </a>
+                  ) : (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-sm font-medium text-cyan-600">
+                        {banner._count?.registrations ?? 0} cadastro(s) de interesse registrados.
+                      </p>
+                      {banner.registrations && banner.registrations.length > 0 ? (
+                        <div className="rounded-2xl bg-slate-50 px-3 py-2">
+                          {banner.registrations.slice(0, 3).map((registration) => (
+                            <p key={registration.id} className="truncate text-xs text-slate-500">
+                              {registration.name || registration.email || 'Usuario'} · {registration.locationLabel || 'Sem regiao'}
+                            </p>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
                   <p className="mt-2 text-xs text-slate-400">
                     Atualizado em {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(banner.updatedAt))}
                   </p>

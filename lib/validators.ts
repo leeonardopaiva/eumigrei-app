@@ -1,5 +1,7 @@
 import {
   BusinessStatus,
+  BannerPlacement,
+  BannerType,
   EventStatus,
   SuggestionCategory,
   SuggestionStatus,
@@ -165,9 +167,19 @@ export const adminRegionSchema = z.object({
 export const adminBannerSchema = z.object({
   name: z.string().trim().min(2).max(80),
   imageUrl: requiredUrl,
-  targetUrl: requiredUrl,
+  type: z.nativeEnum(BannerType).default(BannerType.LINK),
+  placement: z.nativeEnum(BannerPlacement).default(BannerPlacement.HOME),
+  targetUrl: optionalUrl,
   regionKey: z.string().trim().transform(emptyToUndefined).optional(),
   isActive: z.boolean().default(true),
+}).superRefine((data, context) => {
+  if (data.type === BannerType.LINK && !data.targetUrl) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['targetUrl'],
+      message: 'Informe o link de destino para banners do tipo link.',
+    });
+  }
 });
 
 const visibilitySettingsSchema = z
@@ -268,7 +280,7 @@ export const starRatingSchema = z.object({
 });
 
 export const analyticsEventSchema = z.object({
-  type: z.enum(['disabled_feature_click', 'banner_click']),
+  type: z.enum(['disabled_feature_click', 'banner_click', 'banner_registration']),
   targetType: z.enum(['feature', 'banner']),
   targetKey: z.string().trim().min(2).max(80),
   label: z.string().trim().min(2).max(120),

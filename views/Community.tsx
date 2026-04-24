@@ -1,33 +1,26 @@
 import React, { startTransition, useEffect, useState } from 'react';
-import { Copy, Share2, UserPlus } from 'lucide-react';
+import { Copy, ExternalLink, Share2, UserPlus } from 'lucide-react';
 import CommunityComposer from '@/components/community/CommunityComposer';
 import FeedPostCard from '@/components/community/FeedPostCard';
 import type { ComposerMode } from '@/components/community/utils';
 import { isYoutubeUrl } from '@/components/community/utils';
 import { useToast } from '@/components/feedback/ToastProvider';
 import { normalizeUrlFieldValue } from '@/lib/forms/validation';
-import type { Post, ReferralSummary, User } from '@/types';
+import { trackAnalyticsEvent } from '@/lib/analytics';
+import type { BannerAd, Post, ReferralSummary, User } from '@/types';
 
 const getPostTimestamp = (post: Post) => new Date(post.createdAt).getTime() || 0;
 
-const getPostEngagementScore = (post: Post) => post.likeCount * 2 + post.commentCount * 3;
-
-const getPostHighlightScore = (post: Post) => {
-  const ageInHours = Math.max(0, (Date.now() - getPostTimestamp(post)) / (1000 * 60 * 60));
-  const freshnessBoost = Math.max(0, 72 - ageInHours);
-
-  return getPostEngagementScore(post) * 10 + freshnessBoost;
-};
-
 const Community: React.FC<{ user: User }> = ({ user }) => {
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState('Destaques');
   const [composerMode, setComposerMode] = useState<ComposerMode>('text');
   const [postContent, setPostContent] = useState('');
   const [postImageUrl, setPostImageUrl] = useState('');
   const [postExternalUrl, setPostExternalUrl] = useState('');
   const [posts, setPosts] = useState<Post[]>([]);
+  const [banners, setBanners] = useState<BannerAd[]>([]);
   const [publishing, setPublishing] = useState(false);
+  const [submittingBannerId, setSubmittingBannerId] = useState<string | null>(null);
   const [referralSummary, setReferralSummary] = useState<ReferralSummary>({
     referralUrl: null,
     registrationCount: 0,
@@ -57,6 +50,37 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
   useEffect(() => {
     void loadPosts({ silent: true });
   }, [user.username]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadFeedBanners = async () => {
+      try {
+        const response = await fetch('/api/banners?placement=feed', { cache: 'no-store' });
+        const payload = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(payload?.error ?? 'Nao foi possivel carregar banners do feed.');
+        }
+
+        if (!ignore) {
+          setBanners(Array.isArray(payload?.banners) ? payload.banners : []);
+        }
+      } catch (error) {
+        console.error('Failed to load community banners:', error);
+
+        if (!ignore) {
+          setBanners([]);
+        }
+      }
+    };
+
+    void loadFeedBanners();
+
+    return () => {
+      ignore = true;
+    };
+  }, [user.regionKey]);
 
   useEffect(() => {
     let ignore = false;
@@ -393,46 +417,77 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
     }
   };
 
-  const displayedPosts = [...posts].sort((left, right) => {
-    if (activeTab === 'Recente') {
-      return getPostTimestamp(right) - getPostTimestamp(left);
+  const handleBannerLinkClick = (banner: BannerAd) => {
+    if (!banner.targetUrl) {
+      showToast('Esse banner ainda nao tem um link configurado.', 'error');
+      return;
     }
 
-    if (activeTab === 'Populares') {
-      const engagementDelta = getPostEngagementScore(right) - getPostEngagementScore(left);
+    trackAnalyticsEvent({
+      type: 'banner_click',
+      targetType: 'banner',
+      targetKey: banner.id,
+      label: banner.name,
+      sourcePath: '/community',
+      sourceSection: 'community_feed_banner',
+      regionKey: user.regionKey,
+    });
 
-      if (engagementDelta !== 0) {
-        return engagementDelta;
+    window.open(banner.targetUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleBannerRegistration = async (banner: BannerAd) => {
+    setSubmittingBannerId(banner.id);
+
+    try {
+      const response = await fetch(`/api/banners/${banner.id}/registration`, {
+        method: 'POST',
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? 'Nao foi possivel registrar seu interesse.');
       }
 
-      return getPostTimestamp(right) - getPostTimestamp(left);
+      showToast(payload?.message ?? 'Cadastro registrado.', 'success');
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : 'Nao foi possivel registrar seu interesse.',
+        'error',
+      );
+    } finally {
+      setSubmittingBannerId(null);
+    }
+  };
+
+  const displayedPosts = [...posts].sort(
+    (left, right) => getPostTimestamp(right) - getPostTimestamp(left),
+  );
+  const feedBanners = banners.slice(0, 2);
+  const getBannerAfterPost = (postIndex: number) => {
+    if (displayedPosts.length < 5) {
+      return null;
     }
 
-    const highlightDelta = getPostHighlightScore(right) - getPostHighlightScore(left);
-
-    if (highlightDelta !== 0) {
-      return highlightDelta;
+    if (postIndex === 4) {
+      return feedBanners[0] ?? null;
     }
 
-    return getPostTimestamp(right) - getPostTimestamp(left);
-  });
+    if (postIndex === 12) {
+      return feedBanners[1] ?? null;
+    }
+
+    return null;
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="mt-4 px-5">
         <h1 className="mb-4 text-2xl font-bold text-cyan-900">Comunidade</h1>
-        <div className="mb-4 flex items-center gap-4 overflow-x-auto whitespace-nowrap border-b border-slate-100 scrollbar-hide">
-          {['Destaques', 'Recente', 'Populares'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`pb-2 text-sm font-bold transition-all ${
-                activeTab === tab ? 'border-b-2 border-cyan-700 text-cyan-900' : 'text-slate-400'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+        <div className="mb-4 flex items-center border-b border-slate-100">
+          <span className="border-b-2 border-cyan-700 pb-2 text-sm font-bold text-cyan-900">
+            Recentes
+          </span>
         </div>
       </div>
 
@@ -528,25 +583,83 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
             Ninguem publicou por aqui ainda. Seja o primeiro da sua regiao.
           </div>
         ) : null}
-        {displayedPosts.map((post) => (
-          <FeedPostCard
-            key={post.id}
-            post={post}
-            onToggleLike={() => handleToggleLike(post.id)}
-            onAddComment={(content) => handleAddComment(post.id, content)}
-            onUpdatePost={(content, imageUrl, externalUrl) =>
-              handleUpdatePost(post.id, content, imageUrl, externalUrl)
-            }
-            onDeletePost={() => handleDeletePost(post.id)}
-            onUpdateComment={(commentId, content) =>
-              handleUpdateComment(post.id, commentId, content)
-            }
-            onDeleteComment={(commentId) => handleDeleteComment(post.id, commentId)}
-          />
-        ))}
+        {displayedPosts.map((post, index) => {
+          const banner = getBannerAfterPost(index);
+
+          return (
+            <React.Fragment key={post.id}>
+              <FeedPostCard
+                post={post}
+                onToggleLike={() => handleToggleLike(post.id)}
+                onAddComment={(content) => handleAddComment(post.id, content)}
+                onUpdatePost={(content, imageUrl, externalUrl) =>
+                  handleUpdatePost(post.id, content, imageUrl, externalUrl)
+                }
+                onDeletePost={() => handleDeletePost(post.id)}
+                onUpdateComment={(commentId, content) =>
+                  handleUpdateComment(post.id, commentId, content)
+                }
+                onDeleteComment={(commentId) => handleDeleteComment(post.id, commentId)}
+              />
+              {banner ? (
+                <FeedBannerCard
+                  banner={banner}
+                  submitting={submittingBannerId === banner.id}
+                  onOpen={() => handleBannerLinkClick(banner)}
+                  onRegister={() => void handleBannerRegistration(banner)}
+                />
+              ) : null}
+            </React.Fragment>
+          );
+        })}
       </div>
     </div>
   );
 };
+
+const FeedBannerCard: React.FC<{
+  banner: BannerAd;
+  submitting: boolean;
+  onOpen: () => void;
+  onRegister: () => void;
+}> = ({ banner, submitting, onOpen, onRegister }) => (
+  <div className="relative overflow-hidden rounded-[32px] bg-slate-950 shadow-lg">
+    <img src={banner.imageUrl} alt={banner.name} className="h-[220px] w-full object-cover opacity-90" />
+    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+    <div className="absolute left-5 right-5 top-5 flex items-center justify-between gap-3">
+      <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur">
+        Divulgacao
+      </span>
+      <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur">
+        {banner.regionLabel || 'Global'}
+      </span>
+    </div>
+    <div className="absolute bottom-5 left-5 right-5">
+      <h3 className="max-w-[85%] text-2xl font-bold leading-tight text-white drop-shadow">
+        {banner.name}
+      </h3>
+      {banner.type === 'REGISTRATION' ? (
+        <button
+          type="button"
+          onClick={onRegister}
+          disabled={submitting}
+          className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-full bg-[#FF8C00] px-5 text-sm font-bold text-white shadow-xl transition hover:bg-[#E07B00] disabled:opacity-70"
+        >
+          <UserPlus size={18} strokeWidth={2.8} />
+          {submitting ? 'Registrando...' : 'Tenho interesse'}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onOpen}
+          className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-full bg-[#FF8C00] px-5 text-sm font-bold text-white shadow-xl transition hover:bg-[#E07B00]"
+        >
+          <ExternalLink size={18} strokeWidth={2.8} />
+          Abrir link
+        </button>
+      )}
+    </div>
+  </div>
+);
 
 export default Community;
