@@ -16,6 +16,7 @@ import { prisma } from '@/lib/prisma';
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 const passwordAuthEnabled = process.env.NEXT_PUBLIC_PASSWORD_AUTH_ENABLED !== 'false';
+const sessionMaxAgeSeconds = 8 * 60 * 60;
 
 export const isGoogleAuthConfigured = Boolean(
   googleClientId && googleClientSecret && process.env.NEXTAUTH_SECRET,
@@ -28,6 +29,8 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: 'jwt',
+    maxAge: sessionMaxAgeSeconds,
+    updateAge: 60 * 60,
   },
   pages: {
     signIn: '/',

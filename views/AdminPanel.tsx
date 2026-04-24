@@ -6,6 +6,8 @@ import {
   Building2,
   CalendarDays,
   CircleAlert,
+  Download,
+  FileSpreadsheet,
   Globe2,
   MapPinned,
   MessageSquareText,
@@ -15,6 +17,7 @@ import {
   Search,
   ShieldCheck,
   Store,
+  Upload,
   Users,
 } from 'lucide-react';
 import BannerManagementSection, { type ManagedBanner } from '../components/admin/BannerManagementSection';
@@ -259,6 +262,29 @@ type AdminAnalyticsData = {
   recentEvents: ManagedAnalyticsEvent[];
 };
 
+type AdminImportError = {
+  sheet: string;
+  row: number;
+  field: string;
+  message: string;
+};
+
+type AdminImportDraft = {
+  regions: unknown[];
+  businesses: unknown[];
+  events: unknown[];
+};
+
+type AdminImportPreview = {
+  draft: AdminImportDraft;
+  errors: AdminImportError[];
+  summary: {
+    regions: number;
+    businesses: number;
+    events: number;
+  };
+};
+
 type RegionFormState = {
   key: string;
   label: string;
@@ -465,13 +491,23 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
   const [eventForm, setEventForm] = useState<EventFormState>(emptyEventForm);
   const [eventSearch, setEventSearch] = useState('');
   const [activeSection, setActiveSection] = useState<
-    'moderation' | 'banners' | 'regions' | 'businesses' | 'events' | 'users' | 'suggestions' | 'analytics'
+    | 'moderation'
+    | 'imports'
+    | 'banners'
+    | 'regions'
+    | 'businesses'
+    | 'events'
+    | 'users'
+    | 'suggestions'
+    | 'analytics'
   >('moderation');
 
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [userForm, setUserForm] = useState<UserFormState>(emptyUserForm);
   const [userSearch, setUserSearch] = useState('');
   const [suggestionSearch, setSuggestionSearch] = useState('');
+  const [importFileName, setImportFileName] = useState<string | null>(null);
+  const [importPreview, setImportPreview] = useState<AdminImportPreview | null>(null);
   const [analytics, setAnalytics] = useState<AdminAnalyticsData | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [selectedAnalyticsUserId, setSelectedAnalyticsUserId] = useState<string | null>(null);
@@ -975,6 +1011,69 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
     );
   };
 
+  const submitImportPreview = async (file: File | null) => {
+    if (!file) {
+      return;
+    }
+
+    setProcessingKey('import:preview');
+    setError(null);
+    setMessage(null);
+    setImportPreview(null);
+    setImportFileName(file.name);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/admin/import/preview', {
+        method: 'POST',
+        body: formData,
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? 'Nao foi possivel validar o arquivo.');
+      }
+
+      setImportPreview(payload);
+
+      if (payload.errors?.length) {
+        setError('Arquivo validado com erros. Corrija as linhas indicadas antes de importar.');
+      } else {
+        setMessage('Arquivo validado sem erros. Revise a previa e confirme a importacao.');
+      }
+    } catch (importError) {
+      console.error('Failed to preview admin import:', importError);
+      setError(importError instanceof Error ? importError.message : 'Nao foi possivel validar o arquivo.');
+    } finally {
+      setProcessingKey(null);
+    }
+  };
+
+  const confirmImport = async () => {
+    if (!importPreview || importPreview.errors.length > 0) {
+      setError('Valide um arquivo sem erros antes de confirmar a importacao.');
+      return;
+    }
+
+    await runAction(
+      'import:commit',
+      () =>
+        fetch('/api/admin/import/commit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ draft: importPreview.draft }),
+        }),
+      'Importacao concluida.',
+      'Nao foi possivel concluir a importacao.',
+      () => {
+        setImportPreview(null);
+        setImportFileName(null);
+      },
+    );
+  };
+
   const openUserAnalytics = (managedUserId: string) => {
     setSelectedAnalyticsUserId(managedUserId);
     setActiveSection('analytics');
@@ -1061,6 +1160,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
 
   const sectionTabs = [
     { id: 'moderation' as const, label: 'Moderacao', count: totalPending },
+    { id: 'imports' as const, label: 'Importacao', count: importPreview ? importPreview.summary.regions + importPreview.summary.businesses + importPreview.summary.events : 0 },
     { id: 'banners' as const, label: 'Banners', count: dashboard?.banners.length ?? 0 },
     { id: 'regions' as const, label: 'Regioes', count: dashboard?.stats.totalRegions ?? 0 },
     { id: 'businesses' as const, label: 'Negocios', count: filteredBusinesses.length },
@@ -1267,6 +1367,129 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                   : 'Cadastrar regiao'}
             </button>
           </div>
+          </section>
+        ) : null}
+
+        {activeSection === 'imports' ? (
+          <section className="space-y-4">
+            <SectionHeader
+              title="Importacao em massa"
+              count={
+                importPreview
+                  ? importPreview.summary.regions +
+                    importPreview.summary.businesses +
+                    importPreview.summary.events
+                  : 0
+              }
+            />
+            <SupportText text="Baixe o modelo XLSX, preencha as abas Regioes, Negocios e Eventos, valide o arquivo e confirme apenas quando nao houver erros." />
+
+            <div className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-800">
+                  <FileSpreadsheet size={22} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-slate-800">Modelo oficial</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">
+                    O arquivo inclui instrucoes, exemplos e listas para regioes existentes. Nao renomeie abas ou cabecalhos.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <a
+                  href="/api/admin/import/template"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-200"
+                >
+                  <Download size={16} />
+                  Baixar modelo XLSX
+                </a>
+                <label className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#28B8C7] px-4 text-sm font-bold text-white transition hover:bg-[#1E96A4]">
+                  <Upload size={16} />
+                  Validar arquivo preenchido
+                  <input
+                    type="file"
+                    accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    className="sr-only"
+                    disabled={processingKey !== null}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] ?? null;
+                      event.target.value = '';
+                      void submitImportPreview(file);
+                    }}
+                  />
+                </label>
+              </div>
+
+              {importFileName ? (
+                <p className="mt-4 text-xs font-medium text-slate-400">
+                  Ultimo arquivo validado: <span className="text-slate-600">{importFileName}</span>
+                </p>
+              ) : null}
+            </div>
+
+            {processingKey === 'import:preview' ? (
+              <div className="h-[160px] animate-pulse rounded-3xl bg-white shadow-sm" />
+            ) : null}
+
+            {importPreview ? (
+              <div className="space-y-3 rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+                <div className="grid grid-cols-3 gap-3">
+                  <ImportMetric label="Regioes" value={importPreview.summary.regions} />
+                  <ImportMetric label="Negocios" value={importPreview.summary.businesses} />
+                  <ImportMetric label="Eventos" value={importPreview.summary.events} />
+                </div>
+
+                {importPreview.errors.length > 0 ? (
+                  <div className="rounded-3xl border border-red-100 bg-red-50 p-4">
+                    <div className="flex items-start gap-3">
+                      <CircleAlert size={18} className="mt-0.5 shrink-0 text-red-700" />
+                      <div>
+                        <p className="text-sm font-bold text-red-800">
+                          Corrija {importPreview.errors.length} erro(s) antes de importar
+                        </p>
+                        <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">
+                          {importPreview.errors.slice(0, 40).map((item, index) => (
+                            <p key={`${item.sheet}-${item.row}-${item.field}-${index}`} className="text-sm text-red-700">
+                              {item.sheet}, linha {item.row}, campo {item.field}: {item.message}
+                            </p>
+                          ))}
+                          {importPreview.errors.length > 40 ? (
+                            <p className="text-sm font-bold text-red-700">
+                              Mais {importPreview.errors.length - 40} erro(s) ocultos.
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-3xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-700">
+                    Arquivo pronto para importacao. A confirmacao criara/atualizara regioes e criara novos negocios e eventos.
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <ActionButton
+                    label="Confirmar importacao"
+                    tone="primary"
+                    disabled={processingKey !== null || importPreview.errors.length > 0}
+                    loading={processingKey === 'import:commit'}
+                    onClick={() => void confirmImport()}
+                  />
+                  <ActionButton
+                    label="Limpar previa"
+                    tone="neutral"
+                    disabled={processingKey !== null}
+                    onClick={() => {
+                      setImportPreview(null);
+                      setImportFileName(null);
+                    }}
+                  />
+                </div>
+              </div>
+            ) : null}
           </section>
         ) : null}
 
@@ -2372,6 +2595,13 @@ const SectionHeader: React.FC<{ title: string; count: number }> = ({ title, coun
 
 const SupportText: React.FC<{ text: string }> = ({ text }) => (
   <p className="text-sm text-slate-500">{text}</p>
+);
+
+const ImportMetric: React.FC<{ label: string; value: number }> = ({ label, value }) => (
+  <div className="rounded-3xl bg-slate-50 px-4 py-4 text-center">
+    <p className="text-2xl font-bold text-slate-900">{value}</p>
+    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">{label}</p>
+  </div>
 );
 
 const SectionListToggle: React.FC<{
