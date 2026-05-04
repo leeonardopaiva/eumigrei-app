@@ -248,6 +248,8 @@ export const communityPostSchema = z.object({
   content: z.string().trim().min(5).max(500),
   imageUrl: optionalUrl,
   externalUrl: optionalUrl,
+  personaMode: z.enum(['personal', 'professional']).default('personal'),
+  businessId: z.string().trim().min(1).optional(),
 });
 
 export const commentSchema = z.object({
@@ -257,6 +259,50 @@ export const commentSchema = z.object({
 export const suggestionSchema = z.object({
   category: z.nativeEnum(SuggestionCategory),
   message: z.string().trim().min(8, 'Descreva melhor a sua sugestao').max(600),
+});
+
+export const friendRequestCreateSchema = z
+  .object({
+    recipientId: z.string().trim().min(1).optional(),
+    username: z.string().trim().min(1).optional(),
+  })
+  .refine((value) => Boolean(value.recipientId || value.username), {
+    message: 'Informe o perfil que deseja adicionar.',
+  });
+
+export const friendRequestDecisionSchema = z.object({
+  action: z.enum(['accept', 'decline']),
+});
+
+export const communityGroupSchema = z.object({
+  name: z.string().trim().min(2, 'Informe o nome do grupo').max(80),
+  description: z
+    .string()
+    .trim()
+    .max(360, 'Use no maximo 360 caracteres na descricao.')
+    .nullish()
+    .transform((value) => {
+      const normalized = value?.trim();
+      return normalized ? normalized : undefined;
+    }),
+  category: z
+    .string()
+    .trim()
+    .max(40, 'Use no maximo 40 caracteres na categoria.')
+    .nullish()
+    .transform((value) => {
+      const normalized = value?.trim();
+      return normalized ? normalized : undefined;
+    }),
+  regionKey: z
+    .string()
+    .trim()
+    .nullish()
+    .transform((value) => {
+      const normalized = value?.trim();
+      return normalized ? normalized : undefined;
+    }),
+  imageUrl: optionalUrl,
 });
 
 export const adminSuggestionSchema = z.object({
@@ -280,8 +326,8 @@ export const starRatingSchema = z.object({
 });
 
 export const analyticsEventSchema = z.object({
-  type: z.enum(['disabled_feature_click', 'banner_click', 'banner_registration']),
-  targetType: z.enum(['feature', 'banner']),
+  type: z.enum(['disabled_feature_click', 'banner_click', 'banner_registration', 'search_query']),
+  targetType: z.enum(['feature', 'banner', 'search']),
   targetKey: z.string().trim().min(2).max(80),
   label: z.string().trim().min(2).max(120),
   sourcePath: z.string().trim().max(160).optional(),

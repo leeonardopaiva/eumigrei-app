@@ -209,14 +209,14 @@ const SearchResults: React.FC = () => {
                   <Link
                     key={business.id}
                     href={`/negocios/${business.slug || business.id}`}
-                    className="flex gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm"
+                    className="flex min-h-32 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:border-slate-200"
                   >
                     <img
                       src={business.imageUrl || `https://picsum.photos/seed/${business.id}/240`}
                       alt={business.name}
-                      className="h-24 w-24 rounded-2xl object-cover"
+                      className="w-28 shrink-0 self-stretch object-cover"
                     />
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 p-4">
                       <h2 className="text-sm font-bold text-cyan-900">{business.name}</h2>
                       <p className="mt-1 text-xs font-bold uppercase tracking-wide text-cyan-700">
                         {business.category}
@@ -249,14 +249,14 @@ const SearchResults: React.FC = () => {
                   <Link
                     key={event.id}
                     href={`/eventos/${event.slug || event.id}`}
-                    className="flex gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm"
+                    className="flex min-h-32 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:border-slate-200"
                   >
                     <img
                       src={event.imageUrl || `https://picsum.photos/seed/${event.id}/240`}
                       alt={event.title}
-                      className="h-24 w-24 rounded-2xl object-cover"
+                      className="w-28 shrink-0 self-stretch object-cover"
                     />
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 p-4">
                       <h2 className="text-sm font-bold text-cyan-900">{event.title}</h2>
                       <div className="mt-2 flex items-center gap-1 text-[11px] font-medium text-slate-500">
                         <Clock3 size={12} />
@@ -287,17 +287,31 @@ const SearchResults: React.FC = () => {
                 <SectionEmpty text="Nenhuma publicacao encontrada." />
               ) : (
                 results.posts.map((post) => (
-                  <Link
+                  <div
                     key={post.id}
-                    href="/community"
-                    className="flex gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm"
+                    role="link"
+                    tabIndex={0}
+                    onClick={() => router.push(`/community?post=${post.id}`)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        router.push(`/community?post=${post.id}`);
+                      }
+                    }}
+                    className="flex gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition hover:border-slate-200"
                   >
-                    <img
-                      src={post.author.image || `https://picsum.photos/seed/${post.id}/160`}
-                      alt={post.author.name || 'Comunidade'}
-                      className="h-12 w-12 rounded-full object-cover"
-                    />
-                    <div className="min-w-0 flex-1">
+                    <Link
+                      href={post.author.username ? `/${post.author.username}` : '/community'}
+                      onClick={(event) => event.stopPropagation()}
+                      className="shrink-0 transition hover:opacity-80"
+                    >
+                      <img
+                        src={post.author.image || `https://picsum.photos/seed/${post.id}/160`}
+                        alt={post.author.name || 'Comunidade'}
+                        className="h-12 w-12 rounded-full object-cover"
+                      />
+                    </Link>
+                    <Link href={`/community?post=${post.id}`} className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <h2 className="truncate text-sm font-bold text-cyan-900">
                           {post.author.name || 'Usuario da comunidade'}
@@ -313,8 +327,8 @@ const SearchResults: React.FC = () => {
                         <span>{post._count.reactions} curtidas</span>
                         <span>{post._count.comments} comentarios</span>
                       </div>
-                    </div>
-                  </Link>
+                    </Link>
+                  </div>
                 ))
               )}
             </section>

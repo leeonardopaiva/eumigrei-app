@@ -11,6 +11,7 @@ type MinimalAnalyticsEvent = {
   targetKey: string;
   label: string;
   sourceSection: string | null;
+  regionKey: string | null;
   userId: string | null;
 };
 
@@ -52,13 +53,18 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId')?.trim() || undefined;
-  const since = new Date(Date.now() - ANALYTICS_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  const days = Math.min(Math.max(Number(searchParams.get('days') || ANALYTICS_WINDOW_DAYS), 1), 365);
+  const typeFilter = searchParams.get('type')?.trim() || undefined;
+  const regionKey = searchParams.get('regionKey')?.trim() || undefined;
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   const where = {
     createdAt: {
       gte: since,
     },
     ...(userId ? { userId } : {}),
+    ...(typeFilter ? { type: typeFilter } : {}),
+    ...(regionKey ? { regionKey } : {}),
   };
 
   const [events, recentEvents, selectedUser] = await Promise.all([
@@ -70,6 +76,7 @@ export async function GET(request: Request) {
         targetKey: true,
         label: true,
         sourceSection: true,
+        regionKey: true,
         userId: true,
       },
     }),
@@ -116,6 +123,7 @@ export async function GET(request: Request) {
 
   const disabledFeatureClicks = events.filter((event) => event.type === 'disabled_feature_click');
   const bannerClicks = events.filter((event) => event.type === 'banner_click');
+  const searchQueries = events.filter((event) => event.type === 'search_query');
 
   const topDisabledFeatures = aggregateItems(
     events,
@@ -150,20 +158,38 @@ export async function GET(request: Request) {
     }),
   ).slice(0, 8);
 
+  const topSearchesByRegion = aggregateItems(
+    events,
+    (event) => event.type === 'search_query',
+    (event) => `${event.regionKey || 'sem-regiao'}::${event.targetKey}`,
+    (event, count) => ({
+      term: event.label,
+      regionKey: event.regionKey,
+      regionLabel: event.regionKey || 'Sem regiao',
+      count,
+    }),
+  ).slice(0, 12);
+
   const trackedUsers = new Set(events.map((event) => event.userId).filter(Boolean)).size;
 
   return NextResponse.json({
-    windowDays: ANALYTICS_WINDOW_DAYS,
+    windowDays: days,
+    filters: {
+      type: typeFilter ?? null,
+      regionKey: regionKey ?? null,
+    },
     selectedUser,
     summary: {
       totalEvents: events.length,
       disabledFeatureClicks: disabledFeatureClicks.length,
       bannerClicks: bannerClicks.length,
+      searchQueries: searchQueries.length,
       trackedUsers,
     },
     topDisabledFeatures,
     topBanners,
     topSources,
+    topSearchesByRegion,
     recentEvents,
   });
 }

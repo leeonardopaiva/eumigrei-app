@@ -8,11 +8,16 @@ import {
   MapPin,
   MessageSquareText,
   MoreHorizontal,
+  Plus,
+  UserCheck,
   UserPlus,
   Users,
+  UsersRound,
 } from 'lucide-react';
 import StarRating from '../components/engagement/StarRating';
+import { useToast } from '../components/feedback/ToastProvider';
 import { Logo } from '../components/Layout';
+import RegionSelector from '../components/RegionSelector';
 import { PublicUserProfile, User } from '../types';
 
 type PublicProfileProps = {
@@ -21,7 +26,7 @@ type PublicProfileProps = {
   embedded?: boolean;
 };
 
-type PublicTab = 'about' | 'interests' | 'photos' | 'recommendations';
+type PublicTab = 'about' | 'interests' | 'friends' | 'groups' | 'photos' | 'recommendations';
 
 const defaultProfile: PublicUserProfile = {
   id: '',
@@ -38,6 +43,8 @@ const defaultProfile: PublicUserProfile = {
   friendFeature: {
     available: false,
     canRequest: false,
+    status: 'signed_out',
+    requestId: null,
   },
   stats: {
     friendCount: 0,
@@ -45,6 +52,8 @@ const defaultProfile: PublicUserProfile = {
     eventCount: 0,
     postCount: 0,
   },
+  friends: [],
+  groups: [],
   businesses: [],
   events: [],
   posts: [],
@@ -96,10 +105,20 @@ const uniqueStrings = (values: Array<string | null | undefined>) =>
   Array.from(new Set(values.filter((value): value is string => Boolean(value))));
 
 const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedded = false }) => {
+  const { showToast } = useToast();
   const [profile, setProfile] = useState<PublicUserProfile>(defaultProfile);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<PublicTab>('photos');
+  const [activeTab, setActiveTab] = useState<PublicTab>('about');
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [friendActionLoading, setFriendActionLoading] = useState(false);
+  const [creatingGroup, setCreatingGroup] = useState(false);
+  const [groupDraft, setGroupDraft] = useState({
+    name: '',
+    category: '',
+    description: '',
+    regionKey: '',
+  });
 
   useEffect(() => {
     let ignore = false;
@@ -137,7 +156,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
     return () => {
       ignore = true;
     };
-  }, [username]);
+  }, [username, refreshKey]);
 
   const isOwnProfile = viewer?.username === profile.username;
   const photoItems = useMemo(
@@ -177,6 +196,73 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
   const wrapperClass = embedded
     ? 'mx-auto w-full max-w-4xl'
     : 'mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-5xl items-start justify-center';
+
+  const refreshProfile = () => setRefreshKey((current) => current + 1);
+
+  const handleFriendAction = async () => {
+    if (!viewer) {
+      return;
+    }
+
+    setFriendActionLoading(true);
+
+    try {
+      const status = profile.friendFeature.status;
+      const requestId = profile.friendFeature.requestId;
+      const response =
+        status === 'pending_received' && requestId
+          ? await fetch(`/api/friends/requests/${requestId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'accept' }),
+            })
+          : await fetch('/api/friends/requests', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ recipientId: profile.id }),
+            });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? 'Nao foi possivel atualizar a conexao.');
+      }
+
+      showToast(payload?.message ?? 'Conexao atualizada.', 'success');
+      refreshProfile();
+    } catch (actionError) {
+      showToast(
+        actionError instanceof Error ? actionError.message : 'Nao foi possivel atualizar a conexao.',
+        'error',
+      );
+    } finally {
+      setFriendActionLoading(false);
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    setCreatingGroup(true);
+
+    try {
+      const response = await fetch('/api/groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(groupDraft),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? 'Nao foi possivel criar o grupo.');
+      }
+
+      showToast('Grupo criado.', 'success');
+      setGroupDraft({ name: '', category: '', description: '', regionKey: '' });
+      refreshProfile();
+    } catch (createError) {
+      showToast(createError instanceof Error ? createError.message : 'Nao foi possivel criar o grupo.', 'error');
+    } finally {
+      setCreatingGroup(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -218,10 +304,13 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
 
   const tabs = [
     { id: 'about' as const, label: 'Sobre' },
+    { id: 'friends' as const, label: 'Amigos' },
+    { id: 'groups' as const, label: 'Grupos' },
     { id: 'interests' as const, label: 'Interesses' },
     { id: 'photos' as const, label: 'Fotos' },
     { id: 'recommendations' as const, label: 'Recomendacao' },
   ];
+  const friendStatus = profile.friendFeature.status || (viewer ? 'none' : 'signed_out');
 
   return (
     <div className={pageContainerClass}>
@@ -310,23 +399,34 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                   <div className="inline-flex min-h-12 items-center gap-2 rounded-[22px] border border-slate-200 bg-white px-6 text-sm font-bold text-slate-600 shadow-sm">
                     Perfil publico ativo
                   </div>
-                ) : profile.friendFeature.canRequest ? (
-                  <button
-                    type="button"
-                    disabled
-                    className="inline-flex min-h-12 items-center gap-3 rounded-[22px] bg-[#0D6EFD] px-8 text-base font-bold text-white shadow-lg shadow-[#0D6EFD]/20 opacity-90"
-                  >
-                    <UserPlus size={20} />
-                    Adicionar
-                  </button>
-                ) : (
+                ) : friendStatus === 'signed_out' ? (
                   <Link
                     href="/"
                     className="inline-flex min-h-12 items-center gap-3 rounded-[22px] bg-[#0D6EFD] px-8 text-base font-bold text-white shadow-lg shadow-[#0D6EFD]/20"
                   >
                     <UserPlus size={20} />
-                    Adicionar
+                    Entrar para adicionar
                   </Link>
+                ) : friendStatus === 'accepted' ? (
+                  <div className="inline-flex min-h-12 items-center gap-3 rounded-[22px] border border-emerald-100 bg-emerald-50 px-8 text-base font-bold text-emerald-700">
+                    <UserCheck size={20} />
+                    Conectado
+                  </div>
+                ) : friendStatus === 'pending_sent' ? (
+                  <div className="inline-flex min-h-12 items-center gap-3 rounded-[22px] border border-slate-200 bg-slate-50 px-8 text-base font-bold text-slate-500">
+                    <UserPlus size={20} />
+                    Solicitado
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void handleFriendAction()}
+                    disabled={friendActionLoading}
+                    className="inline-flex min-h-12 items-center gap-3 rounded-[22px] bg-[#0D6EFD] px-8 text-base font-bold text-white shadow-lg shadow-[#0D6EFD]/20 opacity-90"
+                  >
+                    {friendStatus === 'pending_received' ? <UserCheck size={20} /> : <UserPlus size={20} />}
+                    {friendActionLoading ? 'Aguarde...' : friendStatus === 'pending_received' ? 'Aceitar conexao' : 'Adicionar'}
+                  </button>
                 )}
                 {profile.stats.businessCount > 0 || profile.stats.eventCount > 0 ? (
                   <Link
@@ -378,6 +478,152 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                   <ProfileMetric icon={<Images size={16} />} value={profile.stats.businessCount} label="Negocios" />
                   <ProfileMetric icon={<CalendarDays size={16} />} value={profile.stats.eventCount} label="Eventos" />
                   <ProfileMetric icon={<MessageSquareText size={16} />} value={profile.stats.postCount} label="Posts" />
+                </div>
+              </section>
+            ) : null}
+
+            {activeTab === 'friends' ? (
+              <section className="mt-6 rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-2xl font-bold text-slate-900">Amigos</h2>
+                  <span className="text-sm font-semibold text-slate-400">
+                    {profile.friends.length} conexao{profile.friends.length === 1 ? '' : 'es'}
+                  </span>
+                </div>
+
+                {profile.friends.length === 0 ? (
+                  <EmptyPublicState text="Ainda nao ha conexoes publicas neste perfil." />
+                ) : (
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {profile.friends.map((friend) => (
+                      <Link
+                        key={friend.id}
+                        href={friend.publicPath || '/'}
+                        className="flex items-center gap-4 rounded-[28px] border border-slate-100 bg-slate-50 p-4"
+                      >
+                        {friend.image ? (
+                          <img src={friend.image} alt={friend.name} className="h-14 w-14 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-cyan-50 text-base font-bold text-[#28B8C7]">
+                            {getInitials(friend.name)}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="truncate text-base font-bold text-slate-900">{friend.name}</p>
+                          <p className="truncate text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                            @{friend.username}
+                          </p>
+                          {friend.locationLabel ? (
+                            <p className="mt-1 truncate text-sm text-slate-500">{friend.locationLabel}</p>
+                          ) : null}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </section>
+            ) : null}
+
+            {activeTab === 'groups' ? (
+              <section className="mt-6 space-y-4">
+                {isOwnProfile ? (
+                  <div className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-50 text-[#28B8C7]">
+                        <Plus size={20} />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-slate-900">Criar grupo</h2>
+                        <p className="text-sm text-slate-500">Organize pessoas por cidade, bairro ou interesse.</p>
+                      </div>
+                    </div>
+                    <div className="mt-5 space-y-3">
+                      <input
+                        value={groupDraft.name}
+                        onChange={(event) => setGroupDraft((current) => ({ ...current, name: event.target.value }))}
+                        placeholder="Nome do grupo"
+                        className="theme-outline-ring w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+                      />
+                      <input
+                        value={groupDraft.category}
+                        onChange={(event) => setGroupDraft((current) => ({ ...current, category: event.target.value }))}
+                        placeholder="Categoria, ex: Bairro, Musica, Cidade"
+                        className="theme-outline-ring w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+                      />
+                      <textarea
+                        value={groupDraft.description}
+                        onChange={(event) => setGroupDraft((current) => ({ ...current, description: event.target.value }))}
+                        placeholder="Descricao curta"
+                        rows={3}
+                        className="theme-outline-ring w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+                      />
+                      <RegionSelector
+                        value={groupDraft.regionKey}
+                        onChange={(region) => setGroupDraft((current) => ({ ...current, regionKey: region.key }))}
+                        onClear={() => setGroupDraft((current) => ({ ...current, regionKey: '' }))}
+                        allowEmpty
+                        emptyLabel="Sem regiao especifica"
+                        label="Regiao opcional"
+                        hint="Use apenas quando o grupo for local."
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void handleCreateGroup()}
+                        disabled={creatingGroup || groupDraft.name.trim().length < 2}
+                        className="theme-bg theme-shadow w-full rounded-2xl px-4 py-3 text-sm font-bold disabled:opacity-60"
+                      >
+                        {creatingGroup ? 'Criando...' : 'Criar grupo'}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-2xl font-bold text-slate-900">Grupos</h2>
+                    <span className="text-sm font-semibold text-slate-400">
+                      {profile.groups.length} grupo{profile.groups.length === 1 ? '' : 's'}
+                    </span>
+                  </div>
+
+                  {profile.groups.length === 0 ? (
+                    <EmptyPublicState text="Ainda nao ha grupos publicos neste perfil." />
+                  ) : (
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      {profile.groups.map((group) => (
+                        <Link
+                          key={group.id}
+                          href={group.publicPath}
+                          className="rounded-[28px] border border-slate-100 bg-slate-50 p-4"
+                        >
+                          <div className="flex items-center gap-3">
+                            {group.imageUrl ? (
+                              <img src={group.imageUrl} alt={group.name} className="h-14 w-14 rounded-2xl object-cover" />
+                            ) : (
+                              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-50 text-base font-bold text-[#28B8C7]">
+                                {getInitials(group.name)}
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="truncate text-base font-bold text-slate-900">{group.name}</p>
+                              <p className="truncate text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                                {group.category || 'Comunidade'}
+                              </p>
+                            </div>
+                          </div>
+                          {group.description ? (
+                            <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">{group.description}</p>
+                          ) : null}
+                          <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
+                            {group.regionLabel ? <span className="rounded-full bg-white px-3 py-1">{group.regionLabel}</span> : null}
+                            <span className="rounded-full bg-white px-3 py-1">
+                              {group.memberCount} membro{group.memberCount === 1 ? '' : 's'}
+                            </span>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </section>
             ) : null}

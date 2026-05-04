@@ -16,7 +16,7 @@ import {
   validateOptionalUrlField,
 } from '../lib/forms/validation';
 import { parseDateTimeInputPtBr } from '../lib/forms/datetime';
-import { EventItem } from '../types';
+import { EventItem, PersonaMode, ProfessionalProfileIdentity } from '../types';
 
 const SAMPLE_EVENTS: EventItem[] = [
   {
@@ -87,16 +87,29 @@ type EventField =
   | 'externalUrl'
   | 'imageUrl';
 
-const Marketplace: React.FC = () => {
+type MarketplaceProps = {
+  personaMode?: PersonaMode;
+  professionalIdentity?: ProfessionalProfileIdentity | null;
+};
+
+const Marketplace: React.FC<MarketplaceProps> = ({
+  personaMode = 'personal',
+  professionalIdentity = null,
+}) => {
   const { data: session } = useSession();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('Proximos');
   const [events, setEvents] = useState<EventItem[]>([]);
   const [resultScope, setResultScope] = useState<'local' | 'global'>('local');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [createForm, setCreateForm] = useState(emptyForm);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<EventField>>({});
+  const isProfessionalMode = personaMode === 'professional' && Boolean(professionalIdentity);
+  const activeRegionKey = isProfessionalMode
+    ? professionalIdentity?.regionKey || session?.user?.regionKey || ''
+    : session?.user?.regionKey || '';
 
   const clearFieldError = (field: EventField) => {
     setFieldErrors((current) => {
@@ -124,8 +137,8 @@ const Marketplace: React.FC = () => {
 
     const fetchEvents = async () => {
       try {
-        const query = session?.user?.regionKey
-          ? `?region=${encodeURIComponent(session.user.regionKey)}`
+        const query = activeRegionKey
+          ? `?region=${encodeURIComponent(activeRegionKey)}`
           : '';
         const response = await fetch(`/api/events${query}`, { cache: 'no-store' });
         const payload = await response.json().catch(() => null);
@@ -154,7 +167,7 @@ const Marketplace: React.FC = () => {
     return () => {
       ignore = true;
     };
-  }, [session?.user?.regionKey]);
+  }, [activeRegionKey, refreshKey]);
 
   const handleCreateEvent = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -182,9 +195,9 @@ const Marketplace: React.FC = () => {
     if (!createForm.startsAt.trim()) {
       nextErrors.startsAt = requiredFieldError('a data de inicio');
     } else if (!parsedStartsAt) {
-      nextErrors.startsAt = 'Use o formato dd/mm/aaaa hh:mm.';
+      nextErrors.startsAt = 'Selecione uma data e horario validos.';
     } else if (createForm.endsAt.trim() && !parsedEndsAt) {
-      nextErrors.startsAt = 'Use o formato dd/mm/aaaa hh:mm.';
+      nextErrors.startsAt = 'Selecione uma data e horario validos.';
     } else if (parsedEndsAt && new Date(parsedEndsAt) < new Date(parsedStartsAt)) {
       nextErrors.startsAt = 'O encerramento nao pode ser antes do inicio.';
     }
@@ -237,6 +250,7 @@ const Marketplace: React.FC = () => {
       showToast('Seu evento foi enviado para aprovacao.', 'success');
       setCreateForm(emptyForm);
       setShowCreateForm(false);
+      setRefreshKey((current) => current + 1);
     } catch (error) {
       console.error('Failed to create event:', error);
       showToast('Nao foi possivel enviar o evento.', 'error');
@@ -304,7 +318,14 @@ const Marketplace: React.FC = () => {
     <div className="px-5 space-y-6 animate-in fade-in duration-500 pb-20">
       <div className="mt-4 space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold text-cyan-900">Agenda de Eventos</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-cyan-900">Agenda de Eventos</h1>
+            {isProfessionalMode ? (
+              <p className="mt-1 text-xs font-semibold text-slate-500">
+                Editando como {professionalIdentity?.name}. Os demais eventos ficam apenas para consulta.
+              </p>
+            ) : null}
+          </div>
           <button
             type="button"
             onClick={() => setShowCreateForm((current) => !current)}
@@ -370,31 +391,29 @@ const Marketplace: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               <input
                 required
-                type="text"
-                inputMode="numeric"
+                type="datetime-local"
                 value={createForm.startsAt}
                 onChange={(event) =>
                   setCreateForm((current) => ({ ...current, startsAt: event.target.value }))
                 }
                 onInput={() => clearFieldError('startsAt')}
                 aria-invalid={Boolean(fieldErrors.startsAt)}
-                placeholder="dd/mm/aaaa hh:mm"
+                placeholder="Data e hora de inicio"
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
               />
               <input
-                type="text"
-                inputMode="numeric"
+                type="datetime-local"
                 value={createForm.endsAt}
                 onChange={(event) =>
                   setCreateForm((current) => ({ ...current, endsAt: event.target.value }))
                 }
-                placeholder="dd/mm/aaaa hh:mm"
+                placeholder="Data e hora de fim"
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
               />
             </div>
             <FieldErrorMessage message={fieldErrors.startsAt} />
             <p className="px-2 text-[11px] font-medium text-slate-400">
-              Use o formato brasileiro: dd/mm/aaaa hh:mm.
+              Use o seletor para escolher data e horario do evento.
             </p>
             <RegionSelector
               value={createForm.regionKey}
@@ -495,21 +514,33 @@ const EventCard: React.FC<{
   img: string;
   onToggleFavorite: () => void;
 }> = ({ item, href, title, date, location, region, img, onToggleFavorite }) => (
-    <div className="bg-white rounded-3xl p-4 shadow-sm border border-slate-50 flex gap-4">
-        <img src={img} className="w-24 h-24 rounded-2xl object-cover" alt={title} />
-        <div className="flex-1 flex flex-col justify-between">
+    <div
+      className={`relative flex min-h-32 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:border-slate-200 ${
+        item.status === 'PENDING_REVIEW' || item.isPendingReview ? 'bg-slate-50 opacity-65 grayscale' : ''
+      }`}
+    >
+        <Link href={href} className="absolute inset-0 z-20" aria-label={`Abrir ${title}`} />
+        <img src={img} className="w-28 shrink-0 self-stretch object-cover" alt={title} />
+        <div className="relative z-10 flex flex-1 flex-col justify-between p-4">
             <div>
                 <div className="flex items-start justify-between gap-3">
                     <h4 className="font-bold text-cyan-900 text-sm leading-tight">{title}</h4>
-                    <button
-                        type="button"
-                        onClick={onToggleFavorite}
-                        className={`rounded-full p-2 ${item.isFavorite ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'}`}
-                        aria-label={item.isFavorite ? 'Remover dos favoritos' : 'Favoritar evento'}
-                    >
-                        <Heart size={14} fill={item.isFavorite ? 'currentColor' : 'none'} />
-                    </button>
+                    {item.status === 'PENDING_REVIEW' || item.isPendingReview ? null : (
+                      <button
+                          type="button"
+                          onClick={onToggleFavorite}
+                          className={`relative z-30 rounded-full p-2 ${item.isFavorite ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'}`}
+                          aria-label={item.isFavorite ? 'Remover dos favoritos' : 'Favoritar evento'}
+                      >
+                          <Heart size={14} fill={item.isFavorite ? 'currentColor' : 'none'} />
+                      </button>
+                    )}
                 </div>
+                {item.status === 'PENDING_REVIEW' || item.isPendingReview ? (
+                  <span className="mt-2 inline-flex w-fit rounded-xl border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                    Aguardando aprovacao
+                  </span>
+                ) : null}
                 <p className="text-slate-500 text-[10px] mt-1 font-medium">{date}</p>
                 <div className="flex items-center gap-1 text-cyan-600 text-[10px] font-bold mt-2">
                     <MapPin size={10} fill="currentColor" /> {location}
@@ -519,9 +550,9 @@ const EventCard: React.FC<{
                     <StarRating average={item.ratingAverage ?? 0} count={item.ratingCount ?? 0} compact />
                 </div>
             </div>
-            <Link href={href} className="self-end bg-cyan-600 text-white px-4 py-1.5 rounded-xl text-[10px] font-bold shadow-sm">
-                Ver evento
-            </Link>
+            <span className="self-end bg-cyan-600 text-white px-4 py-1.5 rounded-xl text-[10px] font-bold shadow-sm">
+                {item.canEdit ? 'Editar evento' : 'Ver evento'}
+            </span>
         </div>
     </div>
 );

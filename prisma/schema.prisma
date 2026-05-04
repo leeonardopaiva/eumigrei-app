@@ -67,6 +67,12 @@ enum FriendRequestStatus {
   DECLINED
 }
 
+enum CommunityGroupMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
 enum BannerType {
   LINK
   REGISTRATION
@@ -117,6 +123,8 @@ model User {
   bannerRegistrations BannerRegistration[]
   sentFriendRequests  FriendRequest[] @relation("FriendRequestSender")
   receivedFriendRequests FriendRequest[] @relation("FriendRequestRecipient")
+  createdGroups       CommunityGroup[] @relation("CommunityGroupCreator")
+  groupMemberships    CommunityGroupMember[]
   referredBy          User?           @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
   referrals           User[]          @relation("UserReferrals")
 
@@ -135,6 +143,7 @@ model Region {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   banners   Banner[]
+  communityGroups CommunityGroup[]
   businessVisibilityTargets Business[] @relation("BusinessVisibilityRegion")
   eventVisibilityTargets Event[] @relation("EventVisibilityRegion")
 
@@ -216,6 +225,7 @@ model Business {
   visibilityRegion Region?      @relation("BusinessVisibilityRegion", fields: [visibilityRegionKey], references: [key], onDelete: SetNull)
   favorites     BusinessFavorite[]
   ratings       BusinessRating[]
+  communityPosts CommunityPost[] @relation("CommunityPostBusinessAuthor")
 
   @@index([status, regionKey])
   @@index([category, regionKey])
@@ -271,16 +281,19 @@ model CommunityPost {
   externalUrl   String?
   status        CommunityPostStatus @default(PUBLISHED)
   authorId      String
+  businessAuthorId String?
   regionKey     String
   locationLabel String
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
   author        User                @relation("CommunityPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  businessAuthor Business?          @relation("CommunityPostBusinessAuthor", fields: [businessAuthorId], references: [id], onDelete: SetNull)
   comments      PostComment[]
   reactions     PostReaction[]
   reports       PostReport[]
 
   @@index([status, regionKey, createdAt])
+  @@index([businessAuthorId, createdAt])
 }
 
 model PostComment {
@@ -419,6 +432,41 @@ model FriendRequest {
 
   @@unique([requesterId, recipientId])
   @@index([recipientId, status, createdAt])
+}
+
+model CommunityGroup {
+  id          String                 @id @default(cuid())
+  name        String
+  slug        String                 @unique
+  description String?
+  imageUrl    String?
+  category    String?
+  regionKey   String?
+  isPublic    Boolean                @default(true)
+  createdById String
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  createdBy   User                   @relation("CommunityGroupCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  region      Region?                @relation(fields: [regionKey], references: [key], onDelete: SetNull)
+  members     CommunityGroupMember[]
+
+  @@index([isPublic, createdAt])
+  @@index([regionKey, createdAt])
+  @@index([createdById, createdAt])
+}
+
+model CommunityGroupMember {
+  id        String                   @id @default(cuid())
+  groupId   String
+  userId    String
+  role      CommunityGroupMemberRole @default(MEMBER)
+  createdAt DateTime                 @default(now())
+  group     CommunityGroup           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId, createdAt])
+  @@index([groupId, createdAt])
 }
 
 model Suggestion {

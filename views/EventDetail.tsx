@@ -44,6 +44,7 @@ type EventDetailState = {
   createdByName: string;
   canEdit: boolean;
   publicPath: string;
+  status: string;
 };
 
 const defaultEvent: EventDetailState = {
@@ -68,6 +69,7 @@ const defaultEvent: EventDetailState = {
   createdByName: 'Comunidade Emigrei',
   canEdit: false,
   publicPath: '',
+  status: 'PUBLISHED',
 };
 
 const formatEventDateTime = (value: string) =>
@@ -127,6 +129,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
             createdByName: payload.event.createdBy?.name || 'Comunidade Emigrei',
             canEdit: Boolean(payload.event.canEdit),
             publicPath: payload.event.publicPath || `/eventos/${payload.event.slug || payload.event.id}`,
+            status: payload.event.status || 'PUBLISHED',
           };
 
           setEvent(nextEvent);
@@ -288,6 +291,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
   };
 
   const galleryImages = [event.imageUrl, ...event.galleryUrls].filter(Boolean);
+  const isPendingReview = event.status === 'PENDING_REVIEW';
 
   if (loading) {
     return (
@@ -304,7 +308,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
 
   return (
     <div className="animate-in pb-24 fade-in duration-500">
-      <div className="relative h-72">
+      <div className={`relative h-72 ${isPendingReview ? 'grayscale' : ''}`}>
         <img src={event.imageUrl} className="h-full w-full object-cover" alt={event.title} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
         <div className="absolute right-4 top-4 flex gap-2">
@@ -336,6 +340,11 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
 
       <div className="-mt-8 space-y-5 rounded-t-[36px] bg-white px-5 pt-6">
         <div className="rounded-[28px] border border-slate-100 bg-slate-50 p-4">
+          {isPendingReview ? (
+            <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
+              Este evento esta aguardando aprovacao e fica visivel apenas para voce e administradores.
+            </div>
+          ) : null}
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-2">
               <div className="theme-text inline-flex items-center gap-2 text-sm font-bold">

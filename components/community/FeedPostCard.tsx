@@ -11,6 +11,7 @@ type FeedPostCardProps = {
   onDeletePost: () => Promise<void>;
   onUpdateComment: (commentId: string, content: string) => Promise<void>;
   onDeleteComment: (commentId: string) => Promise<void>;
+  onSharePost: () => void;
 };
 
 const FeedPostCard: React.FC<FeedPostCardProps> = ({
@@ -21,8 +22,9 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
   onDeletePost,
   onUpdateComment,
   onDeleteComment,
+  onSharePost,
 }) => {
-  const authorHref = post.author.username ? `/${post.author.username}` : undefined;
+  const authorHref = post.authorHref || (post.author.username ? `/${post.author.username}` : undefined);
   const [commentText, setCommentText] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [editingPost, setEditingPost] = useState(false);
@@ -198,8 +200,15 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
       </div>
     ) : null;
 
+  const isPendingReview = post.status === 'PENDING_REVIEW';
+
   return (
-    <PostCard.Root>
+    <PostCard.Root className={isPendingReview ? 'opacity-65' : ''}>
+      {isPendingReview ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
+          Aguardando aprovacao da administracao. Esta publicacao esta visivel apenas para voce e administradores.
+        </div>
+      ) : null}
       <PostCard.Header
         authorImage={post.author.image || `https://picsum.photos/seed/${post.author.id}/100`}
         authorName={post.author.name}
@@ -295,6 +304,7 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
             </div>
           ) : null
         }
+        onShare={onSharePost}
       />
 
       {shouldShowCommentsToggle ? (

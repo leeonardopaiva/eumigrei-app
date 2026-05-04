@@ -2,7 +2,6 @@ import { BusinessStatus } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { updateBusinessMediaSchema } from '@/lib/validators';
 import { isVisibleForRegion } from '@/lib/visibility';
 
 type RouteContext = {
@@ -86,6 +85,7 @@ export async function GET(_request: Request, context: RouteContext) {
     session?.user?.role === 'ADMIN' ||
     session?.user?.id === business.createdById ||
     business.members.length > 0;
+
   const canRate =
     Boolean(session?.user?.id) && session?.user?.role !== 'ADMIN' && business.members.length === 0;
 
@@ -116,15 +116,6 @@ export async function PUT(request: Request, context: RouteContext) {
   }
 
   const body = await request.json();
-  const parsed = updateBusinessMediaSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? 'Dados invalidos do negocio.' },
-      { status: 400 },
-    );
-  }
-
   const { businessId } = await context.params;
 
   const existingBusiness = await prisma.business.findFirst({
@@ -160,12 +151,29 @@ export async function PUT(request: Request, context: RouteContext) {
   const business = await prisma.business.update({
     where: { id: existingBusiness.id },
     data: {
-      imageUrl: parsed.data.imageUrl ?? null,
-      galleryUrls: parsed.data.galleryUrls,
+      name: typeof body.name === 'string' ? body.name.trim() : undefined,
+      category: typeof body.category === 'string' ? body.category.trim() : undefined,
+      description:
+        typeof body.description === 'string' ? body.description.trim() || null : undefined,
+      address: typeof body.address === 'string' ? body.address.trim() : undefined,
+      phone: typeof body.phone === 'string' ? body.phone.trim() || null : undefined,
+      whatsapp: typeof body.whatsapp === 'string' ? body.whatsapp.trim() || null : undefined,
+      website: typeof body.website === 'string' ? body.website.trim() || null : undefined,
+      instagram: typeof body.instagram === 'string' ? body.instagram.trim() || null : undefined,
+      imageUrl: typeof body.imageUrl === 'string' ? body.imageUrl.trim() || null : undefined,
+      galleryUrls: Array.isArray(body.galleryUrls) ? body.galleryUrls : undefined,
     },
     select: {
       id: true,
       slug: true,
+      name: true,
+      category: true,
+      description: true,
+      address: true,
+      phone: true,
+      whatsapp: true,
+      website: true,
+      instagram: true,
       imageUrl: true,
       galleryUrls: true,
       updatedAt: true,

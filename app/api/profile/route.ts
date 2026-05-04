@@ -54,6 +54,7 @@ export async function GET() {
         status: true,
         imageUrl: true,
         locationLabel: true,
+        regionKey: true,
         updatedAt: true,
       },
     }),
@@ -88,6 +89,7 @@ export async function GET() {
             slug: businesses[0].slug || businesses[0].id,
             imageUrl: businesses[0].imageUrl,
             locationLabel: businesses[0].locationLabel,
+            regionKey: businesses[0].regionKey,
             publicPath: `/negocios/${businesses[0].slug || businesses[0].id}`,
           }
         : null,

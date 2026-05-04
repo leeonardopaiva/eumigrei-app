@@ -82,7 +82,7 @@ body {
 }
 
 .theme-shadow {
-  box-shadow: 0 18px 40px var(--accent-shadow);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
 }
 
 .theme-icon-surface {

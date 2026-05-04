@@ -30,6 +30,21 @@ export async function GET(request: Request) {
   const normalizedQuery = query.slice(0, 80);
   const now = new Date();
 
+  await prisma.analyticsEvent.create({
+    data: {
+      type: 'search_query',
+      targetType: 'search',
+      targetKey: normalizedQuery.toLowerCase(),
+      label: normalizedQuery,
+      sourcePath: '/buscar',
+      sourceSection: 'search',
+      regionKey: viewerRegionKey || null,
+      userId: session?.user?.id || null,
+    },
+  }).catch((error) => {
+    console.error('Failed to track search query:', error);
+  });
+
   const businessWhere: Prisma.BusinessWhereInput = {
     status: BusinessStatus.PUBLISHED,
     OR: [

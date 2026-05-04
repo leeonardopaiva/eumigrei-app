@@ -24,6 +24,13 @@ const mapCommunityPost = (
       image: string | null;
       locationLabel: string | null;
     };
+    businessAuthor: {
+      id: string;
+      name: string;
+      slug: string;
+      imageUrl: string | null;
+      locationLabel: string | null;
+    } | null;
     comments: Array<{
       id: string;
       content: string;
@@ -55,6 +62,15 @@ const mapCommunityPost = (
 ) => {
   const isAdmin = session?.user?.role === 'ADMIN';
   const isPostOwner = session?.user?.id === post.authorId;
+  const displayAuthor = post.businessAuthor
+    ? {
+        id: post.businessAuthor.id,
+        name: post.businessAuthor.name,
+        username: null,
+        image: post.businessAuthor.imageUrl,
+        locationLabel: post.businessAuthor.locationLabel,
+      }
+    : post.author;
 
   return {
     id: post.id,
@@ -64,7 +80,13 @@ const mapCommunityPost = (
     status: post.status,
     createdAt: post.createdAt,
     locationLabel: post.locationLabel,
-    author: post.author,
+    author: displayAuthor,
+    authorHref: post.businessAuthor
+      ? `/negocios/${post.businessAuthor.slug || post.businessAuthor.id}`
+      : post.author.username
+        ? `/${post.author.username}`
+        : undefined,
+    authorType: post.businessAuthor ? 'BUSINESS' : 'USER',
     comments: [...post.comments].reverse().map((comment) => {
       const canManageComment = isAdmin || session?.user?.id === comment.authorId;
 
@@ -98,11 +120,20 @@ const mapCommunityPost = (
 export async function GET(request: Request) {
   const session = await getServerAuthSession();
   const { searchParams } = new URL(request.url);
-  const regionKey = session?.user?.regionKey ?? searchParams.get('region');
+  const regionKey = searchParams.get('region') ?? session?.user?.regionKey;
+  const isAdmin = session?.user?.role === 'ADMIN';
 
   const posts = await prisma.communityPost.findMany({
     where: {
-      status: CommunityPostStatus.PUBLISHED,
+      OR: [
+        { status: CommunityPostStatus.PUBLISHED },
+        ...(session?.user?.id
+          ? [
+              { status: CommunityPostStatus.PENDING_REVIEW, authorId: session.user.id },
+              ...(isAdmin ? [{ status: CommunityPostStatus.PENDING_REVIEW }] : []),
+            ]
+          : []),
+      ],
       ...(regionKey ? { regionKey } : {}),
     },
     orderBy: [{ createdAt: 'desc' }],
@@ -114,6 +145,15 @@ export async function GET(request: Request) {
           name: true,
           username: true,
           image: true,
+          locationLabel: true,
+        },
+      },
+      businessAuthor: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          imageUrl: true,
           locationLabel: true,
         },
       },
@@ -197,6 +237,34 @@ export async function POST(request: Request) {
     );
   }
 
+  const professionalBusiness =
+    parsed.data.personaMode === 'professional'
+      ? await prisma.business.findFirst({
+          where: {
+            id: parsed.data.businessId || '__missing-business__',
+            OR: [
+              { createdById: session.user.id },
+              { members: { some: { userId: session.user.id } } },
+            ],
+          },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            imageUrl: true,
+            regionKey: true,
+            locationLabel: true,
+          },
+        })
+      : null;
+
+  if (parsed.data.personaMode === 'professional' && !professionalBusiness) {
+    return NextResponse.json(
+      { error: 'Selecione um perfil profissional valido para publicar como pagina.' },
+      { status: 403 },
+    );
+  }
+
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
@@ -225,8 +293,9 @@ export async function POST(request: Request) {
       externalUrl: parsed.data.externalUrl ?? null,
       status: hasExternalLink ? CommunityPostStatus.PENDING_REVIEW : CommunityPostStatus.PUBLISHED,
       authorId: session.user.id,
-      regionKey: session.user.regionKey,
-      locationLabel: session.user.locationLabel,
+      businessAuthorId: professionalBusiness?.id ?? null,
+      regionKey: professionalBusiness?.regionKey ?? session.user.regionKey,
+      locationLabel: professionalBusiness?.locationLabel ?? session.user.locationLabel,
     },
     include: {
       author: {
@@ -238,8 +307,26 @@ export async function POST(request: Request) {
           locationLabel: true,
         },
       },
+      businessAuthor: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          imageUrl: true,
+          locationLabel: true,
+        },
+      },
     },
   });
+  const displayAuthor = post.businessAuthor
+    ? {
+        id: post.businessAuthor.id,
+        name: post.businessAuthor.name,
+        username: null,
+        image: post.businessAuthor.imageUrl,
+        locationLabel: post.businessAuthor.locationLabel,
+      }
+    : post.author;
 
   return NextResponse.json({
     post: {
@@ -250,7 +337,13 @@ export async function POST(request: Request) {
       status: post.status,
       createdAt: post.createdAt,
       locationLabel: post.locationLabel,
-      author: post.author,
+      author: displayAuthor,
+      authorHref: post.businessAuthor
+        ? `/negocios/${post.businessAuthor.slug || post.businessAuthor.id}`
+        : post.author.username
+          ? `/${post.author.username}`
+          : undefined,
+      authorType: post.businessAuthor ? 'BUSINESS' : 'USER',
       comments: [],
       likeCount: 0,
       commentCount: 0,

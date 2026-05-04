@@ -16,7 +16,7 @@ import {
   validateOptionalUrlField,
   validatePhoneField,
 } from '../lib/forms/validation';
-import { Business } from '../types';
+import { Business, PersonaMode, ProfessionalProfileIdentity } from '../types';
 
 const SAMPLE_BUSINESSES: Business[] = [
   {
@@ -59,7 +59,15 @@ type BusinessField =
   | 'website'
   | 'imageUrl';
 
-const BusinessList: React.FC = () => {
+type BusinessListProps = {
+  personaMode?: PersonaMode;
+  professionalIdentity?: ProfessionalProfileIdentity | null;
+};
+
+const BusinessList: React.FC<BusinessListProps> = ({
+  personaMode = 'personal',
+  professionalIdentity = null,
+}) => {
   const { data: session, update } = useSession();
   const { showToast } = useToast();
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -67,10 +75,15 @@ const BusinessList: React.FC = () => {
   const [resultScope, setResultScope] = useState<'local' | 'global'>('local');
   const [search, setSearch] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [createForm, setCreateForm] = useState(emptyForm);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<BusinessField>>({});
   const deferredSearch = useDeferredValue(search);
+  const isProfessionalMode = personaMode === 'professional' && Boolean(professionalIdentity);
+  const activeRegionKey = isProfessionalMode
+    ? professionalIdentity?.regionKey || session?.user?.regionKey || ''
+    : session?.user?.regionKey || '';
 
   const clearFieldError = (field: BusinessField) => {
     setFieldErrors((current) => {
@@ -96,7 +109,7 @@ const BusinessList: React.FC = () => {
   useEffect(() => {
     let ignore = false;
 
-        const fetchBusinesses = async () => {
+    const fetchBusinesses = async () => {
       try {
         const params = new URLSearchParams();
         if (activeFilter && activeFilter !== 'Todos') {
@@ -104,6 +117,9 @@ const BusinessList: React.FC = () => {
         }
         if (deferredSearch.trim()) {
           params.set('search', deferredSearch.trim());
+        }
+        if (activeRegionKey) {
+          params.set('region', activeRegionKey);
         }
 
         const response = await fetch(`/api/businesses?${params.toString()}`);
@@ -133,7 +149,7 @@ const BusinessList: React.FC = () => {
     return () => {
       ignore = true;
     };
-  }, [activeFilter, deferredSearch]);
+  }, [activeFilter, activeRegionKey, deferredSearch, refreshKey]);
 
   const handleCreateBusiness = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -207,6 +223,7 @@ const BusinessList: React.FC = () => {
       await update();
       setCreateForm(emptyForm);
       setShowCreateForm(false);
+      setRefreshKey((current) => current + 1);
     } catch (error) {
       console.error('Failed to create business:', error);
       showToast('Nao foi possivel enviar seu negocio.', 'error');
@@ -247,7 +264,14 @@ const BusinessList: React.FC = () => {
     <div className="px-5 space-y-6 animate-in fade-in duration-500">
       <div className="mt-4 space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold text-cyan-900">Negocios</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-cyan-900">Negocios</h1>
+            {isProfessionalMode ? (
+              <p className="mt-1 text-xs font-semibold text-slate-500">
+                Editando como {professionalIdentity?.name}. Os demais negocios ficam apenas para consulta.
+              </p>
+            ) : null}
+          </div>
           <button
             type="button"
             onClick={() => setShowCreateForm((current) => !current)}
@@ -420,28 +444,48 @@ const BusinessList: React.FC = () => {
             Nenhum negocio publicado nesta regiao ainda.
           </div>
         ) : null}
-        {businesses.map((business) => (
-          <div key={business.id} className="bg-white rounded-3xl p-4 shadow-sm border border-slate-50 flex gap-4">
+        {businesses.map((business) => {
+          const isPendingReview = business.status === 'PENDING_REVIEW' || business.isPendingReview;
+
+          return (
+          <div
+            key={business.id}
+            className={`relative flex min-h-32 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:border-slate-200 ${
+              isPendingReview ? 'bg-slate-50 opacity-65 grayscale' : ''
+            }`}
+          >
+            <Link
+              href={`/negocios/${business.slug || business.id}`}
+              className="absolute inset-0 z-20"
+              aria-label={`Abrir ${business.name}`}
+            />
             <img
               src={business.imageUrl || `https://picsum.photos/seed/${business.id}/200`}
-              className="w-24 h-24 rounded-2xl object-cover"
+              className="w-28 shrink-0 self-stretch object-cover"
               alt={business.name}
             />
-            <div className="flex-1 flex flex-col justify-between">
+            <div className="relative z-10 flex flex-1 flex-col justify-between p-4">
               <div>
                 <div className="flex items-start justify-between gap-3">
                   <h4 className="font-bold text-cyan-900">{business.name}</h4>
-                  <button
-                    type="button"
-                    onClick={() => void handleFavoriteToggle(business)}
-                    className={`rounded-full p-2 ${
-                      business.isFavorite ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'
-                    }`}
-                    aria-label={business.isFavorite ? 'Remover dos favoritos' : 'Favoritar negocio'}
-                  >
-                    <Heart size={14} fill={business.isFavorite ? 'currentColor' : 'none'} />
-                  </button>
+                  {!isPendingReview ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleFavoriteToggle(business)}
+                      className={`relative z-30 rounded-full p-2 ${
+                        business.isFavorite ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'
+                      }`}
+                      aria-label={business.isFavorite ? 'Remover dos favoritos' : 'Favoritar negocio'}
+                    >
+                      <Heart size={14} fill={business.isFavorite ? 'currentColor' : 'none'} />
+                    </button>
+                  ) : null}
                 </div>
+                {isPendingReview ? (
+                  <span className="mt-2 inline-flex w-fit rounded-xl border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                    Aguardando aprovacao
+                  </span>
+                ) : null}
                 <div className="mt-2">
                   <StarRating
                     average={business.ratingAverage ?? 0}
@@ -454,15 +498,13 @@ const BusinessList: React.FC = () => {
                   <MapPin size={10} /> {business.address}
                 </div>
               </div>
-              <Link
-                href={`/negocios/${business.slug || business.id}`}
-                className="self-end rounded-xl bg-cyan-600 px-4 py-1.5 text-[10px] font-bold text-white shadow-sm"
-              >
-                Ver perfil
-              </Link>
+              <span className="self-end rounded-xl bg-cyan-600 px-4 py-1.5 text-[10px] font-bold text-white shadow-sm">
+                {business.canEdit ? 'Editar perfil' : 'Ver perfil'}
+              </span>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

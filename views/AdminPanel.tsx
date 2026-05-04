@@ -25,7 +25,7 @@ import { useToast } from '../components/feedback/ToastProvider';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import ImageGalleryField from '../components/forms/ImageGalleryField';
 import RegionSelector from '../components/RegionSelector';
-import { formatDateTimeInputPtBr, parseDateTimeInputPtBr } from '../lib/forms/datetime';
+import { formatDateTimeLocalInput, parseDateTimeInputPtBr } from '../lib/forms/datetime';
 import { normalizeUrlFieldValue } from '../lib/forms/validation';
 import { formatLoosePhoneInput } from '../lib/forms/phone';
 import { normalizeUsernameInput } from '../lib/username';
@@ -204,6 +204,7 @@ type AnalyticsSummary = {
   totalEvents: number;
   disabledFeatureClicks: number;
   bannerClicks: number;
+  searchQueries: number;
   trackedUsers: number;
 };
 
@@ -225,10 +226,17 @@ type AnalyticsTopSource = {
   count: number;
 };
 
+type AnalyticsTopSearch = {
+  term: string;
+  regionKey: string | null;
+  regionLabel: string;
+  count: number;
+};
+
 type ManagedAnalyticsEvent = {
   id: string;
-  type: 'disabled_feature_click' | 'banner_click' | 'banner_registration';
-  targetType: 'feature' | 'banner';
+  type: 'disabled_feature_click' | 'banner_click' | 'banner_registration' | 'search_query';
+  targetType: 'feature' | 'banner' | 'search';
   targetKey: string;
   label: string;
   sourcePath: string | null;
@@ -246,6 +254,10 @@ type ManagedAnalyticsEvent = {
 
 type AdminAnalyticsData = {
   windowDays: number;
+  filters: {
+    type: string | null;
+    regionKey: string | null;
+  };
   selectedUser: {
     id: string;
     name: string | null;
@@ -259,6 +271,7 @@ type AdminAnalyticsData = {
   topDisabledFeatures: AnalyticsTopFeature[];
   topBanners: AnalyticsTopBanner[];
   topSources: AnalyticsTopSource[];
+  topSearchesByRegion: AnalyticsTopSearch[];
   recentEvents: ManagedAnalyticsEvent[];
 };
 
@@ -511,6 +524,9 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
   const [analytics, setAnalytics] = useState<AdminAnalyticsData | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [selectedAnalyticsUserId, setSelectedAnalyticsUserId] = useState<string | null>(null);
+  const [analyticsDays, setAnalyticsDays] = useState('30');
+  const [analyticsTypeFilter, setAnalyticsTypeFilter] = useState('');
+  const [analyticsRegionFilter, setAnalyticsRegionFilter] = useState('');
   const [expandedSections, setExpandedSections] = useState<Record<ExpandableSectionKey, boolean>>({
     regions: false,
     businesses: false,
@@ -558,8 +574,13 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
     setError(null);
 
     try {
-      const query = userId ? `?userId=${encodeURIComponent(userId)}` : '';
-      const response = await fetch(`/api/admin/analytics${query}`, { cache: 'no-store' });
+      const query = new URLSearchParams();
+      if (userId) query.set('userId', userId);
+      if (analyticsDays) query.set('days', analyticsDays);
+      if (analyticsTypeFilter) query.set('type', analyticsTypeFilter);
+      if (analyticsRegionFilter) query.set('regionKey', analyticsRegionFilter);
+      const queryString = query.toString();
+      const response = await fetch(`/api/admin/analytics${queryString ? `?${queryString}` : ''}`, { cache: 'no-store' });
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
@@ -597,7 +618,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
     if (activeSection === 'analytics') {
       void loadAnalytics(selectedAnalyticsUserId);
     }
-  }, [activeSection, selectedAnalyticsUserId]);
+  }, [activeSection, selectedAnalyticsUserId, analyticsDays, analyticsTypeFilter, analyticsRegionFilter]);
 
   const totalPending = dashboard
     ? dashboard.stats.pendingBusinesses + dashboard.stats.pendingEvents + dashboard.stats.pendingPosts
@@ -822,8 +843,8 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
       title: event.title,
       description: event.description,
       venueName: event.venueName,
-      startsAt: formatDateTimeInputPtBr(event.startsAt),
-      endsAt: formatDateTimeInputPtBr(event.endsAt),
+      startsAt: formatDateTimeLocalInput(event.startsAt),
+      endsAt: formatDateTimeLocalInput(event.endsAt),
       regionKey: event.regionKey,
       visibilityScope: event.visibilityScope,
       visibilityRegionKey: event.visibilityRegionKey || '',
@@ -845,12 +866,12 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
     const parsedEndsAt = eventForm.endsAt ? parseDateTimeInputPtBr(eventForm.endsAt) : null;
 
     if (!parsedStartsAt) {
-      setError('Use o formato dd/mm/aaaa hh:mm para o inicio do evento.');
+      setError('Selecione uma data e horario validos para o inicio do evento.');
       return;
     }
 
     if (eventForm.endsAt && !parsedEndsAt) {
-      setError('Use o formato dd/mm/aaaa hh:mm para o encerramento do evento.');
+      setError('Selecione uma data e horario validos para o encerramento do evento.');
       return;
     }
 
@@ -2025,24 +2046,24 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                       />
                       <div className="grid grid-cols-2 gap-3">
                         <FormInput
-                          type="text"
+                          type="datetime-local"
                           value={eventForm.startsAt}
                           onChange={(value) =>
                             setEventForm((current) => ({ ...current, startsAt: value }))
                           }
-                          placeholder="Inicio: dd/mm/aaaa hh:mm"
+                          placeholder="Inicio"
                         />
                         <FormInput
-                          type="text"
+                          type="datetime-local"
                           value={eventForm.endsAt}
                           onChange={(value) =>
                             setEventForm((current) => ({ ...current, endsAt: value }))
                           }
-                          placeholder="Fim: dd/mm/aaaa hh:mm"
+                          placeholder="Fim"
                         />
                       </div>
                       <p className="text-xs font-medium text-slate-400">
-                        Use o formato brasileiro: dd/mm/aaaa hh:mm.
+                        Use o seletor para escolher data e horario.
                       </p>
                       <RegionSelector
                         value={eventForm.regionKey}
@@ -2228,6 +2249,49 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
             <SectionHeader title="Analytics" count={analytics?.summary.totalEvents ?? 0} />
             <SupportText text="Mapeie cliques nos recursos desativados e banners dos ultimos 30 dias para entender demanda real antes de abrir novas frentes." />
 
+            <div className="grid gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:grid-cols-3">
+              <label className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Periodo</span>
+                <select
+                  value={analyticsDays}
+                  onChange={(event) => setAnalyticsDays(event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
+                >
+                  <option value="7">7 dias</option>
+                  <option value="30">30 dias</option>
+                  <option value="90">90 dias</option>
+                  <option value="365">12 meses</option>
+                </select>
+              </label>
+              <label className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Tipo</span>
+                <select
+                  value={analyticsTypeFilter}
+                  onChange={(event) => setAnalyticsTypeFilter(event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
+                >
+                  <option value="">Todos</option>
+                  <option value="search_query">Buscas</option>
+                  <option value="banner_click">Cliques em banners</option>
+                  <option value="banner_registration">Cadastros em banners</option>
+                  <option value="disabled_feature_click">Recursos em breve</option>
+                </select>
+              </label>
+              <label className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Localidade</span>
+                <select
+                  value={analyticsRegionFilter}
+                  onChange={(event) => setAnalyticsRegionFilter(event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
+                >
+                  <option value="">Todas</option>
+                  {(dashboard?.regions ?? []).map((region) => (
+                    <option key={region.key} value={region.key}>{region.label}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
             {analytics?.selectedUser ? (
               <div className="rounded-3xl border border-cyan-100 bg-cyan-50/70 p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -2269,12 +2333,45 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                     <p className="mt-2 text-3xl font-bold text-slate-900">{analytics.summary.bannerClicks}</p>
                   </div>
                   <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Buscas feitas</p>
+                    <p className="mt-2 text-3xl font-bold text-slate-900">{analytics.summary.searchQueries}</p>
+                  </div>
+                  <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Usuarios mapeados</p>
                     <p className="mt-2 text-3xl font-bold text-slate-900">{analytics.summary.trackedUsers}</p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
+                  <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Palavras mais buscadas por localidade</p>
+                    {analytics.topSearchesByRegion.length > 0 ? (
+                      <div className="mt-4 space-y-3">
+                        {analytics.topSearchesByRegion.map((item) => {
+                          const maxCount = Math.max(...analytics.topSearchesByRegion.map((search) => search.count), 1);
+                          const width = Math.max(10, Math.round((item.count / maxCount) * 100));
+
+                          return (
+                            <div key={`${item.regionKey || 'none'}-${item.term}`} className="space-y-2 rounded-2xl bg-slate-50 px-4 py-3">
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-sm font-bold text-slate-900">{item.term}</p>
+                                  <p className="text-xs text-slate-500">{item.regionLabel}</p>
+                                </div>
+                                <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600 shadow-sm">{item.count}</span>
+                              </div>
+                              <div className="h-2 overflow-hidden rounded-full bg-white">
+                                <div className="h-full rounded-full bg-cyan-600" style={{ width: `${width}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="mt-4 text-sm text-slate-500">As buscas comecarao a aparecer aqui conforme os usuarios pesquisarem.</p>
+                    )}
+                  </div>
+
                   <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Recursos mais clicados</p>
                     {analytics.topDisabledFeatures.length > 0 ? (
@@ -2343,7 +2440,9 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                                     ? 'Clique em banner'
                                     : event.type === 'banner_registration'
                                       ? 'Cadastro em banner'
-                                      : 'Clique em recurso desativado'}
+                                      : event.type === 'search_query'
+                                        ? 'Busca'
+                                        : 'Clique em recurso desativado'}
                                   {' · '}
                                   {event.sourceSection || 'origem desconhecida'}
                                 </p>

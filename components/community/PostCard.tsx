@@ -16,6 +16,7 @@ import {
 
 type RootProps = {
   children: React.ReactNode;
+  className?: string;
 };
 
 type HeaderProps = {
@@ -63,6 +64,7 @@ type ActionsProps = {
   onLikesHoverStart?: () => void;
   onLikesHoverEnd?: () => void;
   likesPreview?: React.ReactNode;
+  onShare?: () => void;
 };
 
 type CommentItemProps = {
@@ -81,8 +83,8 @@ type CommentComposerProps = {
   submitting: boolean;
 };
 
-const Root: React.FC<RootProps> = ({ children }) => (
-  <div className="space-y-4 rounded-3xl border border-slate-50 bg-white p-5 shadow-sm">
+const Root: React.FC<RootProps> = ({ children, className = '' }) => (
+  <div className={`space-y-4 rounded-3xl border border-slate-50 bg-white p-5 shadow-sm ${className}`.trim()}>
     {children}
   </div>
 );
@@ -271,6 +273,7 @@ const Actions: React.FC<ActionsProps> = ({
   onLikesHoverStart,
   onLikesHoverEnd,
   likesPreview,
+  onShare,
 }) => (
   <div className="flex items-center justify-between pt-2">
     <div className="flex items-center gap-4">
@@ -315,7 +318,7 @@ const Actions: React.FC<ActionsProps> = ({
         <MessageSquare size={16} /> {commentCount}
       </button>
     </div>
-    <button className="text-slate-400">
+    <button type="button" onClick={onShare} className="text-slate-400 transition hover:text-cyan-600">
       <Share2 size={16} />
     </button>
   </div>

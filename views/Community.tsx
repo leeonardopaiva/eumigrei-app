@@ -1,4 +1,5 @@
 import React, { startTransition, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Copy, ExternalLink, Share2, UserPlus } from 'lucide-react';
 import CommunityComposer from '@/components/community/CommunityComposer';
 import FeedPostCard from '@/components/community/FeedPostCard';
@@ -7,12 +8,18 @@ import { isYoutubeUrl } from '@/components/community/utils';
 import { useToast } from '@/components/feedback/ToastProvider';
 import { normalizeUrlFieldValue } from '@/lib/forms/validation';
 import { trackAnalyticsEvent } from '@/lib/analytics';
-import type { BannerAd, Post, ReferralSummary, User } from '@/types';
+import type { BannerAd, PersonaMode, Post, ProfessionalProfileIdentity, ReferralSummary, User } from '@/types';
 
 const getPostTimestamp = (post: Post) => new Date(post.createdAt).getTime() || 0;
 
-const Community: React.FC<{ user: User }> = ({ user }) => {
+const Community: React.FC<{
+  user: User;
+  personaMode?: PersonaMode;
+  professionalIdentity?: ProfessionalProfileIdentity | null;
+}> = ({ user, personaMode = 'personal', professionalIdentity = null }) => {
   const { showToast } = useToast();
+  const searchParams = useSearchParams();
+  const targetPostId = searchParams.get('post');
   const [composerMode, setComposerMode] = useState<ComposerMode>('text');
   const [postContent, setPostContent] = useState('');
   const [postImageUrl, setPostImageUrl] = useState('');
@@ -25,10 +32,24 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
     referralUrl: null,
     registrationCount: 0,
   });
+  const isProfessionalMode = personaMode === 'professional' && Boolean(professionalIdentity);
+  const composerAvatar =
+    isProfessionalMode && professionalIdentity?.imageUrl ? professionalIdentity.imageUrl : user.avatar;
+  const composerHref =
+    isProfessionalMode && professionalIdentity
+      ? professionalIdentity.publicPath
+      : user.username
+        ? `/perfil/${encodeURIComponent(user.username)}`
+        : undefined;
+  const composerName = isProfessionalMode && professionalIdentity ? professionalIdentity.name : user.name;
+  const activeRegionKey = isProfessionalMode
+    ? professionalIdentity?.regionKey || user.regionKey || ''
+    : user.regionKey || '';
 
   const loadPosts = async (options?: { silent?: boolean }) => {
     try {
-      const response = await fetch('/api/community/posts', { cache: 'no-store' });
+      const query = activeRegionKey ? `?region=${encodeURIComponent(activeRegionKey)}` : '';
+      const response = await fetch(`/api/community/posts${query}`, { cache: 'no-store' });
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
@@ -49,7 +70,20 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
 
   useEffect(() => {
     void loadPosts({ silent: true });
-  }, [user.username]);
+  }, [activeRegionKey, user.username]);
+
+  useEffect(() => {
+    if (!targetPostId || posts.length === 0) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      document.getElementById(`post-${targetPostId}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    });
+  }, [posts.length, targetPostId]);
 
   useEffect(() => {
     let ignore = false;
@@ -230,6 +264,8 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
           content,
           imageUrl: normalizedImageUrl,
           externalUrl: normalizedExternalUrl,
+          personaMode: isProfessionalMode ? 'professional' : 'personal',
+          businessId: isProfessionalMode ? professionalIdentity?.id : undefined,
         }),
       });
       const payload = await response.json().catch(() => null);
@@ -417,6 +453,34 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
     }
   };
 
+  const handleSharePost = async (post: Post) => {
+    const postPath = `/community?post=${post.id}`;
+    const postUrl =
+      typeof window === 'undefined'
+        ? postPath
+        : `${window.location.origin}${postPath}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Publicacao na Emigrei',
+          text: post.content,
+          url: postUrl,
+        });
+        return;
+      } catch {
+        // fallback below
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(postUrl);
+      showToast('Link da publicacao copiado.', 'success');
+    } catch {
+      showToast(postUrl, 'info', 5000);
+    }
+  };
+
   const handleBannerLinkClick = (banner: BannerAd) => {
     if (!banner.targetUrl) {
       showToast('Esse banner ainda nao tem um link configurado.', 'error');
@@ -486,7 +550,7 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
         <h1 className="mb-4 text-2xl font-bold text-cyan-900">Comunidade</h1>
         <div className="mb-4 flex items-center border-b border-slate-100">
           <span className="border-b-2 border-cyan-700 pb-2 text-sm font-bold text-cyan-900">
-            Recentes
+           {/*  Recentes */}
           </span>
         </div>
       </div>
@@ -494,8 +558,8 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
       <div className="px-5">
         <CommunityComposer.Root>
           <CommunityComposer.Editor
-            avatar={user.avatar}
-            avatarHref={user.username ? `/perfil/${encodeURIComponent(user.username)}` : undefined}
+            avatar={composerAvatar}
+            avatarHref={composerHref}
             value={postContent}
             onChange={setPostContent}
             placeholder={
@@ -503,9 +567,16 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
                 ? 'Adicione uma descricao para o link...'
                 : composerMode === 'video'
                   ? 'Adicione um contexto para o video...'
-                  : 'No que voce esta pensando?'
+                  : isProfessionalMode
+                    ? `Publique como ${composerName}...`
+                    : 'No que voce esta pensando?'
             }
           />
+          {isProfessionalMode ? (
+            <div className="rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] font-bold text-blue-700">
+              Publicando como pagina profissional: {composerName}
+            </div>
+          ) : null}
           <CommunityComposer.MediaField
             mode={composerMode}
             imageUrl={postImageUrl}
@@ -588,19 +659,22 @@ const Community: React.FC<{ user: User }> = ({ user }) => {
 
           return (
             <React.Fragment key={post.id}>
-              <FeedPostCard
-                post={post}
-                onToggleLike={() => handleToggleLike(post.id)}
-                onAddComment={(content) => handleAddComment(post.id, content)}
-                onUpdatePost={(content, imageUrl, externalUrl) =>
-                  handleUpdatePost(post.id, content, imageUrl, externalUrl)
-                }
-                onDeletePost={() => handleDeletePost(post.id)}
-                onUpdateComment={(commentId, content) =>
-                  handleUpdateComment(post.id, commentId, content)
-                }
-                onDeleteComment={(commentId) => handleDeleteComment(post.id, commentId)}
-              />
+              <div id={`post-${post.id}`} className={targetPostId === post.id ? 'scroll-mt-24 rounded-3xl ring-2 ring-cyan-200' : 'scroll-mt-24'}>
+                <FeedPostCard
+                  post={post}
+                  onToggleLike={() => handleToggleLike(post.id)}
+                  onAddComment={(content) => handleAddComment(post.id, content)}
+                  onUpdatePost={(content, imageUrl, externalUrl) =>
+                    handleUpdatePost(post.id, content, imageUrl, externalUrl)
+                  }
+                  onDeletePost={() => handleDeletePost(post.id)}
+                  onUpdateComment={(commentId, content) =>
+                    handleUpdateComment(post.id, commentId, content)
+                  }
+                  onDeleteComment={(commentId) => handleDeleteComment(post.id, commentId)}
+                  onSharePost={() => handleSharePost(post)}
+                />
+              </div>
               {banner ? (
                 <FeedBannerCard
                   banner={banner}

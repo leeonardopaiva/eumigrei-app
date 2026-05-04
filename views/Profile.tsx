@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { BriefcaseBusiness, ChevronDown, Copy, Globe, Mail, MapPin, PencilLine, Phone, Plus, UserRound, X } from 'lucide-react';
+import { Copy, Globe, Mail, MapPin, PencilLine, Phone, Plus, UserRound, X } from 'lucide-react';
 import { useToast } from '../components/feedback/ToastProvider';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import ImageGalleryField from '../components/forms/ImageGalleryField';
@@ -9,6 +9,7 @@ import RegionSelector from '../components/RegionSelector';
 import { formatLoosePhoneInput } from '../lib/forms/phone';
 import { normalizeUrlFieldValue } from '../lib/forms/validation';
 import { normalizeUsernameInput } from '../lib/username';
+import PersonaModeDropdown from '../components/profile/PersonaModeDropdown';
 import ProfessionalModePanel from '../components/profile/ProfessionalModePanel';
 import { PersonaMode, ProfessionalProfileSummary, ReferralSummary, User } from '../types';
 
@@ -92,7 +93,6 @@ const Profile: React.FC<{
   const [interestInput, setInterestInput] = useState('');
   const [galleryDraft, setGalleryDraft] = useState<string[]>(user.galleryUrls || []);
   const [selectedRegionKey, setSelectedRegionKey] = useState(user.regionKey || '');
-  const [personaMenuOpen, setPersonaMenuOpen] = useState(false);
   const [editing, setEditing] = useState({
     avatar: false,
     cover: false,
@@ -189,10 +189,6 @@ const Profile: React.FC<{
 
     router.replace('/profile');
   }, [router, searchParams, showToast, update]);
-
-  useEffect(() => {
-    setPersonaMenuOpen(false);
-  }, [personaMode]);
 
   useEffect(() => {
     const editSection = searchParams.get('edit');
@@ -456,47 +452,13 @@ const Profile: React.FC<{
             </div>
             <div className="relative mt-4">
               {canUseProfessionalMode ? (
-                <button
-                  type="button"
-                  onClick={() => setPersonaMenuOpen((current) => !current)}
-                  className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.16em] shadow-sm transition ${
-                    isProfessionalView
-                      ? 'border-blue-100 bg-blue-50/90 text-[#0F4C81]'
-                      : 'border-slate-200 bg-white/95 text-slate-600'
-                  }`}
-                >
-                  {isProfessionalView ? <BriefcaseBusiness size={14} /> : <UserRound size={14} />}
-                  {isProfessionalView ? 'Profissional' : 'Pessoal'}
-                  <ChevronDown size={14} className={`transition-transform ${personaMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
-              ) : null}
-              {canUseProfessionalMode && personaMenuOpen ? (
-                <div className="absolute left-1/2 top-[calc(100%+0.6rem)] z-20 w-[220px] -translate-x-1/2 rounded-[24px] border border-slate-200 bg-white p-1.5 text-left shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
-                  <PersonaMenuOption
-                    title="Pessoal"
-                    subtitle={`@${profile.username || 'defina-seu-nome'}`}
-                    active={!isProfessionalView}
-                    icon={<UserRound size={16} />}
-                    onClick={() => {
-                      onPersonaModeChange('personal');
-                      setPersonaMenuOpen(false);
-                    }}
-                  />
-                  <PersonaMenuOption
-                    title="Profissional"
-                    subtitle={professionalIdentity ? `@${professionalIdentity.slug}` : 'Cadastre um negocio'}
-                    active={isProfessionalView}
-                    disabled={!professionalIdentity}
-                    icon={<BriefcaseBusiness size={16} />}
-                    onClick={() => {
-                      if (!professionalIdentity) {
-                        return;
-                      }
-                      onPersonaModeChange('professional');
-                      setPersonaMenuOpen(false);
-                    }}
-                  />
-                </div>
+                <PersonaModeDropdown
+                  value={personaMode}
+                  onChange={onPersonaModeChange}
+                  personalSubtitle={`@${profile.username || 'defina-seu-nome'}`}
+                  professionalSubtitle={professionalIdentity ? `@${professionalIdentity.slug}` : 'Cadastre um negocio'}
+                  professionalDisabled={!professionalIdentity}
+                />
               ) : null}
             </div>
             <h1 className={`mt-4 text-3xl font-bold ${isProfessionalView ? 'text-[#0F4C81]' : 'text-slate-900'}`}>
@@ -675,37 +637,6 @@ const Section: React.FC<{ title: string; description: string; editing: boolean; 
     </div>
     <div className="mt-5">{children}</div>
   </section>
-);
-
-const PersonaMenuOption: React.FC<{
-  title: string;
-  subtitle: string;
-  icon: React.ReactNode;
-  active?: boolean;
-  disabled?: boolean;
-  onClick: () => void;
-}> = ({ title, subtitle, icon, active = false, disabled = false, onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={disabled}
-    className={`flex w-full items-center gap-3 rounded-[18px] px-3 py-2.5 text-left transition ${
-      active
-        ? 'bg-blue-50/80 text-[#0F4C81]'
-        : disabled
-          ? 'cursor-not-allowed text-slate-300'
-          : 'text-slate-700 hover:bg-slate-50'
-    }`}
-  >
-    <span className={`flex h-8 w-8 items-center justify-center rounded-full ${active ? 'bg-white text-[#0F4C81]' : disabled ? 'bg-slate-100 text-slate-300' : 'bg-slate-100 text-slate-500'}`}>{icon}</span>
-    <span className="min-w-0 flex-1">
-      <span className="block text-sm font-semibold leading-tight">{title}</span>
-      <span className="mt-0.5 block truncate text-[11px] font-medium text-slate-400">
-        {subtitle}
-      </span>
-    </span>
-    {active ? <span className="h-2 w-2 rounded-full bg-[#0F4C81]" /> : null}
-  </button>
 );
 
 const EditorCard: React.FC<{ children: React.ReactNode }> = ({ children }) => (

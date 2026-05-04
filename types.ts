@@ -53,6 +53,7 @@ export interface ProfessionalProfileIdentity {
   slug: string;
   imageUrl?: string | null;
   locationLabel?: string | null;
+  regionKey?: string | null;
   publicPath: string;
 }
 
@@ -117,6 +118,8 @@ export interface PublicUserProfile {
   friendFeature: {
     available: boolean;
     canRequest: boolean;
+    status?: 'signed_out' | 'self' | 'none' | 'pending_sent' | 'pending_received' | 'accepted';
+    requestId?: string | null;
   };
   stats: {
     friendCount: number;
@@ -124,6 +127,27 @@ export interface PublicUserProfile {
     eventCount: number;
     postCount: number;
   };
+  friends: Array<{
+    id: string;
+    name: string;
+    username?: string | null;
+    image?: string | null;
+    locationLabel?: string | null;
+    publicPath?: string | null;
+  }>;
+  groups: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    description?: string | null;
+    imageUrl?: string | null;
+    category?: string | null;
+    regionKey?: string | null;
+    regionLabel?: string | null;
+    role: string;
+    memberCount: number;
+    publicPath: string;
+  }>;
   businesses: Array<{
     id: string;
     slug: string;
@@ -176,6 +200,8 @@ export interface PostLikeUser {
 export interface Post {
   id: string;
   author: CommunityAuthor;
+  authorHref?: string;
+  authorType?: 'USER' | 'BUSINESS';
   content: string;
   createdAt: string;
   locationLabel: string;
@@ -221,6 +247,7 @@ export interface Business {
   viewerRating?: number | null;
   canRate?: boolean;
   canEdit?: boolean;
+  isPendingReview?: boolean;
   publicPath?: string;
 }
 
@@ -244,6 +271,7 @@ export interface EventItem {
   viewerRating?: number | null;
   canRate?: boolean;
   canEdit?: boolean;
+  isPendingReview?: boolean;
   publicPath?: string;
   city?: string;
   state?: string;

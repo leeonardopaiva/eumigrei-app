@@ -1,4 +1,4 @@
-import { EventStatus, VisibilityScope } from '@prisma/client';
+import { EventStatus, Prisma, UserRole, VisibilityScope } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -11,16 +11,36 @@ import { getVisibilityFilter } from '@/lib/visibility';
 export async function GET(request: Request) {
   const session = await getServerAuthSession();
   const { searchParams } = new URL(request.url);
-  const viewerRegionKey = session?.user?.regionKey ?? searchParams.get('region');
+  const viewerRegionKey = searchParams.get('region') ?? session?.user?.regionKey;
   const viewerId = session?.user?.id;
+  const isAdmin = session?.user?.role === UserRole.ADMIN;
   const recentCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  const baseWhere = {
-    status: EventStatus.PUBLISHED,
+  const baseWhere: Prisma.EventWhereInput = {
     startsAt: {
       gte: recentCutoff,
     },
-    ...getVisibilityFilter(viewerRegionKey),
+    OR: [
+      {
+        status: EventStatus.PUBLISHED,
+        ...getVisibilityFilter(viewerRegionKey),
+      },
+      ...(viewerId
+        ? [
+            {
+              status: EventStatus.PENDING_REVIEW,
+              createdById: viewerId,
+            },
+          ]
+        : []),
+      ...(isAdmin
+        ? [
+            {
+              status: EventStatus.PENDING_REVIEW,
+            },
+          ]
+        : []),
+    ],
   };
 
   const events = await prisma.event.findMany({
@@ -44,6 +64,7 @@ export async function GET(request: Request) {
       ratingCount: true,
       visibilityScope: true,
       status: true,
+      createdById: true,
       favorites: {
         where: { userId: viewerId || '__no-user__' },
         select: { id: true },
@@ -59,9 +80,11 @@ export async function GET(request: Request) {
       : 'global';
 
   return NextResponse.json({
-    events: events.map(({ favorites, visibilityScope, ...event }) => ({
+    events: events.map(({ createdById, favorites, visibilityScope, ...event }) => ({
       ...event,
       isFavorite: favorites.length > 0,
+      canEdit: isAdmin || createdById === viewerId,
+      isPendingReview: event.status === EventStatus.PENDING_REVIEW,
     })),
     scope,
   });

@@ -17,12 +17,15 @@ import {
   Users,
 } from 'lucide-react';
 import SuggestionButton from './feedback/SuggestionButton';
+import FriendRequestBell from './feedback/FriendRequestBell';
+import PersonaModeDropdown from './profile/PersonaModeDropdown';
 import { useToast } from './feedback/ToastProvider';
 import { trackAnalyticsEvent } from '../lib/analytics';
-import { PersonaMode, User, UserRole } from '../types';
+import { PersonaMode, ProfessionalProfileIdentity, User, UserRole } from '../types';
 
 const logoPrimaryUrl = '/assets/logo-emigrei.png';
 const logoFallbackUrl = '/assets/logo26.png';
+const defaultAvatarUrl = 'https://picsum.photos/seed/emigrei-user/200';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -65,6 +68,7 @@ interface LayoutWithUserProps {
   user: User;
   personaMode?: PersonaMode;
   canUseProfessionalMode?: boolean;
+  professionalIdentity?: ProfessionalProfileIdentity | null;
   onPersonaModeChange?: (mode: PersonaMode) => void;
   onSignOut?: () => void;
 }
@@ -79,23 +83,23 @@ type NavigationItem = {
 
 const navigationItems: NavigationItem[] = [
   { href: '/', label: 'Home', icon: <HomeIcon size={22} /> },
-  { href: '/negocios', label: 'Negocios', icon: <Store size={18} /> },
+  { href: '/negocios', label: 'Negócios', icon: <Store size={18} /> },
   { href: '/community', label: 'Comunidade', icon: <Users size={18} /> },
   { href: '/eventos', label: 'Eventos', icon: <Calendar size={18} /> },
-  { href: '/vagas', label: 'Vagas', icon: <Briefcase size={18} />, disabled: true, badge: 'Em breve' },
+  { href: '/vagas', label: 'Vagas', icon: <Briefcase size={18} />, disabled: true, badge: '' },
   {
     href: '/marketplace',
     label: 'Marketplace',
     icon: <ShoppingBag size={18} />,
     disabled: true,
-    badge: 'Em breve',
+    badge: '',
   },
   {
     href: '/noticias',
-    label: 'Noticias',
+    label: 'Notícias',
     icon: <Newspaper size={18} />,
     disabled: true,
-    badge: 'Em breve',
+    badge: '',
   },
   { href: '/profile', label: 'Meu perfil', icon: <UserIcon size={18} /> },
 ];
@@ -104,22 +108,43 @@ const SidebarContent: React.FC<{
   user: User;
   sourcePath: string;
   personaMode: PersonaMode;
+  canUseProfessionalMode: boolean;
+  professionalIdentity?: ProfessionalProfileIdentity | null;
   accentColorClass: string;
   isActive: (path: string) => boolean;
+  onPersonaModeChange?: (mode: PersonaMode) => void;
   onItemClick?: () => void;
   onSignOut?: () => void;
 }> = ({
   user,
   sourcePath,
   personaMode,
+  canUseProfessionalMode,
+  professionalIdentity,
   accentColorClass,
   isActive,
+  onPersonaModeChange,
   onItemClick,
   onSignOut,
 }) => {
   const { showToast } = useToast();
   const isProfessionalTheme = personaMode === 'professional';
-  const publicProfileHref = user.username ? `/perfil/${encodeURIComponent(user.username)}` : '/profile';
+  const activeName =
+    isProfessionalTheme && professionalIdentity ? professionalIdentity.name : user.name;
+  const activeAvatar =
+    isProfessionalTheme && professionalIdentity?.imageUrl ? professionalIdentity.imageUrl : user.avatar;
+  const activeSubtitle =
+    isProfessionalTheme && professionalIdentity
+      ? 'Perfil profissional'
+      : user.username
+        ? `@${user.username}`
+        : 'Membro da comunidade';
+  const publicProfileHref =
+    isProfessionalTheme && professionalIdentity
+      ? professionalIdentity.publicPath
+      : user.username
+        ? `/perfil/${encodeURIComponent(user.username)}`
+        : '/profile';
 
   const handleDisabledNavigation = (item: NavigationItem) => {
     onItemClick?.();
@@ -143,28 +168,39 @@ const SidebarContent: React.FC<{
           <div className="flex items-center gap-3">
             <Link href={publicProfileHref} onClick={onItemClick} className="relative transition hover:opacity-90">
               <img
-                src={user.avatar}
+                src={activeAvatar}
                 className="h-14 w-14 rounded-full border-2 border-white object-cover shadow-md"
-                alt="User"
+                alt={activeName}
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = defaultAvatarUrl;
+                }}
               />
             </Link>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className={`text-xl font-bold ${accentColorClass}`}>{user.name}</h2>
-                {isProfessionalTheme ? (
-                  <span className="theme-bg rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em]">
-                    Profissional
-                  </span>
+              <div className="flex items-center gap-1">
+                <h2 className={`text-xl font-bold ${accentColorClass}`}>{activeName}</h2>
+                {canUseProfessionalMode && onPersonaModeChange ? (
+                  <PersonaModeDropdown
+                    value={personaMode}
+                    onChange={onPersonaModeChange}
+                    personalSubtitle={user.username ? `@${user.username}` : 'Membro da comunidade'}
+                    professionalSubtitle={professionalIdentity?.name || 'Cadastre um negocio'}
+                    professionalDisabled={!professionalIdentity}
+                    align="right"
+                    trigger="chevron"
+                    menuClassName="z-30"
+                  />
                 ) : null}
               </div>
               <p className={`text-[10px] font-medium uppercase tracking-wider ${isProfessionalTheme ? 'theme-text-soft' : 'text-slate-500'}`}>
-                {user.username ? `@${user.username}` : 'Membro da comunidade'}
+                {activeSubtitle}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="divide-y divide-slate-100 rounded-3xl border border-white/50 bg-white/70 p-2 shadow-sm backdrop-blur-md">
+        <div className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white/80 p-1.5 shadow-sm backdrop-blur-md">
           {navigationItems.map((item) => (
             <MenuListItem
               key={item.href}
@@ -197,7 +233,7 @@ const SidebarContent: React.FC<{
             onItemClick?.();
             onSignOut();
           }}
-          className="theme-bg theme-shadow w-full rounded-2xl px-4 py-3 text-sm font-bold shadow-lg"
+          className="theme-bg theme-shadow w-full rounded-xl px-4 py-3 text-sm font-bold"
         >
           Sair
         </button>
@@ -209,7 +245,7 @@ const SidebarContent: React.FC<{
           onItemClick?.();
           window.dispatchEvent(new CustomEvent('emigrei:open-suggestion-modal'));
         }}
-        className="theme-soft-surface mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-bold shadow-sm"
+        className="theme-soft-surface mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold shadow-sm"
       >
         <MessageSquarePlus size={16} />
         Enviar sugestao
@@ -223,6 +259,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
   user,
   personaMode = 'personal',
   canUseProfessionalMode = false,
+  professionalIdentity,
   onPersonaModeChange,
   onSignOut,
 }) => {
@@ -231,7 +268,20 @@ const Layout: React.FC<LayoutWithUserProps> = ({
   const isProfessionalTheme = canUseProfessionalMode && personaMode === 'professional';
   const accentColorClass = 'theme-text';
   const accentSolidClass = 'theme-bg';
-  const publicProfileHref = user.username ? `/perfil/${encodeURIComponent(user.username)}` : '/profile';
+  const activeName =
+    isProfessionalTheme && professionalIdentity ? professionalIdentity.name : user.name;
+  const activeAvatar =
+    isProfessionalTheme && professionalIdentity?.imageUrl ? professionalIdentity.imageUrl : user.avatar;
+  const activeLocation =
+    isProfessionalTheme && professionalIdentity?.locationLabel
+      ? professionalIdentity.locationLabel
+      : user.location;
+  const publicProfileHref =
+    isProfessionalTheme && professionalIdentity
+      ? professionalIdentity.publicPath
+      : user.username
+        ? `/perfil/${encodeURIComponent(user.username)}`
+        : '/profile';
   const panelClass = isProfessionalTheme
     ? 'border-blue-100/80 bg-blue-50/80'
     : 'border-white/50 bg-white/85';
@@ -243,7 +293,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
 
   return (
     <div className="app-shell min-h-screen bg-texture" data-persona={isProfessionalTheme ? 'professional' : 'personal'}>
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-texture font-sans shadow-2xl lg:max-w-none lg:bg-transparent lg:shadow-none">
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-texture font-sans shadow-xl lg:max-w-none lg:bg-transparent lg:shadow-none">
         {isMenuOpen ? (
           <div
             className="fixed inset-0 z-50 animate-in bg-black/40 backdrop-blur-sm fade-in duration-300"
@@ -252,7 +302,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
         ) : null}
 
         <div
-          className={`fixed inset-y-0 left-0 z-[60] w-[85%] max-w-[380px] overflow-y-auto border-r border-white/50 bg-white/85 shadow-2xl backdrop-blur-xl transition-transform duration-300 ease-out ${
+          className={`fixed inset-y-0 left-0 z-[60] w-[85%] max-w-[380px] overflow-y-auto border-r border-slate-200 bg-white/90 shadow-xl backdrop-blur-xl transition-transform duration-300 ease-out ${
             isMenuOpen ? 'translate-x-0' : '-translate-x-full'
           } ${panelClass}`}
         >
@@ -260,8 +310,11 @@ const Layout: React.FC<LayoutWithUserProps> = ({
             user={user}
             sourcePath={pathname}
             personaMode={personaMode}
+            canUseProfessionalMode={canUseProfessionalMode}
+            professionalIdentity={professionalIdentity}
             accentColorClass={accentColorClass}
             isActive={isActive}
+            onPersonaModeChange={onPersonaModeChange}
             onItemClick={handleMenuItemClick}
             onSignOut={onSignOut}
           />
@@ -280,23 +333,32 @@ const Layout: React.FC<LayoutWithUserProps> = ({
               <Logo size="sm" professional={isProfessionalTheme} />
             </div>
 
-            <div className="hidden items-center gap-3 rounded-full border border-slate-200/80 px-3 py-2 shadow-sm lg:flex">
-              <Link href={publicProfileHref} className="transition hover:opacity-90">
-                <img
-                  src={user.avatar}
-                  className="h-10 w-10 rounded-full object-cover"
-                  alt={user.name}
-                />
-              </Link>
-              <div className="text-right">
-                <p className="text-sm font-bold text-slate-800">{user.name}</p>
-                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">
-                  {user.location}
-                </p>
+            <div className="hidden items-center gap-3 lg:flex">
+              <FriendRequestBell />
+              <div className="flex items-center gap-3 rounded-2xl border border-slate-200 px-3 py-2 shadow-sm">
+                <Link href={publicProfileHref} className="transition hover:opacity-90">
+                  <img
+                    src={activeAvatar}
+                    className="h-10 w-10 rounded-full object-cover"
+                    alt={activeName}
+                    onError={(event) => {
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = defaultAvatarUrl;
+                    }}
+                  />
+                </Link>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-slate-800">{activeName}</p>
+                  <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">
+                    {activeLocation}
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div className="h-7 w-7 lg:hidden" />
+            <div className="lg:hidden">
+              <FriendRequestBell />
+            </div>
           </header>
 
           <main className="scrollbar-hide flex-1 overflow-y-auto">
@@ -306,7 +368,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
           <SuggestionButton />
 
           <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-6 lg:hidden">
-            <nav className={`flex w-full max-w-[360px] items-center justify-between rounded-full border border-white/10 px-2 py-2 shadow-2xl ${accentSolidClass}`}>
+            <nav className={`flex w-full max-w-[360px] items-center justify-between rounded-full border border-white/10 px-2 py-2 shadow-xl ${accentSolidClass}`}>
               <NavItem href="/" icon={<HomeIcon size={20} />} active={isActive('/')} accentColorClass={accentColorClass} />
               <NavItem href="/negocios" icon={<Store size={20} />} active={isActive('/negocios')} accentColorClass={accentColorClass} />
               <NavItem href="/community" icon={<Users size={20} />} active={isActive('/community')} accentColorClass={accentColorClass} />
@@ -330,7 +392,7 @@ const MenuListItem: React.FC<{
   onClick?: () => void;
   onDisabledClick?: () => void;
 }> = ({ href, label, icon, active = false, disabled = false, badge, onClick, onDisabledClick }) => {
-  const classes = `flex items-center gap-3 px-4 py-3.5 transition-colors first:rounded-t-2xl last:rounded-b-2xl ${
+  const classes = `flex items-center gap-3 px-4 py-3 transition-colors first:rounded-t-xl last:rounded-b-xl ${
     disabled
       ? 'cursor-pointer opacity-60 hover:bg-white/30'
       : `hover:bg-white/50 ${active ? 'bg-white/40' : ''}`
@@ -375,8 +437,8 @@ const NavItem: React.FC<{ href: string; icon: React.ReactNode; active: boolean; 
     href={href}
     className={`flex items-center justify-center transition-all duration-300 ${
       active
-        ? `h-12 w-12 scale-105 rounded-full bg-white ${accentColorClass} shadow-lg`
-        : 'h-11 w-11 text-white/70 hover:text-white'
+        ? `h-11 w-11 scale-105 rounded-full bg-white ${accentColorClass} shadow-sm`
+        : 'h-10 w-10 text-white/70 hover:text-white'
     }`}
   >
     {icon}
@@ -384,5 +446,3 @@ const NavItem: React.FC<{ href: string; icon: React.ReactNode; active: boolean; 
 );
 
 export default Layout;
-
-

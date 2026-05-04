@@ -13,22 +13,46 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get('category');
   const search = searchParams.get('search');
-  const viewerRegionKey = session?.user?.regionKey ?? searchParams.get('region');
+  const viewerRegionKey = searchParams.get('region') ?? session?.user?.regionKey;
   const viewerId = session?.user?.id;
+  const isAdmin = session?.user?.role === UserRole.ADMIN;
 
   const baseWhere: Prisma.BusinessWhereInput = {
-    status: BusinessStatus.PUBLISHED,
-    ...(category ? { category } : {}),
-    ...(search
-      ? {
-          OR: [
-            { name: { contains: search, mode: Prisma.QueryMode.insensitive } },
-            { category: { contains: search, mode: Prisma.QueryMode.insensitive } },
-            { address: { contains: search, mode: Prisma.QueryMode.insensitive } },
-          ],
-        }
-      : {}),
-    ...getVisibilityFilter(viewerRegionKey),
+    AND: [
+      category ? { category } : {},
+      search
+        ? {
+            OR: [
+              { name: { contains: search, mode: Prisma.QueryMode.insensitive } },
+              { category: { contains: search, mode: Prisma.QueryMode.insensitive } },
+              { address: { contains: search, mode: Prisma.QueryMode.insensitive } },
+            ],
+          }
+        : {},
+      {
+        OR: [
+          {
+            status: BusinessStatus.PUBLISHED,
+            ...getVisibilityFilter(viewerRegionKey),
+          },
+          ...(viewerId
+            ? [
+                {
+                  status: BusinessStatus.PENDING_REVIEW,
+                  createdById: viewerId,
+                },
+              ]
+            : []),
+          ...(isAdmin
+            ? [
+                {
+                  status: BusinessStatus.PENDING_REVIEW,
+                },
+              ]
+            : []),
+        ],
+      },
+    ],
   };
 
   const businesses = await prisma.business.findMany({
@@ -47,6 +71,12 @@ export async function GET(request: Request) {
       ratingCount: true,
       visibilityScope: true,
       status: true,
+      createdById: true,
+      members: {
+        where: { userId: viewerId || '__no-user__' },
+        select: { id: true },
+        take: 1,
+      },
       favorites: {
         where: { userId: viewerId || '__no-user__' },
         select: { id: true },
@@ -62,9 +92,11 @@ export async function GET(request: Request) {
       : 'global';
 
   return NextResponse.json({
-    businesses: businesses.map(({ favorites, visibilityScope, ...business }) => ({
+    businesses: businesses.map(({ createdById, favorites, members, visibilityScope, ...business }) => ({
       ...business,
       isFavorite: favorites.length > 0,
+      canEdit: isAdmin || createdById === viewerId || members.length > 0,
+      isPendingReview: business.status === BusinessStatus.PENDING_REVIEW,
     })),
     scope,
   });

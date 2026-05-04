@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
-  MapPin,
   Search,
   ChevronDown,
   ExternalLink,
@@ -197,7 +196,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
   };
 
   return (
-    <div className="animate-in space-y-6 px-6 fade-in slide-in-from-bottom-4 duration-500">
+    <div className="animate-in space-y-5 px-5 fade-in slide-in-from-bottom-4 duration-500">
       <div className="mt-4">
         <p className="text-lg font-medium text-slate-500">Ola, {user.name}!</p>
         <button
@@ -205,12 +204,9 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
           onClick={() => {
             setEditingRegion((current) => !current);
           }}
-          className="mt-1 inline-flex items-center gap-2 rounded-2xl border border-transparent text-left text-2xl font-bold text-[#333] transition hover:border-slate-200 hover:bg-white/70 hover:px-2 hover:py-1"
+          className="mt-1 inline-flex items-center gap-1.5 text-left text-2xl font-bold text-[#333] transition hover:text-[#28B8C7]"
         >
           <span>{user.location}</span>
-          <div className="rounded-full bg-white p-1 shadow-sm">
-            <MapPin size={18} className="text-[#28A745]" />
-          </div>
           <ChevronDown
             size={18}
             className={`text-slate-400 transition-transform ${editingRegion ? 'rotate-180' : ''}`}
@@ -218,7 +214,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
         </button>
 
         {editingRegion ? (
-          <div className="mt-4 rounded-[28px] border border-slate-100 bg-white/95 p-4 shadow-sm backdrop-blur">
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <RegionSelector
               value={selectedRegionKey}
               onChange={(region) => {
@@ -233,7 +229,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
                 type="button"
                 onClick={handleRegionSave}
                 disabled={savingRegion}
-                className="theme-bg theme-shadow flex-1 rounded-2xl px-4 py-3 text-sm font-bold disabled:opacity-60"
+                className="theme-bg theme-shadow flex-1 rounded-xl px-4 py-3 text-sm font-bold disabled:opacity-60"
               >
                 {savingRegion ? 'Salvando...' : 'Salvar regiao'}
               </button>
@@ -244,7 +240,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
                   setSelectedRegionKey(user.regionKey || '');
                 }}
                 disabled={savingRegion}
-                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-600 disabled:opacity-60"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 disabled:opacity-60"
               >
                 Cancelar
               </button>
@@ -267,7 +263,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
         className="relative overflow-hidden rounded-full border border-slate-200 bg-white shadow-sm transition-all theme-outline-ring"
       >
         {!searchQuery ? (
-          <div className="pointer-events-none absolute inset-y-0 left-14 right-6 flex items-center text-sm text-slate-400">
+          <div className="pointer-events-none absolute inset-y-0 left-12 right-5 flex items-center text-sm text-slate-400">
             <span>Busque por&nbsp;</span>
             <span
               key={animatedSearchTerms[searchPlaceholderIndex]}
@@ -282,9 +278,9 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           placeholder=""
-          className="w-full bg-transparent py-5 pl-14 pr-6 text-sm text-slate-700 outline-none"
+          className="w-full bg-transparent py-4 pl-12 pr-5 text-sm text-slate-700 outline-none"
         />
-        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={22} />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
       </form>
 
       <div className="grid grid-cols-3 gap-3">
@@ -306,17 +302,17 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
           onDisabledClick={() => handleDisabledFeatureClick('marketplace', 'Marketplace')}
         />
         <ServiceCard
-          href="/noticias"
+          href="/modaria"
           icon={Newspaper}
-          label="Noticias"
+          label="Moradia"
           disabled
-          onDisabledClick={() => handleDisabledFeatureClick('noticias', 'Noticias')}
+          onDisabledClick={() => handleDisabledFeatureClick('moradia', 'Moradia')}
         />
       </div>
 
       {banners.length > 0 ? (
         <div className="space-y-3">
-          <div className="overflow-hidden rounded-[40px]">
+          <div className="overflow-hidden rounded-2xl">
             <div
               className="flex transition-transform duration-700 ease-out"
               style={{ transform: `translateX(-${activeBannerIndex * 100}%)` }}
@@ -324,7 +320,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
               {banners.map((banner) => (
                 <div
                   key={banner.id}
-                  className="group relative h-[240px] w-full flex-none overflow-hidden rounded-[40px] shadow-lg"
+                  className="group relative h-[240px] w-full flex-none overflow-hidden rounded-2xl shadow-sm"
                 >
                   <img
                     src={banner.imageUrl}
@@ -345,7 +341,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
                       type="button"
                       onClick={() => void handleBannerRegistration(banner)}
                       disabled={submittingBannerId === banner.id}
-                      className="absolute bottom-8 left-8 inline-flex min-h-14 items-center gap-3 rounded-full bg-[#FF8C00] px-5 text-sm font-bold text-white shadow-2xl transition-colors hover:bg-[#E07B00] disabled:opacity-70"
+                      className="absolute bottom-8 left-8 inline-flex min-h-12 items-center gap-3 rounded-xl bg-[#FF8C00] px-5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#E07B00] disabled:opacity-70"
                     >
                       <UserPlus size={20} strokeWidth={2.8} />
                       {submittingBannerId === banner.id ? 'Registrando...' : 'Tenho interesse'}
@@ -354,7 +350,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
                     <button
                       type="button"
                       onClick={() => handleBannerLinkClick(banner)}
-                      className="absolute bottom-8 left-8 flex h-14 w-14 items-center justify-center rounded-full bg-[#FF8C00] text-white shadow-2xl transition-colors hover:bg-[#E07B00]"
+                      className="absolute bottom-8 left-8 flex h-12 w-12 items-center justify-center rounded-xl bg-[#FF8C00] text-white shadow-sm transition-colors hover:bg-[#E07B00]"
                       aria-label={`Abrir ${banner.name}`}
                     >
                       <ExternalLink size={22} strokeWidth={3} />
@@ -400,20 +396,20 @@ const ServiceCard: React.FC<{
   disabled = false,
   onDisabledClick,
 }) => {
-  const classes = `flex flex-col items-center justify-center gap-3 rounded-3xl border p-5 shadow-sm transition-all ${
+  const classes = `flex flex-col items-center justify-center gap-2 rounded-2xl border p-4 shadow-sm transition-all ${
     disabled
-      ? 'cursor-pointer border-slate-200 bg-slate-50/90 opacity-70'
-      : 'border-slate-50 bg-white hover:shadow-md active:scale-95'
+      ? 'cursor-pointer border-slate-200 bg-white opacity-60'
+      : 'border-slate-200 bg-white hover:border-slate-300 active:scale-95'
   }`;
 
   const content = (
     <>
       <div
-        className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
-          disabled ? 'bg-slate-200 text-slate-500' : 'theme-icon-surface'
+        className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+          disabled ? 'bg-slate-100 text-slate-400' : 'theme-icon-surface'
         }`}
       >
-        <Icon size={24} strokeWidth={2.2} />
+        <Icon size={21} strokeWidth={2.2} />
       </div>
       <div className="space-y-1 text-center">
         <span className={`block text-[11px] font-bold leading-tight ${disabled ? 'text-slate-500' : 'text-[#333]'}`}>
@@ -421,7 +417,7 @@ const ServiceCard: React.FC<{
         </span>
         {disabled ? (
           <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">
-            Em breve
+            {/* Em breve */}
           </span>
         ) : null}
       </div>

@@ -14,12 +14,12 @@ const categoryOptions: Array<{
   {
     value: 'FUNCTIONALITY',
     label: 'Funcionalidade',
-    description: 'Nova ideia ou recurso que ainda nao existe.',
+    description: 'Nova ideia ou recurso que ainda não existe.',
   },
   {
     value: 'IMPROVEMENT',
     label: 'Melhoria',
-    description: 'Ajuste em algo que ja existe na plataforma.',
+    description: 'Ajuste em algo que já existe na plataforma.',
   },
 ];
 
@@ -57,7 +57,7 @@ const SuggestionButton: React.FC = () => {
 
   const submitSuggestion = async () => {
     if (message.trim().length < 8) {
-      showToast('Descreva melhor a sua sugestao antes de enviar.', 'error');
+      showToast('Descreva melhor a sua sugestão antes de enviar.', 'error');
       return;
     }
 
@@ -78,15 +78,15 @@ const SuggestionButton: React.FC = () => {
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
-        showToast(payload?.error ?? 'Nao foi possivel enviar sua sugestao.', 'error');
+        showToast(payload?.error ?? 'Nao foi possível enviar sua sugestão.', 'error');
         return;
       }
 
-      showToast('Sugestao enviada. Obrigado por ajudar a evoluir a plataforma.', 'success');
+      showToast('Sugestão enviada. Obrigado por ajudar a evoluir a plataforma.', 'success');
       closeModal();
     } catch (error) {
       console.error('Failed to submit suggestion:', error);
-      showToast('Nao foi possivel enviar sua sugestao.', 'error');
+      showToast('Não foi possível enviar sua sugestão.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -94,16 +94,16 @@ const SuggestionButton: React.FC = () => {
 
   return (
     <>
-      <button
+{/*       <button
         type="button"
         onClick={() => setOpen(true)}
         className="theme-bg theme-bg-hover theme-shadow fixed bottom-28 right-5 z-[70] inline-flex h-14 w-14 items-center justify-center rounded-full transition lg:bottom-8 lg:right-8 lg:h-auto lg:w-auto lg:gap-2 lg:px-4 lg:py-3"
-        aria-label="Enviar sugestao"
+        aria-label="Enviar sugestão"
       >
         <MessageSquarePlus size={18} />
-        <span className="hidden lg:inline">Sugestao</span>
+        <span className="hidden lg:inline">Sugestão</span>
       </button>
-
+ */}
       {open ? (
         <div className="fixed inset-0 z-[150] flex items-end justify-center bg-black/35 p-4 backdrop-blur-sm lg:items-center">
           <div className="w-full max-w-lg rounded-[32px] bg-white p-5 shadow-2xl">
@@ -111,18 +111,18 @@ const SuggestionButton: React.FC = () => {
               <div>
                 <div className="theme-soft-surface inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em]">
                   <Lightbulb size={14} />
-                  Sugestao
+                  Sugestão
                 </div>
-                <h2 className="mt-3 text-xl font-bold text-slate-900">Conte para nos o que melhorar</h2>
+                <h2 className="mt-3 text-xl font-bold text-slate-900">Envie suas sugestões</h2>
                 <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                  Escolha o tipo da sugestao e descreva o que faria diferenca para voce.
+                  Escolha o tipo de sugestão e descreva o que faria diferença para você na comunidade.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={closeModal}
                 className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-                aria-label="Fechar sugestao"
+                aria-label="Fechar sugestão"
               >
                 <X size={18} />
               </button>
@@ -175,7 +175,7 @@ const SuggestionButton: React.FC = () => {
                 disabled={submitting}
                 className="theme-bg theme-shadow flex-1 rounded-2xl px-4 py-3 text-sm font-bold disabled:opacity-60"
               >
-                {submitting ? 'Enviando...' : 'Enviar sugestao'}
+                {submitting ? 'Enviando...' : 'Enviar sugestão'}
               </button>
             </div>
           </div>

@@ -17,8 +17,9 @@ import BusinessDetail from './views/BusinessDetail';
 import EventDetail from './views/EventDetail';
 import PublicProfile from './views/PublicProfile';
 import PublicProfessionalProfile from './views/PublicProfessionalProfile';
+import PublicGroup from './views/PublicGroup';
 import Registration from './views/Registration';
-import { UserRole, type PersonaMode, type User } from './types';
+import { UserRole, type PersonaMode, type ProfessionalProfileIdentity, type User } from './types';
 
 const GOOGLE_AUTH_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED !== 'false';
 const EMAIL_AUTH_ENABLED = false;
@@ -39,6 +40,7 @@ const RESERVED_PUBLIC_ROUTES = new Set([
   'profissional',
   'vagas',
   'convite',
+  'grupos',
 ]);
 
 const mapUserRole = (role?: string | null): UserRole => {
@@ -102,6 +104,8 @@ const App: React.FC = () => {
   const [savingProfile, setSavingProfile] = useState(false);
   const [authSubmitting, setAuthSubmitting] = useState(false);
   const [personaMode, setPersonaMode] = useState<PersonaMode>('personal');
+  const [professionalIdentity, setProfessionalIdentity] = useState<ProfessionalProfileIdentity | null>(null);
+  const [professionalProfileLoaded, setProfessionalProfileLoaded] = useState(false);
   const segments = pathname.split('/').filter(Boolean);
   const rootSegment = segments[0];
   const referralUsername =
@@ -114,8 +118,10 @@ const App: React.FC = () => {
         : null;
   const professionalProfileUsername =
     rootSegment === 'profissional' && segments.length >= 2 ? decodeURIComponent(segments[1]) : null;
+  const groupSlug =
+    rootSegment === 'grupos' && segments.length >= 2 ? decodeURIComponent(segments[1]) : null;
   const sessionRole = mapUserRole(session?.user?.role);
-  const canUseProfessionalMode = sessionRole === UserRole.BUSINESS_OWNER;
+  const canUseProfessionalMode = sessionRole === UserRole.BUSINESS_OWNER || sessionRole === UserRole.ADMIN;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -144,6 +150,59 @@ const App: React.FC = () => {
 
     window.localStorage.setItem(PERSONA_MODE_STORAGE_KEY, personaMode);
   }, [canUseProfessionalMode, personaMode, session?.user?.id]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadProfessionalIdentity = async () => {
+      setProfessionalProfileLoaded(false);
+      setProfessionalIdentity(null);
+
+      if (!session?.user?.id || !canUseProfessionalMode) {
+        setProfessionalProfileLoaded(true);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/profile', { cache: 'no-store' });
+        const payload = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(payload?.error ?? 'Nao foi possivel carregar o perfil profissional.');
+        }
+
+        if (!ignore) {
+          setProfessionalIdentity(payload?.professionalProfile?.identity ?? null);
+        }
+      } catch (error) {
+        console.error('Failed to load professional identity:', error);
+
+        if (!ignore) {
+          setProfessionalIdentity(null);
+        }
+      } finally {
+        if (!ignore) {
+          setProfessionalProfileLoaded(true);
+        }
+      }
+    };
+
+    void loadProfessionalIdentity();
+
+    return () => {
+      ignore = true;
+    };
+  }, [canUseProfessionalMode, session?.user?.id, session?.user?.role]);
+
+  useEffect(() => {
+    if (
+      professionalProfileLoaded &&
+      personaMode === 'professional' &&
+      !professionalIdentity
+    ) {
+      setPersonaMode('personal');
+    }
+  }, [personaMode, professionalIdentity, professionalProfileLoaded]);
 
   const resolveDevMagicLink = async (email: string) => {
     if (!DEV_AUTH_ENABLED) {
@@ -360,6 +419,10 @@ const App: React.FC = () => {
     return <PublicProfessionalProfile username={professionalProfileUsername} />;
   }
 
+  if (groupSlug && !session?.user) {
+    return <PublicGroup slug={groupSlug} />;
+  }
+
   if (publicProfileUsername && !session?.user) {
     return <PublicProfile username={publicProfileUsername} />;
   }
@@ -408,13 +471,32 @@ const App: React.FC = () => {
   }
 
   const currentUser = buildCurrentUser(session.user);
+  const effectiveCanUseProfessionalMode = canUseProfessionalMode && Boolean(professionalIdentity);
+  const effectivePersonaMode: PersonaMode =
+    effectiveCanUseProfessionalMode && personaMode === 'professional' ? 'professional' : 'personal';
+
+  if (groupSlug) {
+    return (
+      <Layout
+        user={currentUser}
+        personaMode={effectivePersonaMode}
+        canUseProfessionalMode={canUseProfessionalMode}
+        professionalIdentity={professionalIdentity}
+        onPersonaModeChange={setPersonaMode}
+        onSignOut={() => signOut({ callbackUrl: '/' })}
+      >
+        <PublicGroup slug={groupSlug} viewer={currentUser} embedded />
+      </Layout>
+    );
+  }
 
   if (professionalProfileUsername) {
     return (
       <Layout
         user={currentUser}
-        personaMode={personaMode}
+        personaMode={effectivePersonaMode}
         canUseProfessionalMode={canUseProfessionalMode}
+        professionalIdentity={professionalIdentity}
         onPersonaModeChange={setPersonaMode}
         onSignOut={() => signOut({ callbackUrl: '/' })}
       >
@@ -427,8 +509,9 @@ const App: React.FC = () => {
     return (
       <Layout
         user={currentUser}
-        personaMode={personaMode}
+        personaMode={effectivePersonaMode}
         canUseProfessionalMode={canUseProfessionalMode}
+        professionalIdentity={professionalIdentity}
         onPersonaModeChange={setPersonaMode}
         onSignOut={() => signOut({ callbackUrl: '/' })}
       >
@@ -443,7 +526,7 @@ const App: React.FC = () => {
     }
 
     if (rootSegment === 'negocios' && segments.length === 1) {
-      return <BusinessList />;
+      return <BusinessList personaMode={effectivePersonaMode} professionalIdentity={professionalIdentity} />;
     }
 
     if (rootSegment === 'negocios' && segments.length === 2) {
@@ -462,12 +545,18 @@ const App: React.FC = () => {
           <AdminAccessDenied />
         );
       case 'community':
-        return <Community user={currentUser} />;
+        return (
+          <Community
+            user={currentUser}
+            personaMode={effectivePersonaMode}
+            professionalIdentity={professionalIdentity}
+          />
+        );
       case 'buscar':
         return <SearchResults />;
       case 'marketplace':
       case 'eventos':
-        return <Marketplace />;
+        return <Marketplace personaMode={effectivePersonaMode} professionalIdentity={professionalIdentity} />;
       case 'profile':
         return (
           <Profile
@@ -485,8 +574,9 @@ const App: React.FC = () => {
   return (
     <Layout
       user={currentUser}
-      personaMode={personaMode}
+      personaMode={effectivePersonaMode}
       canUseProfessionalMode={canUseProfessionalMode}
+      professionalIdentity={professionalIdentity}
       onPersonaModeChange={setPersonaMode}
       onSignOut={() => signOut({ callbackUrl: '/' })}
     >
