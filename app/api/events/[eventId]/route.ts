@@ -1,4 +1,4 @@
-import { EventStatus } from '@prisma/client';
+import { EventStatus, Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -61,6 +61,20 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: 'Evento nao encontrado.' }, { status: 404 });
   }
 
+  const isBusinessMember = session?.user?.id
+    ? (
+        await prisma.$queryRaw<Array<{ id: string }>>(
+          Prisma.sql`
+            SELECT bm."id"
+            FROM "public"."Event" e
+            INNER JOIN "public"."BusinessMember" bm ON bm."businessId" = e."businessId"
+            WHERE e."id" = ${event.id}
+              AND bm."userId" = ${session.user.id}
+            LIMIT 1
+          `,
+        )
+      ).length > 0
+    : false;
   const canView =
     (event.status === EventStatus.PUBLISHED &&
       isVisibleForRegion(
@@ -70,18 +84,22 @@ export async function GET(_request: Request, context: RouteContext) {
           visibilityRegionKey: event.visibilityRegionKey,
         },
         session?.user?.regionKey,
-      )) ||
+    )) ||
     session?.user?.role === 'ADMIN' ||
-    session?.user?.id === event.createdById;
+    session?.user?.id === event.createdById ||
+    isBusinessMember;
 
   if (!canView) {
     return NextResponse.json({ error: 'Evento nao disponivel.' }, { status: 404 });
   }
 
   const region = await findRegionByKey(event.regionKey);
-  const canEdit = session?.user?.role === 'ADMIN' || session?.user?.id === event.createdById;
+  const canEdit = session?.user?.role === 'ADMIN' || session?.user?.id === event.createdById || isBusinessMember;
   const canRate =
-    Boolean(session?.user?.id) && session?.user?.role !== 'ADMIN' && session?.user?.id !== event.createdById;
+    Boolean(session?.user?.id) &&
+    session?.user?.role !== 'ADMIN' &&
+    session?.user?.id !== event.createdById &&
+    !isBusinessMember;
 
   return NextResponse.json({
     event: {
@@ -132,7 +150,21 @@ export async function PUT(request: Request, context: RouteContext) {
     return NextResponse.json({ error: 'Evento nao encontrado.' }, { status: 404 });
   }
 
-  const canEdit = session.user.role === 'ADMIN' || session.user.id === existingEvent.createdById;
+  const canEdit =
+    session.user.role === 'ADMIN' ||
+    session.user.id === existingEvent.createdById ||
+    (
+      await prisma.$queryRaw<Array<{ id: string }>>(
+        Prisma.sql`
+          SELECT bm."id"
+          FROM "public"."Event" e
+          INNER JOIN "public"."BusinessMember" bm ON bm."businessId" = e."businessId"
+          WHERE e."id" = ${existingEvent.id}
+            AND bm."userId" = ${session.user.id}
+          LIMIT 1
+        `,
+      )
+    ).length > 0;
 
   if (!canEdit) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

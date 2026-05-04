@@ -218,6 +218,7 @@ export const eventSchema = z.object({
   startsAt: z.string().datetime(),
   endsAt: z.string().datetime().optional(),
   regionKey: z.string().trim().min(2, 'Selecione uma regiao valida'),
+  businessId: z.string().trim().min(1).optional(),
   externalUrl: optionalUrl,
   imageUrl: optionalUrl,
   galleryUrls: optionalUrlArray,

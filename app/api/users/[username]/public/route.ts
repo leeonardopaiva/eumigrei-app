@@ -1,8 +1,7 @@
-import { BusinessStatus, CommunityPostStatus, EventStatus, FriendRequestStatus } from '@prisma/client';
+import { CommunityPostStatus, FriendRequestStatus } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getVisibilityFilter } from '@/lib/visibility';
 
 type RouteContext = {
   params: Promise<{
@@ -38,18 +37,6 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: 'Perfil publico nao encontrado.' }, { status: 404 });
   }
 
-  const businessVisibilityWhere = {
-    createdById: user.id,
-    status: BusinessStatus.PUBLISHED,
-    ...getVisibilityFilter(session?.user?.regionKey),
-  };
-
-  const eventVisibilityWhere = {
-    createdById: user.id,
-    status: EventStatus.PUBLISHED,
-    ...getVisibilityFilter(session?.user?.regionKey),
-  };
-
   const postVisibilityWhere = session?.user?.regionKey
     ? {
         authorId: user.id,
@@ -60,48 +47,13 @@ export async function GET(_request: Request, context: RouteContext) {
     : null;
 
   const [
-    businesses,
-    events,
     posts,
     friends,
     groups,
     friendship,
     friendCount,
-    businessCount,
-    eventCount,
     postCount,
   ] = await Promise.all([
-    prisma.business.findMany({
-      where: businessVisibilityWhere,
-      orderBy: [{ createdAt: 'desc' }],
-      take: 6,
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        category: true,
-        imageUrl: true,
-        locationLabel: true,
-        ratingAverage: true,
-        ratingCount: true,
-      },
-    }),
-    prisma.event.findMany({
-      where: eventVisibilityWhere,
-      orderBy: [{ startsAt: 'asc' }],
-      take: 6,
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        venueName: true,
-        startsAt: true,
-        imageUrl: true,
-        locationLabel: true,
-        ratingAverage: true,
-        ratingCount: true,
-      },
-    }),
     postVisibilityWhere
       ? prisma.communityPost.findMany({
           where: postVisibilityWhere,
@@ -211,12 +163,6 @@ export async function GET(_request: Request, context: RouteContext) {
         OR: [{ requesterId: user.id }, { recipientId: user.id }],
       },
     }),
-    prisma.business.count({
-      where: businessVisibilityWhere,
-    }),
-    prisma.event.count({
-      where: eventVisibilityWhere,
-    }),
     postVisibilityWhere
       ? prisma.communityPost.count({
           where: postVisibilityWhere,
@@ -269,8 +215,8 @@ export async function GET(_request: Request, context: RouteContext) {
       },
       stats: {
         friendCount,
-        businessCount,
-        eventCount,
+        businessCount: 0,
+        eventCount: 0,
         postCount,
       },
       friends: friends
@@ -300,8 +246,8 @@ export async function GET(_request: Request, context: RouteContext) {
         memberCount: membership.group._count.members,
         publicPath: `/grupos/${membership.group.slug}`,
       })),
-      businesses,
-      events,
+      businesses: [],
+      events: [],
       posts,
     },
   });

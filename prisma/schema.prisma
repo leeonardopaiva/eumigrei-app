@@ -226,6 +226,7 @@ model Business {
   favorites     BusinessFavorite[]
   ratings       BusinessRating[]
   communityPosts CommunityPost[] @relation("CommunityPostBusinessAuthor")
+  events        Event[]          @relation("EventBusiness")
 
   @@index([status, regionKey])
   @@index([category, regionKey])
@@ -262,16 +263,19 @@ model Event {
   ratingAverage Float       @default(0)
   ratingCount   Int         @default(0)
   status        EventStatus @default(PENDING_REVIEW)
+  businessId    String?
   createdById   String
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   createdBy     User        @relation("EventCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  business      Business?   @relation("EventBusiness", fields: [businessId], references: [id], onDelete: SetNull)
   visibilityRegion Region?  @relation("EventVisibilityRegion", fields: [visibilityRegionKey], references: [key], onDelete: SetNull)
   favorites     EventFavorite[]
   ratings       EventRating[]
 
   @@index([status, regionKey, startsAt])
   @@index([visibilityScope, visibilityRegionKey, startsAt])
+  @@index([businessId, startsAt])
 }
 
 model CommunityPost {

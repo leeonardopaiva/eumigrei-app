@@ -9,6 +9,7 @@ import {
   MapPin,
   PencilLine,
   Share2,
+  X,
 } from 'lucide-react';
 import StarRating from '../components/engagement/StarRating';
 import { useToast } from '../components/feedback/ToastProvider';
@@ -295,58 +296,96 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
 
   if (loading) {
     return (
-      <div className="animate-in space-y-4 px-5 py-6 fade-in duration-500">
-        <div className="h-64 animate-pulse rounded-[32px] bg-white shadow-sm" />
-        <div className="space-y-3 rounded-[32px] bg-white p-5 shadow-sm">
+      <div className="animate-in space-y-5 px-5 py-6 fade-in duration-500">
+        <div className="h-64 animate-pulse rounded-[28px] bg-slate-100" />
+        <div className="space-y-3">
           <div className="h-8 w-2/3 animate-pulse rounded-full bg-slate-100" />
           <div className="h-4 w-1/2 animate-pulse rounded-full bg-slate-100" />
-          <div className="h-28 animate-pulse rounded-3xl bg-slate-100" />
+          <div className="h-24 animate-pulse rounded-3xl bg-slate-100" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="animate-in pb-24 fade-in duration-500">
+    <div className="animate-in bg-white pb-24 fade-in duration-500">
       <div className={`relative h-72 ${isPendingReview ? 'grayscale' : ''}`}>
         <img src={event.imageUrl} className="h-full w-full object-cover" alt={event.title} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+
+        {event.canEdit ? (
+          <button
+            type="button"
+            onClick={() => {
+              setCoverDraft(event.imageUrl);
+              setGalleryDraft(event.galleryUrls);
+              setEditingMedia(true);
+            }}
+            className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-slate-700 shadow-sm backdrop-blur transition hover:bg-white"
+            aria-label="Editar capa e galeria"
+          >
+            <PencilLine size={18} />
+          </button>
+        ) : null}
+
         <div className="absolute right-4 top-4 flex gap-2">
           <button
             type="button"
             onClick={() => void handleFavoriteToggle()}
-            className={`rounded-full p-2 shadow backdrop-blur ${
-              event.isFavorite ? 'bg-rose-500 text-white' : 'bg-white/80 text-cyan-900'
+            className={`flex h-10 w-10 items-center justify-center rounded-full shadow-sm backdrop-blur transition ${
+              event.isFavorite ? 'bg-rose-500 text-white' : 'bg-white/85 text-cyan-900 hover:bg-white'
             }`}
+            aria-label="Favoritar evento"
           >
-            <Heart size={20} fill={event.isFavorite ? 'currentColor' : 'none'} />
+            <Heart size={19} fill={event.isFavorite ? 'currentColor' : 'none'} />
           </button>
           <button
             type="button"
             onClick={() => void handleShare()}
-            className="rounded-full bg-white/80 p-2 text-cyan-900 shadow backdrop-blur"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-cyan-900 shadow-sm backdrop-blur transition hover:bg-white"
+            aria-label="Compartilhar evento"
           >
-            <Share2 size={20} />
+            <Share2 size={19} />
           </button>
         </div>
-        <div className="absolute bottom-5 left-5 right-5">
-          <div className="inline-flex rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white backdrop-blur-sm">
-            Evento
+
+        <div className="absolute bottom-6 left-5 right-5">
+          <div className="flex items-center gap-2">
+            <div className="inline-flex rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white backdrop-blur-sm">
+              Evento
+            </div>
+
+            {event.canEdit ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setCoverDraft(event.imageUrl);
+                  setGalleryDraft(event.galleryUrls);
+                  setEditingMedia(true);
+                }}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-sm transition hover:bg-white/25"
+                aria-label="Editar imagens"
+              >
+                <PencilLine size={15} />
+              </button>
+            ) : null}
           </div>
+
           <h1 className="mt-3 text-3xl font-bold leading-tight text-white">{event.title}</h1>
           <p className="mt-2 text-sm text-white/85">{event.locationLabel}</p>
         </div>
       </div>
 
-      <div className="-mt-8 space-y-5 rounded-t-[36px] bg-white px-5 pt-6">
-        <div className="rounded-[28px] border border-slate-100 bg-slate-50 p-4">
-          {isPendingReview ? (
-            <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
-              Este evento esta aguardando aprovacao e fica visivel apenas para voce e administradores.
-            </div>
-          ) : null}
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="space-y-2">
+      <div className="space-y-8 px-5 pt-8">
+        {isPendingReview ? (
+          <div className="rounded-2xl bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
+            Este evento esta aguardando aprovacao e fica visivel apenas para voce e administradores.
+          </div>
+        ) : null}
+
+        <section className="space-y-4 border-b border-slate-100 pb-7">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 space-y-2">
               <div className="theme-text inline-flex items-center gap-2 text-sm font-bold">
                 <Globe2 size={16} />
                 URL publica
@@ -354,16 +393,18 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
               <p className="break-all text-sm text-slate-600">{publicUrl}</p>
               <p className="text-xs text-slate-400">Publicado por {event.createdByName}</p>
             </div>
+
             <button
               type="button"
               onClick={() => void handleCopyUrl()}
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600"
+              className="inline-flex shrink-0 items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-200"
             >
               <Copy size={14} />
-              Copiar link
+              Copiar
             </button>
           </div>
-          <div className="mt-4 rounded-[24px] border border-white bg-white/80 p-4">
+
+          <div className="pt-1">
             <StarRating
               average={event.ratingAverage}
               count={event.ratingCount}
@@ -386,36 +427,42 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
               </p>
             )}
           </div>
-        </div>
+        </section>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="flex items-center gap-3 rounded-[28px] border border-slate-100 bg-white p-4 shadow-sm">
-            <div className="theme-icon-surface flex h-12 w-12 items-center justify-center rounded-2xl">
-              <CalendarDays size={20} />
+        <section className="space-y-4 border-b border-slate-100 pb-7">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex items-center gap-4">
+              <div className="theme-icon-surface flex h-11 w-11 shrink-0 items-center justify-center rounded-full">
+                <CalendarDays size={19} />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Inicio</p>
+                <p className="mt-1 text-sm font-bold text-slate-700">{formatEventDateTime(event.startsAt)}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Data e hora</p>
-              <p className="mt-1 text-sm font-bold text-slate-700">{formatEventDateTime(event.startsAt)}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 rounded-[28px] border border-slate-100 bg-white p-4 shadow-sm">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
-              <Clock3 size={20} />
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Encerramento</p>
-              <p className="mt-1 text-sm font-bold text-slate-700">
-                {event.endsAt ? formatEventDateTime(event.endsAt) : 'Nao informado'}
-              </p>
-            </div>
-          </div>
-        </div>
 
-        <div className="space-y-3 rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.2em] text-slate-400">
-            <MapPin size={16} />
-            Local do evento
+            <div className="flex items-center gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+                <Clock3 size={19} />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Encerramento</p>
+                <p className="mt-1 text-sm font-bold text-slate-700">
+                  {event.endsAt ? formatEventDateTime(event.endsAt) : 'Nao informado'}
+                </p>
+              </div>
+            </div>
           </div>
+        </section>
+
+        <section className="space-y-3 border-b border-slate-100 pb-7">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.2em] text-slate-400">
+              <MapPin size={16} />
+              Local
+            </div>
+          </div>
+
           <p className="theme-text text-base font-bold">{event.venueName}</p>
           <div className="space-y-1 text-sm text-slate-600">
             <p>{event.locationLabel}</p>
@@ -433,96 +480,45 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
               href={event.externalUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700"
+              className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-200"
             >
               <Globe2 size={14} />
               Link do evento
             </a>
           ) : null}
-        </div>
+        </section>
 
-        {event.canEdit ? (
-          <div className="theme-soft-surface space-y-3 rounded-[32px] border p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="theme-text inline-flex items-center gap-2 text-sm font-bold">
-                  <PencilLine size={16} />
-                  Gestao de capa e galeria
-                </div>
-                <p className="mt-1 text-sm text-slate-600">
-                  {user.role === 'ADMIN'
-                    ? 'Voce pode editar a capa e a galeria deste evento como administrador.'
-                    : 'Mantenha a pagina do seu evento atualizada com novas imagens.'}
-                </p>
-              </div>
+        <section className="space-y-4 pb-8">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.2em] text-slate-400">
+              <Images size={16} />
+              Galeria
+            </div>
+
+            {event.canEdit ? (
               <button
                 type="button"
                 onClick={() => {
-                  setEditingMedia((current) => !current);
                   setCoverDraft(event.imageUrl);
                   setGalleryDraft(event.galleryUrls);
+                  setEditingMedia(true);
                 }}
-                className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200"
+                aria-label="Editar galeria"
               >
-                {editingMedia ? 'Fechar' : 'Editar'}
+                <PencilLine size={17} />
               </button>
-            </div>
-
-            {editingMedia ? (
-              <div className="space-y-4 rounded-[28px] bg-white p-4 shadow-sm">
-                <CloudinaryImageField
-                  value={coverDraft}
-                  onChange={setCoverDraft}
-                  folder="events"
-                  placeholder="Link da imagem de capa"
-                  hint="Essa imagem aparece no topo da pagina do evento."
-                />
-                <ImageGalleryField
-                  value={galleryDraft}
-                  onChange={setGalleryDraft}
-                  folder="events"
-                  hint="Use a galeria para mostrar ambiente, palestrantes e bastidores."
-                />
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void handleSaveMedia()}
-                    disabled={savingMedia}
-                    className="theme-bg theme-shadow flex-1 rounded-2xl px-4 py-3 text-sm font-bold disabled:opacity-60"
-                  >
-                    {savingMedia ? 'Salvando...' : 'Salvar midia'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingMedia(false);
-                      setCoverDraft(event.imageUrl);
-                      setGalleryDraft(event.galleryUrls);
-                    }}
-                    disabled={savingMedia}
-                    className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-600 disabled:opacity-60"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
             ) : null}
           </div>
-        ) : null}
 
-        <div className="space-y-3 pb-8">
-          <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.2em] text-slate-400">
-            <Images size={16} />
-            Galeria
-          </div>
           {galleryImages.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center text-sm font-medium text-slate-500">
+            <div className="rounded-3xl bg-slate-50 px-5 py-8 text-center text-sm font-medium text-slate-500">
               Nenhuma imagem adicional cadastrada ainda.
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
               {galleryImages.map((imageUrl, index) => (
-                <div key={`${imageUrl}-${index}`} className="overflow-hidden rounded-[28px] border border-slate-100 bg-slate-50 shadow-sm">
+                <div key={`${imageUrl}-${index}`} className="overflow-hidden rounded-[24px] bg-slate-50">
                   <img
                     src={imageUrl}
                     className="aspect-square w-full object-cover"
@@ -532,8 +528,91 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
               ))}
             </div>
           )}
-        </div>
+        </section>
       </div>
+
+      {editingMedia ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4 backdrop-blur-sm"
+          onClick={(clickEvent) => {
+            if (clickEvent.target === clickEvent.currentTarget && !savingMedia) {
+              setEditingMedia(false);
+              setCoverDraft(event.imageUrl);
+              setGalleryDraft(event.galleryUrls);
+            }
+          }}
+        >
+          <div className="animate-in w-full max-w-lg overflow-hidden rounded-[28px] bg-white shadow-2xl fade-in zoom-in duration-200">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+              <div>
+                <div className="theme-text inline-flex items-center gap-2 text-sm font-bold">
+                  <PencilLine size={16} />
+                  Editar imagens
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  {user.role === 'ADMIN'
+                    ? 'Atualize a capa e a galeria deste evento como administrador.'
+                    : 'Atualize a capa e a galeria exibidas na pagina.'}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (savingMedia) return;
+                  setEditingMedia(false);
+                  setCoverDraft(event.imageUrl);
+                  setGalleryDraft(event.galleryUrls);
+                }}
+                disabled={savingMedia}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 disabled:opacity-60"
+                aria-label="Fechar modal"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="max-h-[70vh] space-y-5 overflow-y-auto px-5 py-5">
+              <CloudinaryImageField
+                value={coverDraft}
+                onChange={setCoverDraft}
+                folder="events"
+                placeholder="Link da imagem de capa"
+                hint="Essa imagem aparece no topo da pagina do evento."
+              />
+              <ImageGalleryField
+                value={galleryDraft}
+                onChange={setGalleryDraft}
+                folder="events"
+                hint="Use a galeria para mostrar ambiente, palestrantes e bastidores."
+              />
+            </div>
+
+            <div className="flex gap-2 border-t border-slate-100 px-5 py-4">
+              <button
+                type="button"
+                onClick={() => void handleSaveMedia()}
+                disabled={savingMedia}
+                className="theme-bg theme-shadow flex-1 rounded-full px-4 py-3 text-sm font-bold disabled:opacity-60"
+              >
+                {savingMedia ? 'Salvando...' : 'Salvar midia'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingMedia(false);
+                  setCoverDraft(event.imageUrl);
+                  setGalleryDraft(event.galleryUrls);
+                }}
+                disabled={savingMedia}
+                className="rounded-full bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-200 disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

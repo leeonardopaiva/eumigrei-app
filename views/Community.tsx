@@ -24,6 +24,7 @@ const Community: React.FC<{
   const [postContent, setPostContent] = useState('');
   const [postImageUrl, setPostImageUrl] = useState('');
   const [postExternalUrl, setPostExternalUrl] = useState('');
+  const [postPersonaMode, setPostPersonaMode] = useState<PersonaMode>('personal');
   const [posts, setPosts] = useState<Post[]>([]);
   const [banners, setBanners] = useState<BannerAd[]>([]);
   const [publishing, setPublishing] = useState(false);
@@ -32,7 +33,8 @@ const Community: React.FC<{
     referralUrl: null,
     registrationCount: 0,
   });
-  const isProfessionalMode = personaMode === 'professional' && Boolean(professionalIdentity);
+  const canPostAsProfessional = Boolean(professionalIdentity);
+  const isProfessionalMode = postPersonaMode === 'professional' && canPostAsProfessional;
   const composerAvatar =
     isProfessionalMode && professionalIdentity?.imageUrl ? professionalIdentity.imageUrl : user.avatar;
   const composerHref =
@@ -45,6 +47,10 @@ const Community: React.FC<{
   const activeRegionKey = isProfessionalMode
     ? professionalIdentity?.regionKey || user.regionKey || ''
     : user.regionKey || '';
+
+  useEffect(() => {
+    setPostPersonaMode(personaMode === 'professional' && professionalIdentity ? 'professional' : 'personal');
+  }, [personaMode, professionalIdentity?.id]);
 
   const loadPosts = async (options?: { silent?: boolean }) => {
     try {
@@ -557,6 +563,13 @@ const Community: React.FC<{
 
       <div className="px-5">
         <CommunityComposer.Root>
+          <CommunityComposer.AuthorSwitch
+            value={isProfessionalMode ? 'professional' : 'personal'}
+            onChange={setPostPersonaMode}
+            personalName={user.name}
+            professionalName={professionalIdentity?.name}
+            professionalDisabled={!canPostAsProfessional}
+          />
           <CommunityComposer.Editor
             avatar={composerAvatar}
             avatarHref={composerHref}
@@ -575,6 +588,10 @@ const Community: React.FC<{
           {isProfessionalMode ? (
             <div className="rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] font-bold text-blue-700">
               Publicando como pagina profissional: {composerName}
+            </div>
+          ) : canPostAsProfessional ? (
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-500">
+              Publicando como pessoa. Troque para negocio quando a publicacao for comercial ou institucional.
             </div>
           ) : null}
           <CommunityComposer.MediaField

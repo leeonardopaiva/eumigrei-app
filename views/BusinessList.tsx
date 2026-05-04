@@ -266,11 +266,11 @@ const BusinessList: React.FC<BusinessListProps> = ({
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-cyan-900">Negocios</h1>
-            {isProfessionalMode ? (
-              <p className="mt-1 text-xs font-semibold text-slate-500">
-                Editando como {professionalIdentity?.name}. Os demais negocios ficam apenas para consulta.
-              </p>
-            ) : null}
+            <p className="mt-1 text-xs font-semibold text-slate-500">
+              {isProfessionalMode
+                ? `Editando como ${professionalIdentity?.name}. Os demais negocios ficam apenas para consulta.`
+                : 'Cadastrando como pessoa. Ao criar um negocio, sua vitrine profissional sera ativada.'}
+            </p>
           </div>
           <button
             type="button"

@@ -237,6 +237,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({
           externalUrl: normalizeUrlFieldValue(createForm.externalUrl),
           imageUrl: normalizeUrlFieldValue(createForm.imageUrl),
           galleryUrls: createForm.galleryUrls,
+          businessId: isProfessionalMode ? professionalIdentity?.id : undefined,
         }),
       });
 
@@ -320,11 +321,11 @@ const Marketplace: React.FC<MarketplaceProps> = ({
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-cyan-900">Agenda de Eventos</h1>
-            {isProfessionalMode ? (
-              <p className="mt-1 text-xs font-semibold text-slate-500">
-                Editando como {professionalIdentity?.name}. Os demais eventos ficam apenas para consulta.
-              </p>
-            ) : null}
+            <p className="mt-1 text-xs font-semibold text-slate-500">
+              {isProfessionalMode
+                ? `Cadastrando como ${professionalIdentity?.name}. Novos eventos serao vinculados a este negocio.`
+                : 'Cadastrando como pessoa. Use o modo profissional para publicar eventos do negocio.'}
+            </p>
           </div>
           <button
             type="button"

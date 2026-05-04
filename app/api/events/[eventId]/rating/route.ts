@@ -1,4 +1,4 @@
-import { EventStatus } from '@prisma/client';
+import { EventStatus, Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { refreshEventRating } from '@/lib/place-engagement';
@@ -48,6 +48,20 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ error: 'Evento nao encontrado.' }, { status: 404 });
   }
 
+  const isBusinessMember =
+    (
+      await prisma.$queryRaw<Array<{ id: string }>>(
+        Prisma.sql`
+          SELECT bm."id"
+          FROM "public"."Event" e
+          INNER JOIN "public"."BusinessMember" bm ON bm."businessId" = e."businessId"
+          WHERE e."id" = ${event.id}
+            AND bm."userId" = ${session.user.id}
+          LIMIT 1
+        `,
+      )
+    ).length > 0;
+
   const canView =
     (event.status === EventStatus.PUBLISHED &&
       isVisibleForRegion(
@@ -57,15 +71,16 @@ export async function POST(request: Request, context: RouteContext) {
           visibilityRegionKey: event.visibilityRegionKey,
         },
         session.user.regionKey,
-      )) ||
+    )) ||
     session.user.role === 'ADMIN' ||
-    session.user.id === event.createdById;
+    session.user.id === event.createdById ||
+    isBusinessMember;
 
   if (!canView) {
     return NextResponse.json({ error: 'Evento indisponivel.' }, { status: 404 });
   }
 
-  if (session.user.role === 'ADMIN' || session.user.id === event.createdById) {
+  if (session.user.role === 'ADMIN' || session.user.id === event.createdById || isBusinessMember) {
     return NextResponse.json({ error: 'Voce nao pode avaliar o proprio evento.' }, { status: 403 });
   }
 

@@ -1,8 +1,9 @@
 import React from 'react';
 import Link from 'next/link';
-import { Camera, Link as LinkIcon, Play } from 'lucide-react';
+import { BriefcaseBusiness, Camera, Link as LinkIcon, Play, UserRound } from 'lucide-react';
 import CloudinaryImageField from '@/components/forms/CloudinaryImageField';
 import type { ComposerMode } from '@/components/community/utils';
+import type { PersonaMode } from '@/types';
 
 type RootProps = {
   children: React.ReactNode;
@@ -14,6 +15,14 @@ type EditorProps = {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
+};
+
+type AuthorSwitchProps = {
+  value: PersonaMode;
+  onChange: (value: PersonaMode) => void;
+  personalName: string;
+  professionalName?: string | null;
+  professionalDisabled?: boolean;
 };
 
 type MediaFieldProps = {
@@ -60,6 +69,46 @@ const Editor: React.FC<EditorProps> = ({ avatar, avatarHref, value, onChange, pl
       placeholder={placeholder}
       className="min-h-[96px] flex-1 rounded-2xl border-none bg-slate-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-100"
     />
+  </div>
+);
+
+const AuthorSwitch: React.FC<AuthorSwitchProps> = ({
+  value,
+  onChange,
+  personalName,
+  professionalName,
+  professionalDisabled = false,
+}) => (
+  <div className="flex rounded-2xl bg-slate-50 p-1">
+    <button
+      type="button"
+      onClick={() => onChange('personal')}
+      className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition ${
+        value === 'personal' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+      }`}
+    >
+      <UserRound size={15} />
+      <span className="truncate">Como {personalName}</span>
+    </button>
+    <button
+      type="button"
+      onClick={() => {
+        if (!professionalDisabled) {
+          onChange('professional');
+        }
+      }}
+      disabled={professionalDisabled}
+      className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition ${
+        value === 'professional'
+          ? 'bg-blue-600 text-white shadow-sm'
+          : professionalDisabled
+            ? 'cursor-not-allowed text-slate-300'
+            : 'text-slate-500 hover:text-slate-700'
+      }`}
+    >
+      <BriefcaseBusiness size={15} />
+      <span className="truncate">Como {professionalName || 'negocio'}</span>
+    </button>
   </div>
 );
 
@@ -143,6 +192,7 @@ const Actions: React.FC<ActionsProps> = ({ mode, onModeChange, onPublish, publis
 
 const CommunityComposer = {
   Root,
+  AuthorSwitch,
   Editor,
   MediaField,
   Actions,

@@ -78,12 +78,28 @@ export async function GET(request: Request) {
     events.some((event) => event.visibilityScope !== VisibilityScope.GLOBAL)
       ? 'local'
       : 'global';
+  const businessEditableEventIds =
+    viewerId && events.length > 0
+      ? new Set(
+          (
+            await prisma.$queryRaw<Array<{ eventId: string }>>(
+              Prisma.sql`
+                SELECT e."id" AS "eventId"
+                FROM "public"."Event" e
+                INNER JOIN "public"."BusinessMember" bm ON bm."businessId" = e."businessId"
+                WHERE e."id" IN (${Prisma.join(events.map((event) => event.id))})
+                  AND bm."userId" = ${viewerId}
+              `,
+            )
+          ).map((row) => row.eventId),
+        )
+      : new Set<string>();
 
   return NextResponse.json({
     events: events.map(({ createdById, favorites, visibilityScope, ...event }) => ({
       ...event,
       isFavorite: favorites.length > 0,
-      canEdit: isAdmin || createdById === viewerId,
+      canEdit: isAdmin || createdById === viewerId || businessEditableEventIds.has(event.id),
       isPendingReview: event.status === EventStatus.PENDING_REVIEW,
     })),
     scope,
@@ -128,9 +144,36 @@ export async function POST(request: Request) {
     );
   }
 
-  const region = await findRegionByKey(parsed.data.regionKey, { activeOnly: true });
+  const professionalBusiness = parsed.data.businessId
+    ? await prisma.business.findFirst({
+        where: {
+          id: parsed.data.businessId,
+          OR: [
+            { createdById: session.user.id },
+            { members: { some: { userId: session.user.id } } },
+          ],
+        },
+        select: {
+          id: true,
+          regionKey: true,
+          locationLabel: true,
+        },
+      })
+    : null;
 
-  if (!region) {
+  if (parsed.data.businessId && !professionalBusiness) {
+    return NextResponse.json(
+      { error: 'Selecione um perfil profissional valido para cadastrar o evento.' },
+      { status: 403 },
+    );
+  }
+
+  const effectiveRegionKey = professionalBusiness?.regionKey ?? parsed.data.regionKey;
+  const region = professionalBusiness
+    ? null
+    : await findRegionByKey(effectiveRegionKey, { activeOnly: true });
+
+  if (!professionalBusiness && !region) {
     return NextResponse.json({ error: 'Selecione uma regiao valida.' }, { status: 400 });
   }
 
@@ -144,29 +187,41 @@ export async function POST(request: Request) {
       ? baseSlug
       : uniqueSlug(parsed.data.title);
 
-  const event = await prisma.event.create({
-    data: {
-      title: parsed.data.title,
-      slug,
-      description: parsed.data.description,
-      venueName: parsed.data.venueName,
-      startsAt: new Date(parsed.data.startsAt),
-      endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
-      locationLabel: region.label,
-      regionKey: region.key,
-      externalUrl: parsed.data.externalUrl,
-      imageUrl: parsed.data.imageUrl,
-      galleryUrls: parsed.data.galleryUrls,
-      visibilityScope: VisibilityScope.USER_REGION,
-      status: EventStatus.PENDING_REVIEW,
-      createdById: session.user.id,
-    },
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      status: true,
-    },
+  const event = await prisma.$transaction(async (tx) => {
+    const created = await tx.event.create({
+      data: {
+        title: parsed.data.title,
+        slug,
+        description: parsed.data.description,
+        venueName: parsed.data.venueName,
+        startsAt: new Date(parsed.data.startsAt),
+        endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
+        locationLabel: professionalBusiness?.locationLabel ?? region!.label,
+        regionKey: professionalBusiness?.regionKey ?? region!.key,
+        externalUrl: parsed.data.externalUrl,
+        imageUrl: parsed.data.imageUrl,
+        galleryUrls: parsed.data.galleryUrls,
+        visibilityScope: VisibilityScope.USER_REGION,
+        status: EventStatus.PENDING_REVIEW,
+        createdById: session.user.id,
+      },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        status: true,
+      },
+    });
+
+    if (professionalBusiness) {
+      await tx.$executeRaw`
+        UPDATE "public"."Event"
+        SET "businessId" = ${professionalBusiness.id}
+        WHERE "id" = ${created.id}
+      `;
+    }
+
+    return created;
   });
 
   return NextResponse.json({
