@@ -19,6 +19,7 @@ import PublicProfile from './views/PublicProfile';
 import PublicProfessionalProfile from './views/PublicProfessionalProfile';
 import PublicGroup from './views/PublicGroup';
 import Registration from './views/Registration';
+import { DEFAULT_AVATAR_URL } from './lib/avatar';
 import { UserRole, type PersonaMode, type ProfessionalProfileIdentity, type User } from './types';
 
 const GOOGLE_AUTH_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED !== 'false';
@@ -69,7 +70,7 @@ const buildCurrentUser = (sessionUser: {
   name: sessionUser.name || 'Comunidade Emigrei',
   username: sessionUser.username,
   role: mapUserRole(sessionUser.role),
-  avatar: sessionUser.image || 'https://picsum.photos/seed/emigrei-user/200',
+  avatar: sessionUser.image || DEFAULT_AVATAR_URL,
   location: sessionUser.locationLabel || 'Defina sua regiao',
   regionKey: sessionUser.regionKey,
   email: sessionUser.email,

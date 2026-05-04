@@ -18,6 +18,7 @@ import StarRating from '../components/engagement/StarRating';
 import { useToast } from '../components/feedback/ToastProvider';
 import { Logo } from '../components/Layout';
 import RegionSelector from '../components/RegionSelector';
+import { DEFAULT_AVATAR_URL, handleAvatarError } from '../lib/avatar';
 import { PublicUserProfile, User } from '../types';
 
 type PublicProfileProps = {
@@ -353,6 +354,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                   src={profile.image}
                   alt={profile.name}
                   className="h-full w-full object-cover"
+                  onError={handleAvatarError}
                 />
               ) : (
                 <div className={`flex h-full w-full items-center justify-center ${PROFILE_GRADIENT_CLASS} text-4xl font-bold text-white`}>
@@ -502,7 +504,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                         className="flex items-center gap-4 rounded-[28px] border border-slate-100 bg-slate-50 p-4"
                       >
                         {friend.image ? (
-                          <img src={friend.image} alt={friend.name} className="h-14 w-14 rounded-full object-cover" />
+                          <img src={friend.image || DEFAULT_AVATAR_URL} alt={friend.name} className="h-14 w-14 rounded-full object-cover" onError={handleAvatarError} />
                         ) : (
                           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-cyan-50 text-base font-bold text-[#28B8C7]">
                             {getInitials(friend.name)}

@@ -21,12 +21,11 @@ import FriendRequestBell from './feedback/FriendRequestBell';
 import PersonaModeDropdown from './profile/PersonaModeDropdown';
 import { useToast } from './feedback/ToastProvider';
 import { trackAnalyticsEvent } from '../lib/analytics';
+import { handleAvatarError } from '../lib/avatar';
 import { PersonaMode, ProfessionalProfileIdentity, User, UserRole } from '../types';
 
 const logoPrimaryUrl = '/assets/logo-emigrei.png';
 const logoFallbackUrl = '/assets/logo26.png';
-const defaultAvatarUrl = 'https://picsum.photos/seed/emigrei-user/200';
-
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -171,10 +170,7 @@ const SidebarContent: React.FC<{
                 src={activeAvatar}
                 className="h-14 w-14 rounded-full border-2 border-white object-cover shadow-md"
                 alt={activeName}
-                onError={(event) => {
-                  event.currentTarget.onerror = null;
-                  event.currentTarget.src = defaultAvatarUrl;
-                }}
+                onError={handleAvatarError}
               />
             </Link>
             <div>
@@ -341,10 +337,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
                     src={activeAvatar}
                     className="h-10 w-10 rounded-full object-cover"
                     alt={activeName}
-                    onError={(event) => {
-                      event.currentTarget.onerror = null;
-                      event.currentTarget.src = defaultAvatarUrl;
-                    }}
+                    onError={handleAvatarError}
                   />
                 </Link>
                 <div className="text-right">

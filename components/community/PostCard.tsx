@@ -8,6 +8,7 @@ import {
   ThumbsUp,
 } from 'lucide-react';
 import CloudinaryImageField from '@/components/forms/CloudinaryImageField';
+import { handleAvatarError } from '@/lib/avatar';
 import {
   buildYoutubeEmbedUrl,
   formatRelativeTime,
@@ -100,7 +101,7 @@ const Header: React.FC<HeaderProps> = ({
   <div className="flex items-center justify-between">
     {authorHref ? (
       <Link href={authorHref} className="flex items-center gap-3 transition hover:opacity-90">
-        <img src={authorImage} className="h-10 w-10 rounded-full object-cover" alt={authorName} />
+        <img src={authorImage} className="h-10 w-10 rounded-full object-cover" alt={authorName} onError={handleAvatarError} />
         <div>
           <h5 className="text-sm font-bold text-cyan-900">{authorName}</h5>
           <p className="text-[10px] text-slate-400">
@@ -110,7 +111,7 @@ const Header: React.FC<HeaderProps> = ({
       </Link>
     ) : (
       <div className="flex items-center gap-3">
-        <img src={authorImage} className="h-10 w-10 rounded-full object-cover" alt={authorName} />
+        <img src={authorImage} className="h-10 w-10 rounded-full object-cover" alt={authorName} onError={handleAvatarError} />
         <div>
           <h5 className="text-sm font-bold text-cyan-900">{authorName}</h5>
           <p className="text-[10px] text-slate-400">
@@ -336,10 +337,10 @@ const CommentItem: React.FC<CommentItemProps> = ({
     <div className="flex gap-3">
       {authorHref ? (
         <Link href={authorHref} className="block transition hover:opacity-90">
-          <img src={authorImage} className="h-8 w-8 rounded-full object-cover" alt={authorName} />
+          <img src={authorImage} className="h-8 w-8 rounded-full object-cover" alt={authorName} onError={handleAvatarError} />
         </Link>
       ) : (
-        <img src={authorImage} className="h-8 w-8 rounded-full object-cover" alt={authorName} />
+        <img src={authorImage} className="h-8 w-8 rounded-full object-cover" alt={authorName} onError={handleAvatarError} />
       )}
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-3">

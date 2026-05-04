@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { BadgeCheck, BriefcaseBusiness, CalendarDays, Globe2, MapPin } from 'lucide-react';
 import StarRating from '../components/engagement/StarRating';
 import { Logo } from '../components/Layout';
+import { handleAvatarError } from '../lib/avatar';
 import { PublicProfessionalProfile, User } from '../types';
 
 type PublicProfessionalProfileProps = {
@@ -166,7 +167,7 @@ const PublicProfessionalProfileView: React.FC<PublicProfessionalProfileProps> = 
             <div className="-mt-12 px-5 pb-8">
               <div className="mx-auto flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-[5px] border-white bg-white shadow-lg">
                 {profile.image ? (
-                  <img src={profile.image} alt={profile.name} className="h-full w-full object-cover" />
+                  <img src={profile.image} alt={profile.name} className="h-full w-full object-cover" onError={handleAvatarError} />
                 ) : (
                   <div className={`flex h-full w-full items-center justify-center ${PROFILE_GRADIENT_CLASS} text-3xl font-bold text-white`}>
                     {getInitials(profile.name)}

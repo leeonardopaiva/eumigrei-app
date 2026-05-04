@@ -9,11 +9,11 @@ import RegionSelector from '../components/RegionSelector';
 import { formatLoosePhoneInput } from '../lib/forms/phone';
 import { normalizeUrlFieldValue } from '../lib/forms/validation';
 import { normalizeUsernameInput } from '../lib/username';
+import { DEFAULT_AVATAR_URL, handleAvatarError } from '../lib/avatar';
 import PersonaModeDropdown from '../components/profile/PersonaModeDropdown';
 import ProfessionalModePanel from '../components/profile/ProfessionalModePanel';
 import { PersonaMode, ProfessionalProfileSummary, ReferralSummary, User } from '../types';
 
-const DEFAULT_AVATAR_URL = 'https://picsum.photos/seed/emigrei-user/200';
 const PROFILE_GRADIENT_CLASS = 'bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.35),_transparent_32%),linear-gradient(135deg,#28B8C7_0%,#1DA7D5_45%,#0D6EFD_100%)]';
 const PROFESSIONAL_PROFILE_GRADIENT_CLASS = 'bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.2),_transparent_28%),linear-gradient(135deg,#0F4C81_0%,#145DA0_48%,#0D6EFD_100%)]';
 
@@ -380,7 +380,7 @@ const Profile: React.FC<{
     setInterestInput('');
   };
 
-  const avatarImage = profile.image || '';
+  const avatarImage = profile.image || DEFAULT_AVATAR_URL;
   const referralUrl = referralSummary.referralUrl || (profile.username ? `https://emigrei.com.br/convite/${profile.username}` : 'https://emigrei.com.br/convite/seu-nome-publico');
   const professionalIdentity = professionalProfile.identity;
   const isProfessionalView =
@@ -438,7 +438,7 @@ const Profile: React.FC<{
           <div className="flex flex-col items-center text-center">
             <div className="relative h-28 w-28 overflow-hidden rounded-full border-[5px] border-white bg-white shadow-lg">
               {activeHeaderImage ? (
-                <img src={activeHeaderImage} alt={activeHeaderName} className="h-full w-full object-cover" />
+                <img src={activeHeaderImage} alt={activeHeaderName} className="h-full w-full object-cover" onError={handleAvatarError} />
               ) : (
                 <div className={`flex h-full w-full items-center justify-center ${activeHeaderGradientClass} text-3xl font-bold text-white`}>
                   {getInitials(activeHeaderName)}

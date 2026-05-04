@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { BriefcaseBusiness, Camera, Link as LinkIcon, Play, UserRound } from 'lucide-react';
 import CloudinaryImageField from '@/components/forms/CloudinaryImageField';
 import type { ComposerMode } from '@/components/community/utils';
+import { handleAvatarError } from '@/lib/avatar';
 import type { PersonaMode } from '@/types';
 
 type RootProps = {
@@ -57,10 +58,10 @@ const Editor: React.FC<EditorProps> = ({ avatar, avatarHref, value, onChange, pl
   <div className="flex items-start gap-3">
     {avatarHref ? (
       <Link href={avatarHref} className="transition hover:opacity-90">
-        <img src={avatar} className="h-10 w-10 rounded-full object-cover" alt="User" />
+        <img src={avatar} className="h-10 w-10 rounded-full object-cover" alt="User" onError={handleAvatarError} />
       </Link>
     ) : (
-      <img src={avatar} className="h-10 w-10 rounded-full object-cover" alt="User" />
+      <img src={avatar} className="h-10 w-10 rounded-full object-cover" alt="User" onError={handleAvatarError} />
     )}
     <textarea
       rows={3}

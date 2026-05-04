@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import type { Post } from '@/types';
 import PostCard from '@/components/community/PostCard';
+import { DEFAULT_AVATAR_URL, handleAvatarError } from '@/lib/avatar';
 
 type FeedPostCardProps = {
   post: Post;
@@ -184,9 +185,10 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
           {post.likedBy.map((likedUser) => (
             <div key={likedUser.id} className="flex items-center gap-3">
               <img
-                src={likedUser.image || `https://picsum.photos/seed/${likedUser.id}/80`}
+                src={likedUser.image || DEFAULT_AVATAR_URL}
                 alt={likedUser.name}
                 className="h-8 w-8 rounded-full object-cover"
+                onError={handleAvatarError}
               />
               <p className="text-sm font-medium text-slate-700">{likedUser.name}</p>
             </div>
@@ -210,7 +212,7 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
         </div>
       ) : null}
       <PostCard.Header
-        authorImage={post.author.image || `https://picsum.photos/seed/${post.author.id}/100`}
+        authorImage={post.author.image || DEFAULT_AVATAR_URL}
         authorName={post.author.name}
         authorHref={authorHref}
         createdAt={post.createdAt}
@@ -320,7 +322,7 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
       {visibleComments.map((comment) => (
         <PostCard.CommentItem
           key={comment.id}
-          authorImage={comment.author.image || `https://picsum.photos/seed/${comment.author.id}/100`}
+          authorImage={comment.author.image || DEFAULT_AVATAR_URL}
           authorName={comment.author.name}
           authorHref={comment.author.username ? `/${comment.author.username}` : undefined}
           content={
