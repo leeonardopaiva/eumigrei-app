@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ImagePlus, PencilLine, Plus } from 'lucide-react';
+import { ImagePlus, PencilLine, Plus, Target, WalletCards } from 'lucide-react';
 import CloudinaryImageField from '../forms/CloudinaryImageField';
 import FieldErrorMessage from '../forms/FieldErrorMessage';
 import RegionSelector from '../RegionSelector';
@@ -22,6 +22,21 @@ export type ManagedBanner = {
   targetUrl: string | null;
   regionKey: string | null;
   isActive: boolean;
+  campaignStatus: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'ENDED';
+  objective: 'TRAFFIC' | 'LEAD' | 'AWARENESS';
+  billingMode: 'FLAT' | 'CPC' | 'CPM' | 'CPL';
+  paymentStatus: 'NOT_REQUIRED' | 'PENDING' | 'PAID' | 'FAILED';
+  targetInterests: string[];
+  targetKeywords: string[];
+  targetCategories: string[];
+  startsAt: string | null;
+  endsAt: string | null;
+  dailyBudgetCents: number | null;
+  totalBudgetCents: number | null;
+  bidCents: number;
+  spentCents: number;
+  checkoutUrl: string | null;
+  paymentProvider: string | null;
   createdAt: string;
   updatedAt: string;
   region: {
@@ -30,6 +45,7 @@ export type ManagedBanner = {
   } | null;
   _count?: {
     registrations: number;
+    impressions: number;
   };
   registrations?: Array<{
     id: string;
@@ -49,6 +65,20 @@ type BannerFormState = {
   targetUrl: string;
   regionKey: string;
   isActive: boolean;
+  campaignStatus: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'ENDED';
+  objective: 'TRAFFIC' | 'LEAD' | 'AWARENESS';
+  billingMode: 'FLAT' | 'CPC' | 'CPM' | 'CPL';
+  paymentStatus: 'NOT_REQUIRED' | 'PENDING' | 'PAID' | 'FAILED';
+  targetInterests: string;
+  targetKeywords: string;
+  targetCategories: string;
+  startsAt: string;
+  endsAt: string;
+  dailyBudget: string;
+  totalBudget: string;
+  bid: string;
+  checkoutUrl: string;
+  paymentProvider: string;
 };
 
 type BannerField = 'name' | 'imageUrl' | 'targetUrl';
@@ -61,9 +91,57 @@ const emptyBannerForm: BannerFormState = {
   targetUrl: '',
   regionKey: '',
   isActive: true,
+  campaignStatus: 'ACTIVE',
+  objective: 'TRAFFIC',
+  billingMode: 'FLAT',
+  paymentStatus: 'NOT_REQUIRED',
+  targetInterests: '',
+  targetKeywords: '',
+  targetCategories: '',
+  startsAt: '',
+  endsAt: '',
+  dailyBudget: '',
+  totalBudget: '',
+  bid: '',
+  checkoutUrl: '',
+  paymentProvider: '',
 };
 
 const BANNER_PREVIEW_LIMIT = 5;
+
+const splitTargets = (value: string) =>
+  value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const centsFromCurrency = (value: string) => {
+  const normalized = value.replace(',', '.').trim();
+  if (!normalized) {
+    return undefined;
+  }
+
+  return Math.round(Number(normalized) * 100);
+};
+
+const currencyFromCents = (value: number | null | undefined) =>
+  typeof value === 'number' ? (value / 100).toFixed(2).replace('.', ',') : '';
+
+const toLocalDateTimeValue = (value: string | null | undefined) => {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
+
+const fromLocalDateTimeValue = (value: string) =>
+  value ? new Date(value).toISOString() : undefined;
 
 interface BannerManagementSectionProps {
   banners: ManagedBanner[];
@@ -117,6 +195,20 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
       targetUrl: banner.targetUrl || '',
       regionKey: banner.regionKey || '',
       isActive: banner.isActive,
+      campaignStatus: banner.campaignStatus,
+      objective: banner.objective,
+      billingMode: banner.billingMode,
+      paymentStatus: banner.paymentStatus,
+      targetInterests: banner.targetInterests.join(', '),
+      targetKeywords: banner.targetKeywords.join(', '),
+      targetCategories: banner.targetCategories.join(', '),
+      startsAt: toLocalDateTimeValue(banner.startsAt),
+      endsAt: toLocalDateTimeValue(banner.endsAt),
+      dailyBudget: currencyFromCents(banner.dailyBudgetCents),
+      totalBudget: currencyFromCents(banner.totalBudgetCents),
+      bid: currencyFromCents(banner.bidCents),
+      checkoutUrl: banner.checkoutUrl || '',
+      paymentProvider: banner.paymentProvider || '',
     });
     onError(null);
     onMessage(null);
@@ -153,6 +245,30 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
       setProcessingKey(null);
     }
   };
+
+  const buildBannerPayload = (form: BannerFormState) => ({
+    name: form.name.trim(),
+    imageUrl: normalizeUrlFieldValue(form.imageUrl),
+    type: form.type,
+    placement: form.placement,
+    targetUrl: form.type === 'LINK' ? normalizeUrlFieldValue(form.targetUrl) : undefined,
+    regionKey: form.regionKey || undefined,
+    isActive: form.isActive,
+    campaignStatus: form.campaignStatus,
+    objective: form.objective,
+    billingMode: form.billingMode,
+    paymentStatus: form.paymentStatus,
+    targetInterests: splitTargets(form.targetInterests),
+    targetKeywords: splitTargets(form.targetKeywords),
+    targetCategories: splitTargets(form.targetCategories),
+    startsAt: fromLocalDateTimeValue(form.startsAt),
+    endsAt: fromLocalDateTimeValue(form.endsAt),
+    dailyBudgetCents: centsFromCurrency(form.dailyBudget),
+    totalBudgetCents: centsFromCurrency(form.totalBudget),
+    bidCents: centsFromCurrency(form.bid) ?? 0,
+    checkoutUrl: form.checkoutUrl ? normalizeUrlFieldValue(form.checkoutUrl) : undefined,
+    paymentProvider: form.paymentProvider.trim() || undefined,
+  });
 
   const submitBanner = async () => {
     const nextErrors: FieldErrors<BannerField> = {};
@@ -192,15 +308,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
         fetch(route, {
           method: editingBannerId ? 'PUT' : 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: bannerForm.name.trim(),
-            imageUrl: normalizeUrlFieldValue(bannerForm.imageUrl),
-            type: bannerForm.type,
-            placement: bannerForm.placement,
-            targetUrl: bannerForm.type === 'LINK' ? normalizeUrlFieldValue(bannerForm.targetUrl) : undefined,
-            regionKey: bannerForm.regionKey || undefined,
-            isActive: bannerForm.isActive,
-          }),
+          body: JSON.stringify(buildBannerPayload(bannerForm)),
         }),
       editingBannerId ? 'Banner atualizado.' : 'Banner criado.',
       true,
@@ -222,6 +330,20 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
             targetUrl: banner.type === 'LINK' ? banner.targetUrl : undefined,
             regionKey: banner.regionKey || undefined,
             isActive: !banner.isActive,
+            campaignStatus: banner.campaignStatus,
+            objective: banner.objective,
+            billingMode: banner.billingMode,
+            paymentStatus: banner.paymentStatus,
+            targetInterests: banner.targetInterests,
+            targetKeywords: banner.targetKeywords,
+            targetCategories: banner.targetCategories,
+            startsAt: banner.startsAt ?? undefined,
+            endsAt: banner.endsAt ?? undefined,
+            dailyBudgetCents: banner.dailyBudgetCents ?? undefined,
+            totalBudgetCents: banner.totalBudgetCents ?? undefined,
+            bidCents: banner.bidCents,
+            checkoutUrl: banner.checkoutUrl ?? undefined,
+            paymentProvider: banner.paymentProvider ?? undefined,
           }),
         }),
       banner.isActive ? 'Banner ocultado.' : 'Banner ativado.',
@@ -404,6 +526,254 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
             />
           </label>
         </div>
+
+        <div className="space-y-4 rounded-3xl border border-cyan-100 bg-cyan-50/60 p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-[#28B8C7]">
+              <Target size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-700">Segmentacao Ads Lite</p>
+              <p className="text-xs leading-5 text-slate-500">
+                Use listas separadas por virgula. O app cruza esses dados com interesses do perfil,
+                regiao e buscas recentes.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Interesses
+              </span>
+              <input
+                value={bannerForm.targetInterests}
+                onChange={(event) =>
+                  setBannerForm((current) => ({ ...current, targetInterests: event.target.value }))
+                }
+                placeholder="moradia, emprego"
+                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              />
+            </label>
+            <label className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Buscas
+              </span>
+              <input
+                value={bannerForm.targetKeywords}
+                onChange={(event) =>
+                  setBannerForm((current) => ({ ...current, targetKeywords: event.target.value }))
+                }
+                placeholder="advogado, visto"
+                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              />
+            </label>
+            <label className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Categorias
+              </span>
+              <input
+                value={bannerForm.targetCategories}
+                onChange={(event) =>
+                  setBannerForm((current) => ({ ...current, targetCategories: event.target.value }))
+                }
+                placeholder="restaurante, servicos"
+                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              />
+            </label>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Status
+              </span>
+              <select
+                value={bannerForm.campaignStatus}
+                onChange={(event) =>
+                  setBannerForm((current) => ({
+                    ...current,
+                    campaignStatus: event.target.value as BannerFormState['campaignStatus'],
+                  }))
+                }
+                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-cyan-200"
+              >
+                <option value="DRAFT">Rascunho</option>
+                <option value="ACTIVE">Ativa</option>
+                <option value="PAUSED">Pausada</option>
+                <option value="ENDED">Encerrada</option>
+              </select>
+            </label>
+            <label className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Objetivo
+              </span>
+              <select
+                value={bannerForm.objective}
+                onChange={(event) =>
+                  setBannerForm((current) => ({
+                    ...current,
+                    objective: event.target.value as BannerFormState['objective'],
+                  }))
+                }
+                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-cyan-200"
+              >
+                <option value="TRAFFIC">Trafego</option>
+                <option value="LEAD">Leads</option>
+                <option value="AWARENESS">Alcance</option>
+              </select>
+            </label>
+            <label className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Pagamento
+              </span>
+              <select
+                value={bannerForm.paymentStatus}
+                onChange={(event) =>
+                  setBannerForm((current) => ({
+                    ...current,
+                    paymentStatus: event.target.value as BannerFormState['paymentStatus'],
+                  }))
+                }
+                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-cyan-200"
+              >
+                <option value="NOT_REQUIRED">Sem cobranca</option>
+                <option value="PENDING">Aguardando pagamento</option>
+                <option value="PAID">Pago</option>
+                <option value="FAILED">Falhou</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Inicio
+              </span>
+              <input
+                type="datetime-local"
+                value={bannerForm.startsAt}
+                onChange={(event) =>
+                  setBannerForm((current) => ({ ...current, startsAt: event.target.value }))
+                }
+                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              />
+            </label>
+            <label className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Fim
+              </span>
+              <input
+                type="datetime-local"
+                value={bannerForm.endsAt}
+                onChange={(event) =>
+                  setBannerForm((current) => ({ ...current, endsAt: event.target.value }))
+                }
+                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="space-y-4 rounded-3xl border border-slate-100 bg-white p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-50 text-slate-600">
+              <WalletCards size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-700">Orcamento e cobranca</p>
+              <p className="text-xs leading-5 text-slate-500">
+                Por enquanto o pagamento e controlado manualmente; o link de checkout prepara a
+                integracao com Stripe ou Mercado Pago.
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-4">
+            <label className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Modelo
+              </span>
+              <select
+                value={bannerForm.billingMode}
+                onChange={(event) =>
+                  setBannerForm((current) => ({
+                    ...current,
+                    billingMode: event.target.value as BannerFormState['billingMode'],
+                  }))
+                }
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-cyan-200"
+              >
+                <option value="FLAT">Pacote fixo</option>
+                <option value="CPC">CPC</option>
+                <option value="CPM">CPM</option>
+                <option value="CPL">CPL</option>
+              </select>
+            </label>
+            <label className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Diario
+              </span>
+              <input
+                value={bannerForm.dailyBudget}
+                onChange={(event) =>
+                  setBannerForm((current) => ({ ...current, dailyBudget: event.target.value }))
+                }
+                placeholder="50,00"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              />
+            </label>
+            <label className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Total
+              </span>
+              <input
+                value={bannerForm.totalBudget}
+                onChange={(event) =>
+                  setBannerForm((current) => ({ ...current, totalBudget: event.target.value }))
+                }
+                placeholder="300,00"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              />
+            </label>
+            <label className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Lance
+              </span>
+              <input
+                value={bannerForm.bid}
+                onChange={(event) =>
+                  setBannerForm((current) => ({ ...current, bid: event.target.value }))
+                }
+                placeholder="1,50"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              />
+            </label>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <input
+              value={bannerForm.paymentProvider}
+              onChange={(event) =>
+                setBannerForm((current) => ({ ...current, paymentProvider: event.target.value }))
+              }
+              placeholder="Provedor: mercado-pago ou stripe"
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+            />
+            <input
+              value={bannerForm.checkoutUrl}
+              onChange={(event) =>
+                setBannerForm((current) => ({ ...current, checkoutUrl: event.target.value }))
+              }
+              onBlur={() =>
+                setBannerForm((current) => ({
+                  ...current,
+                  checkoutUrl: current.checkoutUrl ? normalizeUrlFieldValue(current.checkoutUrl) : '',
+                }))
+              }
+              placeholder="Link de checkout"
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+            />
+          </div>
+        </div>
         <button
           type="button"
           onClick={() => void submitBanner()}
@@ -470,6 +840,9 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                       <p className="mt-1 text-xs font-bold text-slate-500">
                         Local: {banner.placement === 'HOME' ? 'Home' : banner.placement === 'FEED' ? 'Feed' : 'Home e Feed'}
                       </p>
+                      <p className="mt-1 text-xs font-bold text-slate-500">
+                        Campanha: {banner.campaignStatus} · Objetivo: {banner.objective} · Pagamento: {banner.paymentStatus}
+                      </p>
                     </div>
                     <span
                       className={`rounded-full px-3 py-1 text-[11px] font-bold ${
@@ -507,6 +880,37 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                       ) : null}
                     </div>
                   )}
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <div className="rounded-2xl bg-slate-50 px-3 py-2">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                        Impressoes
+                      </p>
+                      <p className="text-sm font-bold text-slate-700">
+                        {banner._count?.impressions ?? 0}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 px-3 py-2">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                        Leads
+                      </p>
+                      <p className="text-sm font-bold text-slate-700">
+                        {banner._count?.registrations ?? 0}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 px-3 py-2">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                        Total
+                      </p>
+                      <p className="text-sm font-bold text-slate-700">
+                        {banner.totalBudgetCents ? `R$ ${currencyFromCents(banner.totalBudgetCents)}` : 'Livre'}
+                      </p>
+                    </div>
+                  </div>
+                  {banner.targetInterests.length || banner.targetKeywords.length || banner.targetCategories.length ? (
+                    <p className="mt-3 text-xs leading-5 text-slate-500">
+                      Segmentos: {[...banner.targetInterests, ...banner.targetKeywords, ...banner.targetCategories].slice(0, 8).join(', ')}
+                    </p>
+                  ) : null}
                   <p className="mt-2 text-xs text-slate-400">
                     Atualizado em {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(banner.updatedAt))}
                   </p>

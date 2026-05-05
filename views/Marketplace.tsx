@@ -6,7 +6,7 @@ import { useToast } from '../components/feedback/ToastProvider';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import FieldErrorMessage from '../components/forms/FieldErrorMessage';
 import ImageGalleryField from '../components/forms/ImageGalleryField';
-import { Heart, MapPin, Plus } from 'lucide-react';
+import { BriefcaseBusiness, Heart, MapPin, Plus, UserRound } from 'lucide-react';
 import RegionSelector from '../components/RegionSelector';
 import {
   type FieldErrors,
@@ -345,6 +345,33 @@ const Marketplace: React.FC<MarketplaceProps> = ({
                     {tab}
                 </button>
             ))}
+        </div>
+
+        <div className={`rounded-3xl border p-4 ${
+          isProfessionalMode ? 'border-blue-100 bg-blue-50/60' : 'border-slate-100 bg-white'
+        }`}>
+          <div className="flex items-center gap-4">
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
+              isProfessionalMode ? 'bg-white text-[#0F4C81]' : 'bg-cyan-50 text-cyan-700'
+            }`}>
+              {isProfessionalMode ? <BriefcaseBusiness size={20} /> : <UserRound size={20} />}
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                Indicando evento
+              </p>
+              <p className={`mt-1 text-sm font-bold ${isProfessionalMode ? 'text-[#0F4C81]' : 'text-slate-800'}`}>
+                {isProfessionalMode
+                  ? `Como ${professionalIdentity?.name}`
+                  : `Como ${session?.user?.name || 'pessoa da comunidade'}`}
+              </p>
+              <p className="mt-1 text-xs font-medium leading-relaxed text-slate-500">
+                {isProfessionalMode
+                  ? 'Eventos criados aqui ficam vinculados ao negocio e aparecem na vitrine profissional apos aprovacao.'
+                  : 'Eventos pessoais entram como agenda da comunidade. Para evento do negocio, use o modo profissional.'}
+              </p>
+            </div>
+          </div>
         </div>
 
         {showCreateForm ? (

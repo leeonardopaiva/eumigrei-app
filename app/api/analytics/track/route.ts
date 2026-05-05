@@ -15,12 +15,49 @@ export async function POST(request: Request) {
     );
   }
 
-  await prisma.analyticsEvent.create({
-    data: {
-      ...parsed.data,
-      regionKey: parsed.data.regionKey || session?.user?.regionKey || null,
-      userId: session?.user?.id || null,
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.analyticsEvent.create({
+      data: {
+        ...parsed.data,
+        regionKey: parsed.data.regionKey || session?.user?.regionKey || null,
+        userId: session?.user?.id || null,
+      },
+    });
+
+    if (parsed.data.type === 'banner_click' && parsed.data.targetType === 'banner') {
+      const banner = await tx.banner.findUnique({
+        where: { id: parsed.data.targetKey },
+        select: {
+          id: true,
+          billingMode: true,
+          bidCents: true,
+        },
+      });
+
+      if (banner?.billingMode === 'CPC' && banner.bidCents > 0) {
+        const amountCents = banner.bidCents;
+
+        await tx.banner.update({
+          where: { id: banner.id },
+          data: {
+            spentCents: {
+              increment: amountCents,
+            },
+          },
+          select: { id: true },
+        });
+        await tx.adCharge.create({
+          data: {
+            bannerId: banner.id,
+            userId: session?.user?.id || null,
+            amountCents,
+            billingMode: 'CPC',
+            sourceType: 'click',
+          },
+          select: { id: true },
+        });
+      }
+    }
   });
 
   return NextResponse.json({ ok: true });

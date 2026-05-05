@@ -84,6 +84,33 @@ enum BannerPlacement {
   BOTH
 }
 
+enum AdCampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum AdObjective {
+  TRAFFIC
+  LEAD
+  AWARENESS
+}
+
+enum AdBillingMode {
+  FLAT
+  CPC
+  CPM
+  CPL
+}
+
+enum AdPaymentStatus {
+  NOT_REQUIRED
+  PENDING
+  PAID
+  FAILED
+}
+
 model User {
   id                  String          @id @default(cuid())
   name                String?
@@ -105,6 +132,8 @@ model User {
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
   accounts            Account[]
+  adCharges           AdCharge[]
+  adImpressions       AdImpression[]
   sessions            Session[]
   businessMemberships BusinessMember[]
   createdBusinesses   Business[]      @relation("BusinessCreator")
@@ -338,20 +367,72 @@ model PostReport {
 }
 
 model Banner {
-  id        String   @id @default(cuid())
-  name      String
-  imageUrl  String
-  type      BannerType @default(LINK)
-  placement BannerPlacement @default(HOME)
-  targetUrl String?
-  regionKey String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  region    Region?  @relation(fields: [regionKey], references: [key], onDelete: SetNull)
+  id                String           @id @default(cuid())
+  name              String
+  imageUrl          String
+  type              BannerType       @default(LINK)
+  placement         BannerPlacement  @default(HOME)
+  targetUrl         String?
+  regionKey         String?
+  isActive          Boolean          @default(true)
+  campaignStatus    AdCampaignStatus @default(ACTIVE)
+  objective         AdObjective      @default(TRAFFIC)
+  billingMode       AdBillingMode    @default(FLAT)
+  paymentStatus     AdPaymentStatus  @default(NOT_REQUIRED)
+  targetInterests   String[]         @default([])
+  targetKeywords    String[]         @default([])
+  targetCategories  String[]         @default([])
+  startsAt          DateTime?
+  endsAt            DateTime?
+  dailyBudgetCents  Int?
+  totalBudgetCents  Int?
+  bidCents          Int              @default(0)
+  spentCents        Int              @default(0)
+  checkoutUrl       String?
+  paymentProvider   String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  region            Region?          @relation(fields: [regionKey], references: [key], onDelete: SetNull)
   registrations BannerRegistration[]
+  impressions   AdImpression[]
+  charges       AdCharge[]
 
   @@index([isActive, regionKey, updatedAt])
+  @@index([campaignStatus, startsAt, endsAt])
+  @@index([paymentStatus, updatedAt])
+}
+
+model AdCharge {
+  id          String        @id @default(cuid())
+  bannerId    String
+  userId      String?
+  amountCents Int
+  billingMode AdBillingMode
+  sourceType  String
+  createdAt   DateTime      @default(now())
+  banner      Banner        @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([bannerId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model AdImpression {
+  id            String          @id @default(cuid())
+  bannerId      String
+  userId        String?
+  placement     BannerPlacement
+  sourcePath    String?
+  sourceSection String?
+  regionKey     String?
+  matchedBy     String[]        @default([])
+  createdAt     DateTime        @default(now())
+  banner        Banner          @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  user          User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([bannerId, createdAt])
+  @@index([userId, createdAt])
+  @@index([placement, createdAt])
 }
 
 model BannerRegistration {

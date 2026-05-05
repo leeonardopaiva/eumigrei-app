@@ -24,7 +24,9 @@ const Community: React.FC<{
   const [postContent, setPostContent] = useState('');
   const [postImageUrl, setPostImageUrl] = useState('');
   const [postExternalUrl, setPostExternalUrl] = useState('');
-  const [postPersonaMode, setPostPersonaMode] = useState<PersonaMode>('personal');
+  const [postPersonaMode, setPostPersonaMode] = useState<PersonaMode>(
+    personaMode === 'professional' ? 'professional' : 'personal',
+  );
   const [posts, setPosts] = useState<Post[]>([]);
   const [banners, setBanners] = useState<BannerAd[]>([]);
   const [publishing, setPublishing] = useState(false);
@@ -49,8 +51,8 @@ const Community: React.FC<{
     : user.regionKey || '';
 
   useEffect(() => {
-    setPostPersonaMode(personaMode === 'professional' && professionalIdentity ? 'professional' : 'personal');
-  }, [personaMode, professionalIdentity?.id]);
+    setPostPersonaMode(personaMode === 'professional' ? 'professional' : 'personal');
+  }, [personaMode]);
 
   const loadPosts = async (options?: { silent?: boolean }) => {
     try {
@@ -564,7 +566,7 @@ const Community: React.FC<{
       <div className="px-5">
         <CommunityComposer.Root>
           <CommunityComposer.AuthorSwitch
-            value={isProfessionalMode ? 'professional' : 'personal'}
+            value={postPersonaMode}
             onChange={setPostPersonaMode}
             personalName={user.name}
             professionalName={professionalIdentity?.name}
@@ -719,7 +721,7 @@ const FeedBannerCard: React.FC<{
     <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
     <div className="absolute left-5 right-5 top-5 flex items-center justify-between gap-3">
       <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur">
-        Divulgacao
+        Patrocinado
       </span>
       <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur">
         {banner.regionLabel || 'Global'}

@@ -287,6 +287,9 @@ export interface BannerAd {
   regionKey?: string | null;
   regionLabel?: string | null;
   scope?: 'global' | 'regional';
+  objective?: 'TRAFFIC' | 'LEAD' | 'AWARENESS';
+  matchedBy?: string[];
+  sponsored?: boolean;
 }
 
 export interface ReferralSummary {

@@ -36,6 +36,7 @@ interface RegistrationProps {
   emailEnabled: boolean;
   passwordEnabled: boolean;
   onGoogleLogin: () => void;
+  onGoogleSelectAccount?: () => void;
   onEmailLogin?: (email: string) => Promise<void>;
   onPasswordLogin?: (values: { email: string; password: string }) => Promise<void>;
   onPasswordRegister?: (values: {
@@ -70,6 +71,7 @@ const Registration: React.FC<RegistrationProps> = ({
   emailEnabled,
   passwordEnabled,
   onGoogleLogin,
+  onGoogleSelectAccount,
   onEmailLogin,
   onPasswordLogin,
   onPasswordRegister,
@@ -272,17 +274,18 @@ const Registration: React.FC<RegistrationProps> = ({
   return (
     <div className="min-h-screen bg-texture px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
       <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-5xl items-center justify-center">
-        <div className="scrollbar-hide flex w-full flex-col items-center overflow-y-auto px-6 py-10 sm:px-8 lg:px-14 lg:py-14">
-          <div className="w-full max-w-md">
-            <div className="mb-12 flex justify-center">
+        <div className="scrollbar-hide flex w-full flex-col items-center overflow-y-auto py-6 sm:py-10">
+          <div className="w-full max-w-lg overflow-hidden rounded-[32px] border border-slate-100 bg-white px-7 py-9 shadow-xl shadow-cyan-950/8 sm:px-10 sm:py-11">
+            <div className="mb-9 flex justify-center">
               <Logo size="lg" />
             </div>
 
-            <div className="mb-10 space-y-3 text-center">
-              <h1 className="text-2xl font-black leading-tight text-[#28B8C7]">
+            <div className="mb-10 space-y-4 text-center">
+              <div className="mx-auto h-1 w-10 rounded-full bg-[#28B8C7]" />
+              <h1 className="text-3xl font-black leading-tight text-slate-950 sm:text-[2rem]">
                 {isOnboarding ? 'Complete seu perfil' : 'A comunidade brasileira pelo mundo.'}
               </h1>
-              <p className="text-sm font-medium text-slate-500">
+              <p className="mx-auto max-w-md text-sm font-medium leading-relaxed text-slate-500">
                 {isOnboarding
                   ? 'Precisamos da sua regiao para liberar comunidade, negocios e eventos locais.'
                   : showGoogleOnlyAuth
@@ -298,7 +301,7 @@ const Registration: React.FC<RegistrationProps> = ({
             </div>
 
             {!isOnboarding ? (
-              <div className="w-full space-y-4">
+              <div className="w-full space-y-6">
                 {emailEnabled ? (
                   <form
                     className="space-y-3"
@@ -338,21 +341,36 @@ const Registration: React.FC<RegistrationProps> = ({
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="w-full rounded-[32px] bg-[#28B8C7] px-6 py-5 text-base font-bold text-white shadow-2xl shadow-[#28B8C7]/25 transition-all hover:bg-[#1E96A4] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex min-h-14 w-full items-center justify-center rounded-full bg-[#28B8C7] px-6 text-base font-bold text-white shadow-sm transition hover:bg-[#1E96A4] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {submitting ? 'Enviando link...' : 'Continuar com Email'}
                     </button>
                   </form>
                 ) : null}
                 {googleEnabled ? (
-                  <button
-                    type="button"
-                    onClick={onGoogleLogin}
-                    disabled={submitting}
-                    className="w-full rounded-[32px] border border-slate-200 bg-white px-6 py-5 text-base font-bold text-slate-700 shadow-xl shadow-slate-200/60 transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Continuar com Google
-                  </button>
+                  <div className="space-y-3">
+                    <button
+                      type="button"
+                      onClick={onGoogleLogin}
+                      disabled={submitting}
+                      className="flex min-h-14 w-full items-center justify-center gap-3 rounded-full border border-slate-200 bg-white px-6 text-base font-bold text-slate-800 shadow-sm transition hover:border-cyan-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-sm font-black text-[#4285F4]">
+                        G
+                      </span>
+                      Continuar com Google
+                    </button>
+                    {onGoogleSelectAccount ? (
+                      <button
+                        type="button"
+                        onClick={onGoogleSelectAccount}
+                        disabled={submitting}
+                        className="flex min-h-14 w-full items-center justify-center rounded-full border border-cyan-100 bg-cyan-50/60 px-6 text-base font-bold text-[#28B8C7] transition hover:bg-cyan-50 hover:text-[#1E96A4] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Escolher outra conta
+                      </button>
+                    ) : null}
+                  </div>
                 ) : null}
                 {passwordEnabled ? (
                   <div className="space-y-4">
@@ -629,7 +647,7 @@ const Registration: React.FC<RegistrationProps> = ({
                     ) : null}
                   </div>
                 ) : null}
-                <p className="text-center text-xs font-medium text-slate-400">
+                <p className="rounded-2xl bg-slate-50 px-4 py-3 text-center text-xs font-medium leading-relaxed text-slate-500">
                   {showGoogleOnlyAuth
                     ? 'Google cria ou reutiliza sua conta automaticamente.'
                     : emailEnabled
@@ -639,7 +657,7 @@ const Registration: React.FC<RegistrationProps> = ({
               </div>
             ) : (
               <form
-                className="w-full space-y-4"
+                className="w-full space-y-7"
                 onSubmit={async (event) => {
                   event.preventDefault();
 
@@ -679,7 +697,7 @@ const Registration: React.FC<RegistrationProps> = ({
                   });
                 }}
               >
-                <div className="space-y-3">
+                <div className="space-y-5">
                   <input
                     required
                     type="text"
@@ -690,7 +708,7 @@ const Registration: React.FC<RegistrationProps> = ({
                     }
                     onInput={() => clearFieldError('name')}
                     aria-invalid={Boolean(fieldErrors.name)}
-                    className="w-full rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#28B8C7]"
+                    className="min-h-14 w-full rounded-2xl border border-slate-200 bg-white px-5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:text-slate-900"
                   />
                   <FieldErrorMessage message={fieldErrors.name} />
 
@@ -708,7 +726,7 @@ const Registration: React.FC<RegistrationProps> = ({
                       }
                       onInput={() => clearFieldError('username')}
                       aria-invalid={Boolean(fieldErrors.username)}
-                      className="w-full rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#28B8C7]"
+                      className="min-h-14 w-full rounded-2xl border border-slate-200 bg-white px-5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:text-slate-900"
                     />
                     <p className="px-2 text-[11px] font-medium text-slate-400">
                       Esse nome vai identificar seu perfil publico e futuros links como
@@ -735,8 +753,8 @@ const Registration: React.FC<RegistrationProps> = ({
                     />
                   </div>
 
-                  <div className="flex gap-2">
-                    <label className="min-w-[150px] rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-sm">
+                  <div className="grid gap-3 sm:grid-cols-[170px_1fr]">
+                    <label className="flex min-h-14 items-center rounded-2xl border border-slate-200 bg-white px-3">
                       <div className="flex items-center gap-2">
                         <img
                           src={selectedCountry.flagUrl}
@@ -777,7 +795,7 @@ const Registration: React.FC<RegistrationProps> = ({
                       }
                       onInput={() => clearFieldError('phone')}
                       aria-invalid={Boolean(fieldErrors.phone)}
-                      className="flex-1 rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#28B8C7]"
+                      className="min-h-14 w-full rounded-2xl border border-slate-200 bg-white px-5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:text-slate-900"
                     />
                   </div>
                   <FieldErrorMessage message={fieldErrors.phone} />
@@ -793,7 +811,7 @@ const Registration: React.FC<RegistrationProps> = ({
                     placeholder="Seu melhor e-mail"
                     value={formValues.email}
                     disabled
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-100 py-4 px-6 text-sm text-slate-500 outline-none transition-all shadow-sm placeholder:text-slate-400"
+                    className="min-h-14 w-full rounded-2xl border border-slate-200 bg-slate-100 px-5 text-sm text-slate-500 outline-none transition placeholder:text-slate-400"
                   />
 
                   <RegionSelector
@@ -818,7 +836,7 @@ const Registration: React.FC<RegistrationProps> = ({
                 <button
                   type="submit"
                   disabled={submitting || onboardingBlocked}
-                  className="mt-8 w-full rounded-[32px] bg-[#28B8C7] py-5 text-lg font-bold text-white shadow-2xl shadow-[#28B8C7]/30 transition-all hover:bg-[#1E96A4] active:scale-95 disabled:opacity-60"
+                  className="flex min-h-14 w-full items-center justify-center rounded-2xl bg-[#28B8C7] px-6 text-base font-bold text-white shadow-sm transition hover:bg-[#1E96A4] disabled:opacity-60"
                 >
                   {submitting
                     ? 'Salvando...'
@@ -841,7 +859,7 @@ const Registration: React.FC<RegistrationProps> = ({
               </div>
             ) : null}
 
-            <div className="mb-2 mt-12 flex items-center gap-3 rounded-2xl border border-white/50 bg-white/40 px-6 py-3 backdrop-blur-sm">
+            <div className="mt-8 flex items-center gap-3 rounded-2xl border border-cyan-100 bg-cyan-50/70 px-4 py-3">
               <Shield size={18} className="flex-shrink-0 text-[#28B8C7]" />
               <p className="text-[10px] font-bold uppercase tracking-tight text-slate-500">
                 Ambiente seguro, com autenticacao e conteudo local.

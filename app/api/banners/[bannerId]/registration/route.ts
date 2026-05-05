@@ -24,12 +24,22 @@ export async function POST(_request: Request, context: RouteContext) {
       type: BannerType.REGISTRATION,
       isActive: true,
     },
-    select: { id: true, name: true },
+    select: { id: true, name: true, billingMode: true, bidCents: true },
   });
 
   if (!banner) {
     return NextResponse.json({ error: 'Banner de cadastro nao encontrado.' }, { status: 404 });
   }
+
+  const existingRegistration = await prisma.bannerRegistration.findUnique({
+    where: {
+      bannerId_userId: {
+        bannerId,
+        userId: session.user.id,
+      },
+    },
+    select: { id: true },
+  });
 
   const registration = await prisma.bannerRegistration.upsert({
     where: {
@@ -69,6 +79,30 @@ export async function POST(_request: Request, context: RouteContext) {
       userId: session.user.id,
     },
   });
+
+  if (!existingRegistration && banner.billingMode === 'CPL' && banner.bidCents > 0) {
+    await prisma.$transaction([
+      prisma.banner.update({
+        where: { id: banner.id },
+        data: {
+          spentCents: {
+            increment: banner.bidCents,
+          },
+        },
+        select: { id: true },
+      }),
+      prisma.adCharge.create({
+        data: {
+          bannerId: banner.id,
+          userId: session.user.id,
+          amountCents: banner.bidCents,
+          billingMode: 'CPL',
+          sourceType: 'lead',
+        },
+        select: { id: true },
+      }),
+    ]);
+  }
 
   return NextResponse.json({
     registration,

@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ShieldAlert } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -104,7 +104,16 @@ const App: React.FC = () => {
   const [registrationNotice, setRegistrationNotice] = useState<string | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
   const [authSubmitting, setAuthSubmitting] = useState(false);
-  const [personaMode, setPersonaMode] = useState<PersonaMode>('personal');
+  const [personaMode, setPersonaMode] = useState<PersonaMode>(() => {
+    if (typeof window === 'undefined') {
+      return 'personal';
+    }
+
+    return window.localStorage.getItem(PERSONA_MODE_STORAGE_KEY) === 'professional'
+      ? 'professional'
+      : 'personal';
+  });
+  const [personaModeReady, setPersonaModeReady] = useState(false);
   const [professionalIdentity, setProfessionalIdentity] = useState<ProfessionalProfileIdentity | null>(null);
   const [professionalProfileLoaded, setProfessionalProfileLoaded] = useState(false);
   const segments = pathname.split('/').filter(Boolean);
@@ -131,35 +140,43 @@ const App: React.FC = () => {
 
     if (!session?.user?.id) {
       setPersonaMode('personal');
+      setPersonaModeReady(true);
       return;
     }
 
     if (!canUseProfessionalMode) {
       window.localStorage.removeItem(PERSONA_MODE_STORAGE_KEY);
       setPersonaMode('personal');
+      setPersonaModeReady(true);
       return;
     }
 
     const storedMode = window.localStorage.getItem(PERSONA_MODE_STORAGE_KEY);
     setPersonaMode(storedMode === 'professional' ? 'professional' : 'personal');
+    setPersonaModeReady(true);
   }, [canUseProfessionalMode, session?.user?.id]);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !session?.user?.id || !canUseProfessionalMode) {
+    if (
+      typeof window === 'undefined' ||
+      !session?.user?.id ||
+      !canUseProfessionalMode ||
+      !personaModeReady
+    ) {
       return;
     }
 
     window.localStorage.setItem(PERSONA_MODE_STORAGE_KEY, personaMode);
-  }, [canUseProfessionalMode, personaMode, session?.user?.id]);
+  }, [canUseProfessionalMode, personaMode, personaModeReady, session?.user?.id]);
 
   useEffect(() => {
     let ignore = false;
 
     const loadProfessionalIdentity = async () => {
       setProfessionalProfileLoaded(false);
-      setProfessionalIdentity(null);
 
       if (!session?.user?.id || !canUseProfessionalMode) {
+        setProfessionalIdentity(null);
         setProfessionalProfileLoaded(true);
         return;
       }
@@ -177,10 +194,6 @@ const App: React.FC = () => {
         }
       } catch (error) {
         console.error('Failed to load professional identity:', error);
-
-        if (!ignore) {
-          setProfessionalIdentity(null);
-        }
       } finally {
         if (!ignore) {
           setProfessionalProfileLoaded(true);
@@ -205,6 +218,15 @@ const App: React.FC = () => {
     }
   }, [personaMode, professionalIdentity, professionalProfileLoaded]);
 
+  const handlePersonaModeChange = useCallback((mode: PersonaMode) => {
+    setPersonaMode(mode);
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(PERSONA_MODE_STORAGE_KEY, mode);
+      setPersonaModeReady(true);
+    }
+  }, []);
+
   const resolveDevMagicLink = async (email: string) => {
     if (!DEV_AUTH_ENABLED) {
       return false;
@@ -228,12 +250,16 @@ const App: React.FC = () => {
     return true;
   };
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = async (selectAccount = false) => {
     setRegistrationError(null);
     setRegistrationNotice(null);
 
     try {
-      await signIn('google', { callbackUrl: pathname || '/' });
+      await signIn(
+        'google',
+        { callbackUrl: pathname || '/' },
+        selectAccount ? { prompt: 'select_account' } : undefined,
+      );
     } catch (error) {
       console.error('Google sign-in failed:', error);
       setRegistrationError('Nao foi possivel entrar com Google agora.');
@@ -435,7 +461,8 @@ const App: React.FC = () => {
         googleEnabled={GOOGLE_AUTH_ENABLED}
         emailEnabled={EMAIL_AUTH_ENABLED}
         passwordEnabled={PASSWORD_AUTH_ENABLED}
-        onGoogleLogin={handleGoogleLogin}
+        onGoogleLogin={() => handleGoogleLogin(false)}
+        onGoogleSelectAccount={() => handleGoogleLogin(true)}
         onEmailLogin={handleEmailLogin}
         onPasswordLogin={handlePasswordLogin}
         onPasswordRegister={handlePasswordRegister}
@@ -454,7 +481,8 @@ const App: React.FC = () => {
         googleEnabled={GOOGLE_AUTH_ENABLED}
         emailEnabled={EMAIL_AUTH_ENABLED}
         passwordEnabled={PASSWORD_AUTH_ENABLED}
-        onGoogleLogin={handleGoogleLogin}
+        onGoogleLogin={() => handleGoogleLogin(false)}
+        onGoogleSelectAccount={() => handleGoogleLogin(true)}
         onCompleteProfile={handleProfileCompletion}
         submitting={savingProfile}
         error={registrationError}
@@ -472,7 +500,8 @@ const App: React.FC = () => {
   }
 
   const currentUser = buildCurrentUser(session.user);
-  const effectiveCanUseProfessionalMode = canUseProfessionalMode && Boolean(professionalIdentity);
+  const effectiveCanUseProfessionalMode =
+    canUseProfessionalMode && (Boolean(professionalIdentity) || !professionalProfileLoaded);
   const effectivePersonaMode: PersonaMode =
     effectiveCanUseProfessionalMode && personaMode === 'professional' ? 'professional' : 'personal';
 
@@ -483,7 +512,7 @@ const App: React.FC = () => {
         personaMode={effectivePersonaMode}
         canUseProfessionalMode={canUseProfessionalMode}
         professionalIdentity={professionalIdentity}
-        onPersonaModeChange={setPersonaMode}
+        onPersonaModeChange={handlePersonaModeChange}
         onSignOut={() => signOut({ callbackUrl: '/' })}
       >
         <PublicGroup slug={groupSlug} viewer={currentUser} embedded />
@@ -498,7 +527,7 @@ const App: React.FC = () => {
         personaMode={effectivePersonaMode}
         canUseProfessionalMode={canUseProfessionalMode}
         professionalIdentity={professionalIdentity}
-        onPersonaModeChange={setPersonaMode}
+        onPersonaModeChange={handlePersonaModeChange}
         onSignOut={() => signOut({ callbackUrl: '/' })}
       >
         <PublicProfessionalProfile username={professionalProfileUsername} viewer={currentUser} embedded />
@@ -513,7 +542,7 @@ const App: React.FC = () => {
         personaMode={effectivePersonaMode}
         canUseProfessionalMode={canUseProfessionalMode}
         professionalIdentity={professionalIdentity}
-        onPersonaModeChange={setPersonaMode}
+        onPersonaModeChange={handlePersonaModeChange}
         onSignOut={() => signOut({ callbackUrl: '/' })}
       >
         <PublicProfile username={publicProfileUsername} viewer={currentUser} embedded />
@@ -564,7 +593,7 @@ const App: React.FC = () => {
             user={currentUser}
             personaMode={personaMode}
             canUseProfessionalMode={canUseProfessionalMode}
-            onPersonaModeChange={setPersonaMode}
+            onPersonaModeChange={handlePersonaModeChange}
           />
         );
       default:
@@ -578,7 +607,7 @@ const App: React.FC = () => {
       personaMode={effectivePersonaMode}
       canUseProfessionalMode={canUseProfessionalMode}
       professionalIdentity={professionalIdentity}
-      onPersonaModeChange={setPersonaMode}
+      onPersonaModeChange={handlePersonaModeChange}
       onSignOut={() => signOut({ callbackUrl: '/' })}
     >
       {content}

@@ -1,4 +1,8 @@
 import {
+  AdBillingMode,
+  AdCampaignStatus,
+  AdObjective,
+  AdPaymentStatus,
   BusinessStatus,
   BannerPlacement,
   BannerType,
@@ -62,6 +66,34 @@ const optionalUrlArray = z
     message: 'Use URLs validas para a galeria iniciando com http:// ou https://',
   })
   .default([]);
+
+const optionalDate = z
+  .string()
+  .trim()
+  .transform(emptyToUndefined)
+  .optional()
+  .refine((value) => !value || !Number.isNaN(new Date(value).getTime()), {
+    message: 'Use uma data valida.',
+  });
+
+const optionalCurrencyCents = z
+  .union([z.coerce.number().int().min(0), z.null()])
+  .optional()
+  .transform((value) => (value === null ? undefined : value));
+
+const targetListSchema = z
+  .array(z.string().trim().min(2).max(60))
+  .max(20)
+  .default([])
+  .transform((values) =>
+    Array.from(
+      new Set(
+        values
+          .map((value) => value.toLowerCase())
+          .filter(Boolean),
+      ),
+    ),
+  );
 
 export const usernameSchema = z
   .string()
@@ -172,12 +204,34 @@ export const adminBannerSchema = z.object({
   targetUrl: optionalUrl,
   regionKey: z.string().trim().transform(emptyToUndefined).optional(),
   isActive: z.boolean().default(true),
+  campaignStatus: z.nativeEnum(AdCampaignStatus).default(AdCampaignStatus.ACTIVE),
+  objective: z.nativeEnum(AdObjective).default(AdObjective.TRAFFIC),
+  billingMode: z.nativeEnum(AdBillingMode).default(AdBillingMode.FLAT),
+  paymentStatus: z.nativeEnum(AdPaymentStatus).default(AdPaymentStatus.NOT_REQUIRED),
+  targetInterests: targetListSchema,
+  targetKeywords: targetListSchema,
+  targetCategories: targetListSchema,
+  startsAt: optionalDate,
+  endsAt: optionalDate,
+  dailyBudgetCents: optionalCurrencyCents,
+  totalBudgetCents: optionalCurrencyCents,
+  bidCents: z.coerce.number().int().min(0).default(0),
+  checkoutUrl: optionalUrl,
+  paymentProvider: z.string().trim().max(40).transform(emptyToUndefined).optional(),
 }).superRefine((data, context) => {
   if (data.type === BannerType.LINK && !data.targetUrl) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['targetUrl'],
       message: 'Informe o link de destino para banners do tipo link.',
+    });
+  }
+
+  if (data.startsAt && data.endsAt && new Date(data.endsAt) <= new Date(data.startsAt)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['endsAt'],
+      message: 'A data final deve ser posterior a data inicial.',
     });
   }
 });

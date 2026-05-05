@@ -330,7 +330,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
                   <div className="absolute left-8 top-8 right-8">
                     <div className="inline-flex rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-white backdrop-blur-sm">
-                      {banner.regionLabel || 'Toda a comunidade'}
+                      Patrocinado · {banner.regionLabel || 'Toda a comunidade'}
                     </div>
                     <h3 className="mt-4 text-3xl font-bold leading-tight text-white drop-shadow-md">
                       {banner.name}

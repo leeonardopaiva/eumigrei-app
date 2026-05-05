@@ -103,6 +103,21 @@ export async function GET() {
         targetUrl: true,
         regionKey: true,
         isActive: true,
+        campaignStatus: true,
+        objective: true,
+        billingMode: true,
+        paymentStatus: true,
+        targetInterests: true,
+        targetKeywords: true,
+        targetCategories: true,
+        startsAt: true,
+        endsAt: true,
+        dailyBudgetCents: true,
+        totalBudgetCents: true,
+        bidCents: true,
+        spentCents: true,
+        checkoutUrl: true,
+        paymentProvider: true,
         createdAt: true,
         updatedAt: true,
         region: {
@@ -114,6 +129,7 @@ export async function GET() {
         _count: {
           select: {
             registrations: true,
+            impressions: true,
           },
         },
         registrations: {

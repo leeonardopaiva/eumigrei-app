@@ -5,7 +5,7 @@ import { useToast } from '../components/feedback/ToastProvider';
 import StarRating from '../components/engagement/StarRating';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import FieldErrorMessage from '../components/forms/FieldErrorMessage';
-import { Search, Heart, MapPin, Plus } from 'lucide-react';
+import { BriefcaseBusiness, Heart, MapPin, Plus, Search, UserRound } from 'lucide-react';
 import RegionSelector from '../components/RegionSelector';
 import { formatLoosePhoneInput } from '../lib/forms/phone';
 import {
@@ -289,6 +289,33 @@ const BusinessList: React.FC<BusinessListProps> = ({
             className="w-full bg-slate-100/80 rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-0"
           />
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+        </div>
+
+        <div className={`rounded-3xl border p-4 ${
+          isProfessionalMode ? 'border-blue-100 bg-blue-50/60' : 'border-slate-100 bg-white'
+        }`}>
+          <div className="flex items-center gap-4">
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
+              isProfessionalMode ? 'bg-white text-[#0F4C81]' : 'bg-cyan-50 text-cyan-700'
+            }`}>
+              {isProfessionalMode ? <BriefcaseBusiness size={20} /> : <UserRound size={20} />}
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                Indicando negocio
+              </p>
+              <p className={`mt-1 text-sm font-bold ${isProfessionalMode ? 'text-[#0F4C81]' : 'text-slate-800'}`}>
+                {isProfessionalMode
+                  ? `Como ${professionalIdentity?.name}`
+                  : `Como ${session?.user?.name || 'pessoa da comunidade'}`}
+              </p>
+              <p className="mt-1 text-xs font-medium leading-relaxed text-slate-500">
+                {isProfessionalMode
+                  ? 'Use este modo para gerenciar sua propria vitrine profissional.'
+                  : 'Indique um negocio local. Depois da aprovacao, ele ativa a vitrine profissional.'}
+              </p>
+            </div>
+          </div>
         </div>
 
         {showCreateForm ? (
