@@ -13,20 +13,20 @@ body {
 }
 
 .app-shell {
-  --accent: #28b8c7;
-  --accent-strong: #1e96a4;
-  --accent-soft: #ecfeff;
-  --accent-soft-border: #c7f2f7;
-  --accent-ring: rgba(40, 184, 199, 0.18);
-  --accent-shadow: rgba(40, 184, 199, 0.22);
-  --accent-text-soft: rgba(15, 23, 42, 0.72);
-  --accent-gradient-start: rgba(40, 184, 199, 0.12);
-  --accent-gradient-end: rgba(30, 150, 164, 0.08);
+  --accent: #5b4bff;
+  --accent-strong: #345cff;
+  --accent-soft: #eef2ff;
+  --accent-soft-border: #d8e0ff;
+  --accent-ring: rgba(91, 75, 255, 0.18);
+  --accent-shadow: rgba(91, 75, 255, 0.22);
+  --accent-text-soft: rgba(52, 92, 255, 0.72);
+  --accent-gradient-start: rgba(91, 75, 255, 0.12);
+  --accent-gradient-end: rgba(52, 92, 255, 0.08);
 }
 
 .app-shell[data-persona='professional'] {
-  --accent: #0f4c81;
-  --accent-strong: #145da0;
+  --accent: #145da0;
+  --accent-strong: #0f4c81;
   --accent-soft: #eff6ff;
   --accent-soft-border: #bfdbfe;
   --accent-ring: rgba(15, 76, 129, 0.18);

@@ -24,8 +24,6 @@ import { trackAnalyticsEvent } from '../lib/analytics';
 import { handleAvatarError } from '../lib/avatar';
 import { PersonaMode, ProfessionalProfileIdentity, User, UserRole } from '../types';
 
-const logoPrimaryUrl = '/assets/logo-emigrei.png';
-const logoFallbackUrl = '/assets/logo26.png';
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -33,31 +31,21 @@ interface LogoProps {
 }
 
 export const Logo: React.FC<LogoProps> = ({ size = 'md', className = '', professional = false }) => {
-  const heightClass = {
-    sm: 'h-8',
-    md: 'h-12',
-    lg: 'h-14',
+  const textClass = {
+    sm: 'text-2xl',
+    md: 'text-3xl',
+    lg: 'text-4xl',
   }[size];
 
   return (
     <Link href="/" aria-label="Home">
-      <img
-        src={logoPrimaryUrl}
-        alt="emigrei"
-        className={`${heightClass} w-auto object-contain transition-all duration-300 ${className}`}
-        style={
-          professional
-            ? {
-                filter:
-                  'brightness(0) saturate(100%) invert(23%) sepia(74%) saturate(2108%) hue-rotate(205deg) brightness(92%) contrast(98%)',
-              }
-            : undefined
-        }
-        onError={(event) => {
-          event.currentTarget.onerror = null;
-          event.currentTarget.src = logoFallbackUrl;
-        }}
-      />
+      <span
+        className={`inline-block select-none font-black tracking-tight transition-all duration-300 ${
+          professional ? 'text-[#145DA0]' : 'theme-text'
+        } ${textClass} ${className}`}
+      >
+        Gringoou
+      </span>
     </Link>
   );
 };

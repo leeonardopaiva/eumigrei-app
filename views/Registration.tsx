@@ -272,25 +272,24 @@ const Registration: React.FC<RegistrationProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-texture px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+    <div className="min-h-screen bg-[#F4F6FB] px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
       <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-5xl items-center justify-center">
         <div className="scrollbar-hide flex w-full flex-col items-center overflow-y-auto py-6 sm:py-10">
-          <div className="w-full max-w-lg overflow-hidden rounded-[32px] border border-slate-100 bg-white px-7 py-9 shadow-xl shadow-cyan-950/8 sm:px-10 sm:py-11">
-            <div className="mb-9 flex justify-center">
+          <div className="w-full max-w-lg overflow-hidden rounded-[32px] border border-slate-200 bg-white px-7 py-10 shadow-xl shadow-slate-900/5 sm:px-10 sm:py-12">
+            <div className="mb-8 flex justify-center">
               <Logo size="lg" />
             </div>
 
-            <div className="mb-10 space-y-4 text-center">
-              <div className="mx-auto h-1 w-10 rounded-full bg-[#28B8C7]" />
-              <h1 className="text-3xl font-black leading-tight text-slate-950 sm:text-[2rem]">
-                {isOnboarding ? 'Complete seu perfil' : 'A comunidade brasileira pelo mundo.'}
+            <div className="mb-10 space-y-3 text-left">
+              <h1 className="text-4xl font-black leading-tight text-slate-900">
+                {isOnboarding ? 'Complete seu perfil' : 'Entre na sua conta'}
               </h1>
-              <p className="mx-auto max-w-md text-sm font-medium leading-relaxed text-slate-500">
+              <p className="max-w-md text-sm font-medium leading-relaxed text-slate-500">
                 {isOnboarding
-                  ? 'Precisamos da sua regiao para liberar comunidade, negocios e eventos locais.'
+                  ? 'Precisamos da sua região para liberar comunidade, negócios e eventos locais.'
                   : showGoogleOnlyAuth
-                    ? 'Entre com Google para acessar sua conta e finalizar o cadastro em poucos segundos.'
-                    : 'Entre com email ou Google para finalizar seu cadastro em poucos segundos.'}
+                    ? 'Use o Google para acessar sua conta.'
+                    : 'Use e-mail, Google ou senha para acessar sua conta.'}
               </p>
               {referralUsername ? (
                 <div className="inline-flex rounded-full border border-cyan-100 bg-cyan-50 px-4 py-2 text-xs font-bold text-cyan-700">
@@ -304,7 +303,7 @@ const Registration: React.FC<RegistrationProps> = ({
               <div className="w-full space-y-6">
                 {emailEnabled ? (
                   <form
-                    className="space-y-3"
+                    className="space-y-4"
                     onSubmit={async (event) => {
                       event.preventDefault();
 
@@ -335,25 +334,25 @@ const Registration: React.FC<RegistrationProps> = ({
                       }
                       onInput={() => clearFieldError('email')}
                       aria-invalid={Boolean(fieldErrors.email)}
-                      className="w-full rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#28B8C7]"
+                      className="w-full rounded-2xl border border-slate-200 bg-white py-4 px-6 text-sm text-slate-900 outline-none transition-all shadow-sm placeholder:text-slate-400 focus:text-slate-900 focus:ring-2 focus:ring-[#345CFF]"
                     />
                     <FieldErrorMessage message={fieldErrors.email} />
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="flex min-h-14 w-full items-center justify-center rounded-full bg-[#28B8C7] px-6 text-base font-bold text-white shadow-sm transition hover:bg-[#1E96A4] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex min-h-14 w-full items-center justify-center rounded-full bg-[#345CFF] px-6 text-base font-bold text-white shadow-sm transition hover:bg-[#2F4FE0] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {submitting ? 'Enviando link...' : 'Continuar com Email'}
                     </button>
                   </form>
                 ) : null}
                 {googleEnabled ? (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <button
                       type="button"
                       onClick={onGoogleLogin}
                       disabled={submitting}
-                      className="flex min-h-14 w-full items-center justify-center gap-3 rounded-full border border-slate-200 bg-white px-6 text-base font-bold text-slate-800 shadow-sm transition hover:border-cyan-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex min-h-14 w-full items-center justify-center gap-3 rounded-full border border-slate-200 bg-white px-6 text-base font-bold text-slate-800 shadow-sm transition hover:border-[#D8E0FF] hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <span className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-sm font-black text-[#4285F4]">
                         G
@@ -365,7 +364,7 @@ const Registration: React.FC<RegistrationProps> = ({
                         type="button"
                         onClick={onGoogleSelectAccount}
                         disabled={submitting}
-                        className="flex min-h-14 w-full items-center justify-center rounded-full border border-cyan-100 bg-cyan-50/60 px-6 text-base font-bold text-[#28B8C7] transition hover:bg-cyan-50 hover:text-[#1E96A4] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex min-h-14 w-full items-center justify-center rounded-full border border-[#D8E0FF] bg-[#EEF2FF] px-6 text-base font-bold text-[#345CFF] transition hover:bg-[#E6ECFF] hover:text-[#2F4FE0] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Escolher outra conta
                       </button>

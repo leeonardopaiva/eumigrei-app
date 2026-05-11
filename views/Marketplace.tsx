@@ -6,8 +6,9 @@ import { useToast } from '../components/feedback/ToastProvider';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import FieldErrorMessage from '../components/forms/FieldErrorMessage';
 import ImageGalleryField from '../components/forms/ImageGalleryField';
-import { BriefcaseBusiness, Heart, MapPin, Plus, UserRound } from 'lucide-react';
+import { Heart, MapPin, Plus } from 'lucide-react';
 import RegionSelector from '../components/RegionSelector';
+import UnifiedSearchInput from '../components/search/UnifiedSearchInput';
 import {
   type FieldErrors,
   hasFieldErrors,
@@ -99,6 +100,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({
   const { data: session } = useSession();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('Proximos');
+  const [search, setSearch] = useState('');
   const [events, setEvents] = useState<EventItem[]>([]);
   const [resultScope, setResultScope] = useState<'local' | 'global'>('local');
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -306,7 +308,15 @@ const Marketplace: React.FC<MarketplaceProps> = ({
       return eventDate >= todayStart && eventDate <= weekEnd;
     }
 
-    return eventDate >= now || isSameLocalDay(eventDate, now);
+    const term = search.trim().toLowerCase();
+    if (!term) {
+      return eventDate >= now || isSameLocalDay(eventDate, now);
+    }
+
+    return (
+      (eventDate >= now || isSameLocalDay(eventDate, now)) &&
+      `${item.title} ${item.venueName} ${item.locationLabel}`.toLowerCase().includes(term)
+    );
   });
 
   const sectionTitle =
@@ -318,60 +328,59 @@ const Marketplace: React.FC<MarketplaceProps> = ({
   return (
     <div className="px-5 space-y-6 animate-in fade-in duration-500 pb-20">
       <div className="mt-4 space-y-4">
-        <div className="flex items-center justify-between gap-3">
+        <div>
           <div>
-            <h1 className="text-2xl font-bold text-cyan-900">Agenda de Eventos</h1>
+            <h1 className="text-2xl font-bold theme-text">Agenda de Eventos</h1>
             <p className="mt-1 text-xs font-semibold text-slate-500">
               {isProfessionalMode
                 ? `Cadastrando como ${professionalIdentity?.name}. Novos eventos serao vinculados a este negocio.`
                 : 'Cadastrando como pessoa. Use o modo profissional para publicar eventos do negocio.'}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowCreateForm((current) => !current)}
-            className="inline-flex items-center gap-2 rounded-2xl bg-cyan-600 px-4 py-2 text-xs font-bold text-white shadow-md"
-          >
-            <Plus size={14} /> Criar
-          </button>
         </div>
+        <UnifiedSearchInput
+          value={search}
+          onChange={setSearch}
+          staticPlaceholder="Buscar eventos por titulo ou local..."
+        />
+        <button
+          type="button"
+          onClick={() => setShowCreateForm((current) => !current)}
+          className={`w-full rounded-3xl border p-4 text-left transition ${
+            isProfessionalMode
+              ? 'border-blue-100 bg-blue-50/60 hover:bg-blue-50'
+              : 'border-slate-100 bg-white hover:bg-slate-50'
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
+              isProfessionalMode ? 'bg-white text-[#0F4C81]' : 'theme-soft-surface'
+            }`}>
+              <Plus size={20} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                Cadastre seu evento
+              </p>
+              <p className={`mt-1 text-sm font-bold ${isProfessionalMode ? 'text-[#0F4C81]' : 'text-slate-800'}`}>
+                Divulgue seu evento para a comunidade local.
+              </p>
+              <p className="mt-1 text-xs font-medium leading-relaxed text-slate-500">
+                {showCreateForm ? 'Toque para ocultar o formulario.' : 'Toque para abrir o formulario de cadastro.'}
+              </p>
+            </div>
+          </div>
+        </button>
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {['Hoje', 'Esta semana', 'Proximos', 'Cultural', 'Networking'].map((tab) => (
                 <button 
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-5 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap shadow-sm border ${activeTab === tab ? 'bg-cyan-600 text-white border-cyan-700' : 'bg-white text-cyan-900 border-slate-100'}`}
+                    className={`px-5 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap shadow-sm border ${activeTab === tab ? 'theme-bg text-white border-transparent' : 'bg-white theme-text border-slate-100'}`}
                 >
                     {tab}
                 </button>
             ))}
-        </div>
-
-        <div className={`rounded-3xl border p-4 ${
-          isProfessionalMode ? 'border-blue-100 bg-blue-50/60' : 'border-slate-100 bg-white'
-        }`}>
-          <div className="flex items-center gap-4">
-            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
-              isProfessionalMode ? 'bg-white text-[#0F4C81]' : 'bg-cyan-50 text-cyan-700'
-            }`}>
-              {isProfessionalMode ? <BriefcaseBusiness size={20} /> : <UserRound size={20} />}
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                Indicando evento
-              </p>
-              <p className={`mt-1 text-sm font-bold ${isProfessionalMode ? 'text-[#0F4C81]' : 'text-slate-800'}`}>
-                {isProfessionalMode
-                  ? `Como ${professionalIdentity?.name}`
-                  : `Como ${session?.user?.name || 'pessoa da comunidade'}`}
-              </p>
-              <p className="mt-1 text-xs font-medium leading-relaxed text-slate-500">
-                {isProfessionalMode
-                  ? 'Eventos criados aqui ficam vinculados ao negocio e aparecem na vitrine profissional apos aprovacao.'
-                  : 'Eventos pessoais entram como agenda da comunidade. Para evento do negocio, use o modo profissional.'}
-              </p>
-            </div>
-          </div>
         </div>
 
         {showCreateForm ? (
@@ -388,7 +397,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({
               onInput={() => clearFieldError('title')}
               aria-invalid={Boolean(fieldErrors.title)}
               placeholder="Titulo do evento"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
             />
             <FieldErrorMessage message={fieldErrors.title} />
             <textarea
@@ -401,7 +410,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({
               onInput={() => clearFieldError('description')}
               aria-invalid={Boolean(fieldErrors.description)}
               placeholder="Descricao do evento"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
             />
             <FieldErrorMessage message={fieldErrors.description} />
             <input
@@ -413,7 +422,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({
               onInput={() => clearFieldError('venueName')}
               aria-invalid={Boolean(fieldErrors.venueName)}
               placeholder="Local"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
             />
             <FieldErrorMessage message={fieldErrors.venueName} />
             <div className="grid grid-cols-2 gap-3">
@@ -427,7 +436,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({
                 onInput={() => clearFieldError('startsAt')}
                 aria-invalid={Boolean(fieldErrors.startsAt)}
                 placeholder="Data e hora de inicio"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+                className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
               />
               <input
                 type="datetime-local"
@@ -436,7 +445,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({
                   setCreateForm((current) => ({ ...current, endsAt: event.target.value }))
                 }
                 placeholder="Data e hora de fim"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+                className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
               />
             </div>
             <FieldErrorMessage message={fieldErrors.startsAt} />
@@ -460,7 +469,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({
               onInput={() => clearFieldError('externalUrl')}
               aria-invalid={Boolean(fieldErrors.externalUrl)}
               placeholder="Link externo do evento"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
             />
             <FieldErrorMessage message={fieldErrors.externalUrl} />
             <CloudinaryImageField
@@ -485,7 +494,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({
             <button
               type="submit"
               disabled={submitting || !createForm.regionKey}
-              className="w-full rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
+              className="theme-bg theme-bg-hover w-full rounded-2xl px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
             >
               {submitting ? 'Enviando...' : 'Enviar para aprovacao'}
             </button>
@@ -495,7 +504,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({
       </div>
 
       <div className="space-y-4">
-        <h2 className="font-bold text-cyan-900">{sectionTitle}</h2>
+        <h2 className="font-bold theme-text">{sectionTitle}</h2>
         {resultScope === 'global' && events.length > 0 ? (
           <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
             Ainda nao ha eventos publicados na sua regiao. Mostrando eventos de outras regioes.

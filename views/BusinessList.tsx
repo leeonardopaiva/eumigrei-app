@@ -5,8 +5,9 @@ import { useToast } from '../components/feedback/ToastProvider';
 import StarRating from '../components/engagement/StarRating';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import FieldErrorMessage from '../components/forms/FieldErrorMessage';
-import { BriefcaseBusiness, Heart, MapPin, Plus, Search, UserRound } from 'lucide-react';
+import { Heart, MapPin, Plus } from 'lucide-react';
 import RegionSelector from '../components/RegionSelector';
+import UnifiedSearchInput from '../components/search/UnifiedSearchInput';
 import { formatLoosePhoneInput } from '../lib/forms/phone';
 import {
   type FieldErrors,
@@ -263,60 +264,50 @@ const BusinessList: React.FC<BusinessListProps> = ({
   return (
     <div className="px-5 space-y-6 animate-in fade-in duration-500">
       <div className="mt-4 space-y-4">
-        <div className="flex items-center justify-between gap-3">
+        <div>
           <div>
-            <h1 className="text-2xl font-bold text-cyan-900">Negocios</h1>
+            <h1 className="text-2xl font-bold theme-text">Negocios</h1>
             <p className="mt-1 text-xs font-semibold text-slate-500">
               {isProfessionalMode
                 ? `Editando como ${professionalIdentity?.name}. Os demais negocios ficam apenas para consulta.`
                 : 'Cadastrando como pessoa. Ao criar um negocio, sua vitrine profissional sera ativada.'}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowCreateForm((current) => !current)}
-            className="inline-flex items-center gap-2 rounded-2xl bg-cyan-600 px-4 py-2 text-xs font-bold text-white shadow-md"
-          >
-            <Plus size={14} /> Cadastrar
-          </button>
         </div>
-        <div className="relative">
-          <input
-            type="text"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar negocios brasileiros..."
-            className="w-full bg-slate-100/80 rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-0"
-          />
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-        </div>
+        <UnifiedSearchInput
+          value={search}
+          onChange={setSearch}
+          staticPlaceholder="Buscar negocios brasileiros..."
+        />
 
-        <div className={`rounded-3xl border p-4 ${
-          isProfessionalMode ? 'border-blue-100 bg-blue-50/60' : 'border-slate-100 bg-white'
-        }`}>
+        <button
+          type="button"
+          onClick={() => setShowCreateForm((current) => !current)}
+          className={`w-full rounded-3xl border p-4 text-left transition ${
+            isProfessionalMode
+              ? 'border-blue-100 bg-blue-50/60 hover:bg-blue-50'
+              : 'border-slate-100 bg-white hover:bg-slate-50'
+          }`}
+        >
           <div className="flex items-center gap-4">
             <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
-              isProfessionalMode ? 'bg-white text-[#0F4C81]' : 'bg-cyan-50 text-cyan-700'
+              isProfessionalMode ? 'bg-white text-[#0F4C81]' : 'theme-soft-surface'
             }`}>
-              {isProfessionalMode ? <BriefcaseBusiness size={20} /> : <UserRound size={20} />}
+              <Plus size={20} />
             </div>
             <div className="min-w-0">
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                Indicando negocio
+                Cadastre seu negocio
               </p>
               <p className={`mt-1 text-sm font-bold ${isProfessionalMode ? 'text-[#0F4C81]' : 'text-slate-800'}`}>
-                {isProfessionalMode
-                  ? `Como ${professionalIdentity?.name}`
-                  : `Como ${session?.user?.name || 'pessoa da comunidade'}`}
+                Tem uma empresa ou negocio? Crie sua pagina sem custo.
               </p>
               <p className="mt-1 text-xs font-medium leading-relaxed text-slate-500">
-                {isProfessionalMode
-                  ? 'Use este modo para gerenciar sua propria vitrine profissional.'
-                  : 'Indique um negocio local. Depois da aprovacao, ele ativa a vitrine profissional.'}
+                {showCreateForm ? 'Toque para ocultar o formulario.' : 'Toque para abrir o formulario de cadastro.'}
               </p>
             </div>
           </div>
-        </div>
+        </button>
 
         {showCreateForm ? (
           <form
@@ -332,7 +323,7 @@ const BusinessList: React.FC<BusinessListProps> = ({
               onInput={() => clearFieldError('name')}
               aria-invalid={Boolean(fieldErrors.name)}
               placeholder="Nome do negocio"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
             />
             <FieldErrorMessage message={fieldErrors.name} />
             <div className="grid grid-cols-2 gap-3">
@@ -341,7 +332,7 @@ const BusinessList: React.FC<BusinessListProps> = ({
                 onChange={(event) =>
                   setCreateForm((current) => ({ ...current, category: event.target.value }))
                 }
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+                className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
               >
                 {['Restaurante', 'Mercado', 'Beleza', 'Saude'].map((category) => (
                   <option key={category} value={category}>
@@ -361,7 +352,7 @@ const BusinessList: React.FC<BusinessListProps> = ({
                 onInput={() => clearFieldError('phone')}
                 aria-invalid={Boolean(fieldErrors.phone)}
                 placeholder="Telefone"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+                className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
               />
             </div>
             <FieldErrorMessage message={fieldErrors.phone} />
@@ -374,7 +365,7 @@ const BusinessList: React.FC<BusinessListProps> = ({
               onInput={() => clearFieldError('address')}
               aria-invalid={Boolean(fieldErrors.address)}
               placeholder="Endereco"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
             />
             <FieldErrorMessage message={fieldErrors.address} />
             <RegionSelector
@@ -396,7 +387,7 @@ const BusinessList: React.FC<BusinessListProps> = ({
               onInput={() => clearFieldError('description')}
               aria-invalid={Boolean(fieldErrors.description)}
               placeholder="Descricao do negocio"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
             />
             <FieldErrorMessage message={fieldErrors.description} />
             <div className="grid grid-cols-2 gap-3">
@@ -408,7 +399,7 @@ const BusinessList: React.FC<BusinessListProps> = ({
                 onInput={() => clearFieldError('website')}
                 aria-invalid={Boolean(fieldErrors.website)}
                 placeholder="Website"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+                className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
               />
               <input
                 value={createForm.instagram}
@@ -416,7 +407,7 @@ const BusinessList: React.FC<BusinessListProps> = ({
                   setCreateForm((current) => ({ ...current, instagram: event.target.value }))
                 }
                 placeholder="Instagram"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+                className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
               />
             </div>
             <FieldErrorMessage message={fieldErrors.website} />
@@ -434,7 +425,7 @@ const BusinessList: React.FC<BusinessListProps> = ({
             <button
               type="submit"
               disabled={submitting || !createForm.regionKey}
-              className="w-full rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
+              className="theme-bg theme-bg-hover w-full rounded-2xl px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
             >
               {submitting ? 'Enviando...' : 'Enviar para aprovacao'}
             </button>
@@ -450,8 +441,8 @@ const BusinessList: React.FC<BusinessListProps> = ({
             onClick={() => setActiveFilter(category)}
             className={`px-6 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap shadow-sm border ${
               activeFilter === category
-                ? 'bg-cyan-600 text-white border-cyan-700'
-                : 'bg-white text-cyan-900 border-slate-100'
+                ? 'theme-bg text-white border-transparent'
+                : 'bg-white theme-text border-slate-100'
             }`}
           >
             {category}
@@ -460,7 +451,7 @@ const BusinessList: React.FC<BusinessListProps> = ({
       </div>
 
       <div className="space-y-4 pb-20">
-        <h2 className="font-bold text-cyan-900">Negocios disponiveis</h2>
+        <h2 className="font-bold theme-text">Negocios disponiveis</h2>
         {resultScope === 'global' && businesses.length > 0 ? (
           <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
             Ainda nao ha negocios publicados na sua regiao. Mostrando resultados de outras regioes.
@@ -494,7 +485,7 @@ const BusinessList: React.FC<BusinessListProps> = ({
             <div className="relative z-10 flex flex-1 flex-col justify-between p-4">
               <div>
                 <div className="flex items-start justify-between gap-3">
-                  <h4 className="font-bold text-cyan-900">{business.name}</h4>
+                  <h4 className="font-bold theme-text">{business.name}</h4>
                   {!isPendingReview ? (
                     <button
                       type="button"
@@ -520,12 +511,12 @@ const BusinessList: React.FC<BusinessListProps> = ({
                     compact
                   />
                 </div>
-                <p className="text-cyan-600 text-[10px] font-bold mt-0.5">{business.category}</p>
+                <p className="theme-text text-[10px] font-bold mt-0.5">{business.category}</p>
                 <div className="flex items-center gap-1 text-slate-500 text-[10px] mt-1">
                   <MapPin size={10} /> {business.address}
                 </div>
               </div>
-              <span className="self-end rounded-xl bg-cyan-600 px-4 py-1.5 text-[10px] font-bold text-white shadow-sm">
+              <span className="theme-bg self-end rounded-xl px-4 py-1.5 text-[10px] font-bold text-white shadow-sm">
                 {business.canEdit ? 'Editar perfil' : 'Ver perfil'}
               </span>
             </div>

@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
-  Search,
   ChevronDown,
   ExternalLink,
   Building2,
@@ -19,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../components/feedback/ToastProvider';
 import RegionSelector from '../components/RegionSelector';
+import UnifiedSearchInput from '../components/search/UnifiedSearchInput';
 import { trackAnalyticsEvent } from '../lib/analytics';
 import { BannerAd, User } from '../types';
 
@@ -249,39 +249,17 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
         ) : null}
       </div>
 
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
+      <UnifiedSearchInput
+        value={searchQuery}
+        onChange={setSearchQuery}
+        animatedTerms={animatedSearchTerms}
+        animatedIndex={searchPlaceholderIndex}
+        onSubmit={() => {
           const trimmed = searchQuery.trim();
-
-          if (!trimmed) {
-            return;
-          }
-
+          if (!trimmed) return;
           router.push(`/buscar?q=${encodeURIComponent(trimmed)}`);
         }}
-        className="relative overflow-hidden rounded-full border border-slate-200 bg-white shadow-sm transition-all theme-outline-ring"
-      >
-        {!searchQuery ? (
-          <div className="pointer-events-none absolute inset-y-0 left-12 right-5 flex items-center text-sm text-slate-400">
-            <span>Busque por&nbsp;</span>
-            <span
-              key={animatedSearchTerms[searchPlaceholderIndex]}
-              className="theme-text animate-in font-bold fade-in duration-300"
-            >
-              {animatedSearchTerms[searchPlaceholderIndex]}
-            </span>
-          </div>
-        ) : null}
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder=""
-          className="w-full bg-transparent py-4 pl-12 pr-5 text-sm text-slate-700 outline-none"
-        />
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-      </form>
+      />
 
       <div className="grid grid-cols-3 gap-3">
         <ServiceCard href="/negocios" icon={Building2} label="Negocios" />
