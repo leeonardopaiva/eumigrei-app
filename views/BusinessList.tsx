@@ -303,136 +303,49 @@ const BusinessList: React.FC<BusinessListProps> = ({
                 Tem uma empresa ou negocio? Crie sua pagina sem custo.
               </p>
               <p className="mt-1 text-xs font-medium leading-relaxed text-slate-500">
-                {showCreateForm ? 'Toque para ocultar o formulario.' : 'Toque para abrir o formulario de cadastro.'}
+                {showCreateForm ? 'Toque para fechar o modal.' : 'Toque para abrir o cadastro em modal.'}
               </p>
             </div>
           </div>
         </button>
 
-        {showCreateForm ? (
-          <form
-            onSubmit={handleCreateBusiness}
-            className="space-y-3 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm"
-          >
-            <input
-              required
-              value={createForm.name}
-              onChange={(event) =>
-                setCreateForm((current) => ({ ...current, name: event.target.value }))
-              }
-              onInput={() => clearFieldError('name')}
-              aria-invalid={Boolean(fieldErrors.name)}
-              placeholder="Nome do negocio"
-              className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
-            />
-            <FieldErrorMessage message={fieldErrors.name} />
-            <div className="grid grid-cols-2 gap-3">
-              <select
-                value={createForm.category}
-                onChange={(event) =>
-                  setCreateForm((current) => ({ ...current, category: event.target.value }))
-                }
-                className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
-              >
-                {['Restaurante', 'Mercado', 'Beleza', 'Saude'].map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-              <input
-                required
-                value={createForm.phone}
-                onChange={(event) =>
-                  setCreateForm((current) => ({
-                    ...current,
-                    phone: formatLoosePhoneInput(event.target.value),
-                  }))
-                }
-                onInput={() => clearFieldError('phone')}
-                aria-invalid={Boolean(fieldErrors.phone)}
-                placeholder="Telefone"
-                className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
-              />
-            </div>
-            <FieldErrorMessage message={fieldErrors.phone} />
-            <input
-              required
-              value={createForm.address}
-              onChange={(event) =>
-                setCreateForm((current) => ({ ...current, address: event.target.value }))
-              }
-              onInput={() => clearFieldError('address')}
-              aria-invalid={Boolean(fieldErrors.address)}
-              placeholder="Endereco"
-              className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
-            />
-            <FieldErrorMessage message={fieldErrors.address} />
-            <RegionSelector
-              value={createForm.regionKey}
-              onChange={(region) => {
-                clearFieldError('regionKey');
-                setCreateForm((current) => ({ ...current, regionKey: region.key }));
-              }}
-              hint="Escolha uma regiao existente para padronizar a publicacao."
-            />
-            <FieldErrorMessage message={fieldErrors.regionKey} />
-            <textarea
-              required
-              rows={3}
-              value={createForm.description}
-              onChange={(event) =>
-                setCreateForm((current) => ({ ...current, description: event.target.value }))
-              }
-              onInput={() => clearFieldError('description')}
-              aria-invalid={Boolean(fieldErrors.description)}
-              placeholder="Descricao do negocio"
-              className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
-            />
-            <FieldErrorMessage message={fieldErrors.description} />
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                value={createForm.website}
-                onChange={(event) =>
-                  setCreateForm((current) => ({ ...current, website: event.target.value }))
-                }
-                onInput={() => clearFieldError('website')}
-                aria-invalid={Boolean(fieldErrors.website)}
-                placeholder="Website"
-                className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
-              />
-              <input
-                value={createForm.instagram}
-                onChange={(event) =>
-                  setCreateForm((current) => ({ ...current, instagram: event.target.value }))
-                }
-                placeholder="Instagram"
-                className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
-              />
-            </div>
-            <FieldErrorMessage message={fieldErrors.website} />
-            <CloudinaryImageField
-              value={createForm.imageUrl}
-              onChange={(value) =>
-                setCreateForm((current) => ({ ...current, imageUrl: value }))
-              }
-              onClearError={() => clearFieldError('imageUrl')}
-              error={fieldErrors.imageUrl}
-              folder="businesses"
-              placeholder="Link da imagem de capa"
-              hint="Envie a capa pela Cloudinary ou cole uma URL publica."
-            />
-            <button
-              type="submit"
-              disabled={submitting || !createForm.regionKey}
-              className="theme-bg theme-bg-hover w-full rounded-2xl px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
-            >
-              {submitting ? 'Enviando...' : 'Enviar para aprovacao'}
-            </button>
-          </form>
-        ) : null}
-
       </div>
+      {showCreateForm ? (
+        <div className="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 p-3 sm:items-center sm:p-6">
+          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl sm:p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-lg font-bold theme-text">Cadastrar negócio</h3>
+              <button type="button" onClick={() => setShowCreateForm(false)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600">Fechar</button>
+            </div>
+            <form onSubmit={handleCreateBusiness} className="space-y-3">
+              <input required value={createForm.name} onChange={(event) => setCreateForm((current) => ({ ...current, name: event.target.value }))} onInput={() => clearFieldError('name')} aria-invalid={Boolean(fieldErrors.name)} placeholder="Nome do negocio" className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none" />
+              <FieldErrorMessage message={fieldErrors.name} />
+              <div className="grid grid-cols-2 gap-3">
+                <select value={createForm.category} onChange={(event) => setCreateForm((current) => ({ ...current, category: event.target.value }))} className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none">
+                  {['Restaurante', 'Mercado', 'Beleza', 'Saude'].map((category) => <option key={category} value={category}>{category}</option>)}
+                </select>
+                <input required value={createForm.phone} onChange={(event) => setCreateForm((current) => ({ ...current, phone: formatLoosePhoneInput(event.target.value) }))} onInput={() => clearFieldError('phone')} aria-invalid={Boolean(fieldErrors.phone)} placeholder="Telefone" className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none" />
+              </div>
+              <FieldErrorMessage message={fieldErrors.phone} />
+              <input required value={createForm.address} onChange={(event) => setCreateForm((current) => ({ ...current, address: event.target.value }))} onInput={() => clearFieldError('address')} aria-invalid={Boolean(fieldErrors.address)} placeholder="Endereco" className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none" />
+              <FieldErrorMessage message={fieldErrors.address} />
+              <RegionSelector value={createForm.regionKey} onChange={(region) => { clearFieldError('regionKey'); setCreateForm((current) => ({ ...current, regionKey: region.key })); }} hint="Escolha uma regiao existente para padronizar a publicacao." />
+              <FieldErrorMessage message={fieldErrors.regionKey} />
+              <textarea required rows={3} value={createForm.description} onChange={(event) => setCreateForm((current) => ({ ...current, description: event.target.value }))} onInput={() => clearFieldError('description')} aria-invalid={Boolean(fieldErrors.description)} placeholder="Descricao do negocio" className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none" />
+              <FieldErrorMessage message={fieldErrors.description} />
+              <div className="grid grid-cols-2 gap-3">
+                <input value={createForm.website} onChange={(event) => setCreateForm((current) => ({ ...current, website: event.target.value }))} onInput={() => clearFieldError('website')} aria-invalid={Boolean(fieldErrors.website)} placeholder="Website" className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none" />
+                <input value={createForm.instagram} onChange={(event) => setCreateForm((current) => ({ ...current, instagram: event.target.value }))} placeholder="Instagram" className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none" />
+              </div>
+              <FieldErrorMessage message={fieldErrors.website} />
+              <CloudinaryImageField value={createForm.imageUrl} onChange={(value) => setCreateForm((current) => ({ ...current, imageUrl: value }))} onClearError={() => clearFieldError('imageUrl')} error={fieldErrors.imageUrl} folder="businesses" placeholder="Link da imagem de capa" hint="Envie a capa pela Cloudinary ou cole uma URL publica." />
+              <button type="submit" disabled={submitting || !createForm.regionKey} className="theme-bg theme-bg-hover w-full rounded-2xl px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60">
+                {submitting ? 'Enviando...' : 'Enviar para aprovacao'}
+              </button>
+            </form>
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
         {['Todos', 'Restaurante', 'Mercado', 'Beleza', 'Saude'].map((category) => (

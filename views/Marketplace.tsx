@@ -366,7 +366,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({
                 Divulgue seu evento para a comunidade local.
               </p>
               <p className="mt-1 text-xs font-medium leading-relaxed text-slate-500">
-                {showCreateForm ? 'Toque para ocultar o formulario.' : 'Toque para abrir o formulario de cadastro.'}
+                {showCreateForm ? 'Toque para fechar o modal.' : 'Toque para abrir o cadastro em modal.'}
               </p>
             </div>
           </div>
@@ -384,10 +384,16 @@ const Marketplace: React.FC<MarketplaceProps> = ({
         </div>
 
         {showCreateForm ? (
-          <form
-            onSubmit={handleCreateEvent}
-            className="space-y-3 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm"
-          >
+          <div className="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 p-3 sm:items-center sm:p-6">
+            <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl sm:p-5">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-lg font-bold theme-text">Cadastrar evento</h3>
+                <button type="button" onClick={() => setShowCreateForm(false)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600">Fechar</button>
+              </div>
+              <form
+                onSubmit={handleCreateEvent}
+                className="space-y-3"
+              >
             <input
               required
               value={createForm.title}
@@ -491,14 +497,16 @@ const Marketplace: React.FC<MarketplaceProps> = ({
               folder="events"
               hint="Adicione mais imagens para a pagina detalhada do evento."
             />
-            <button
-              type="submit"
-              disabled={submitting || !createForm.regionKey}
-              className="theme-bg theme-bg-hover w-full rounded-2xl px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
-            >
-              {submitting ? 'Enviando...' : 'Enviar para aprovacao'}
-            </button>
-          </form>
+                <button
+                  type="submit"
+                  disabled={submitting || !createForm.regionKey}
+                  className="theme-bg theme-bg-hover w-full rounded-2xl px-4 py-3 text-sm font-bold text-white shadow-md disabled:opacity-60"
+                >
+                  {submitting ? 'Enviando...' : 'Enviar para aprovacao'}
+                </button>
+              </form>
+            </div>
+          </div>
         ) : null}
 
       </div>
