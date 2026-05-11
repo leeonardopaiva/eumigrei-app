@@ -652,7 +652,7 @@ const EventCard: React.FC<{
                     title={item.isFavorite ? 'Interessados' : 'Confirmar interesse'}
                     className={`relative z-30 inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[10px] font-bold disabled:opacity-60 ${
                       item.isFavorite
-                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                        ? 'h-8 w-8 justify-center bg-emerald-600 p-0 text-white shadow-md shadow-emerald-600/25'
                         : 'border border-slate-200 bg-white text-slate-700'
                     }`}
                   >

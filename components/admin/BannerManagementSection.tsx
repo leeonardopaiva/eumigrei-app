@@ -353,7 +353,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-[#28B8C7]">Banners</h2>
+        <h2 className="text-lg font-bold theme-text">Banners</h2>
         <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500 shadow-sm">
           {banners.length}
         </span>
@@ -395,7 +395,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
             }}
             placeholder="Nome do banner"
             aria-invalid={Boolean(fieldErrors.name)}
-            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 theme-ring"
           />
           <FieldErrorMessage message={fieldErrors.name} />
         </div>
@@ -421,7 +421,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                   }}
                   className={`rounded-xl px-3 py-2 text-sm font-bold transition ${
                     bannerForm.type === option.value
-                      ? 'bg-white text-[#28B8C7] shadow-sm'
+                      ? 'bg-white theme-text shadow-sm'
                       : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
@@ -455,7 +455,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                   }
                   className={`rounded-xl px-2 py-2 text-xs font-bold transition sm:text-sm ${
                     bannerForm.placement === option.value
-                      ? 'bg-white text-[#28B8C7] shadow-sm'
+                      ? 'bg-white theme-text shadow-sm'
                       : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
@@ -497,7 +497,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
               }
               placeholder="Link de destino"
               aria-invalid={Boolean(fieldErrors.targetUrl)}
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 theme-ring"
             />
             <FieldErrorMessage message={fieldErrors.targetUrl} />
           </div>
@@ -522,14 +522,14 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
               onChange={(event) =>
                 setBannerForm((current) => ({ ...current, isActive: event.target.checked }))
               }
-              className="h-4 w-4 rounded border-slate-300 text-[#28B8C7] focus:ring-[#28B8C7]"
+              className="h-4 w-4 rounded border-slate-300 theme-text theme-ring"
             />
           </label>
         </div>
 
-        <div className="space-y-4 rounded-3xl border border-cyan-100 bg-cyan-50/60 p-4">
+        <div className="space-y-4 rounded-3xl border border-slate-200 theme-soft-surface p-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-[#28B8C7]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white theme-text">
               <Target size={18} />
             </div>
             <div>
@@ -552,7 +552,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                   setBannerForm((current) => ({ ...current, targetInterests: event.target.value }))
                 }
                 placeholder="moradia, emprego"
-                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm outline-none focus:ring-2 theme-ring"
               />
             </label>
             <label className="space-y-2">
@@ -565,7 +565,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                   setBannerForm((current) => ({ ...current, targetKeywords: event.target.value }))
                 }
                 placeholder="advogado, visto"
-                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm outline-none focus:ring-2 theme-ring"
               />
             </label>
             <label className="space-y-2">
@@ -578,7 +578,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                   setBannerForm((current) => ({ ...current, targetCategories: event.target.value }))
                 }
                 placeholder="restaurante, servicos"
-                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm outline-none focus:ring-2 theme-ring"
               />
             </label>
           </div>
@@ -596,7 +596,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                     campaignStatus: event.target.value as BannerFormState['campaignStatus'],
                   }))
                 }
-                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-cyan-200"
+                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm font-bold text-slate-600 outline-none focus:ring-2 theme-ring"
               >
                 <option value="DRAFT">Rascunho</option>
                 <option value="ACTIVE">Ativa</option>
@@ -616,7 +616,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                     objective: event.target.value as BannerFormState['objective'],
                   }))
                 }
-                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-cyan-200"
+                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm font-bold text-slate-600 outline-none focus:ring-2 theme-ring"
               >
                 <option value="TRAFFIC">Trafego</option>
                 <option value="LEAD">Leads</option>
@@ -635,7 +635,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                     paymentStatus: event.target.value as BannerFormState['paymentStatus'],
                   }))
                 }
-                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-cyan-200"
+                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm font-bold text-slate-600 outline-none focus:ring-2 theme-ring"
               >
                 <option value="NOT_REQUIRED">Sem cobranca</option>
                 <option value="PENDING">Aguardando pagamento</option>
@@ -656,7 +656,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                 onChange={(event) =>
                   setBannerForm((current) => ({ ...current, startsAt: event.target.value }))
                 }
-                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm outline-none focus:ring-2 theme-ring"
               />
             </label>
             <label className="space-y-2">
@@ -669,7 +669,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                 onChange={(event) =>
                   setBannerForm((current) => ({ ...current, endsAt: event.target.value }))
                 }
-                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm outline-none focus:ring-2 theme-ring"
               />
             </label>
           </div>
@@ -701,7 +701,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                     billingMode: event.target.value as BannerFormState['billingMode'],
                   }))
                 }
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-cyan-200"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 outline-none focus:ring-2 theme-ring"
               >
                 <option value="FLAT">Pacote fixo</option>
                 <option value="CPC">CPC</option>
@@ -719,7 +719,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                   setBannerForm((current) => ({ ...current, dailyBudget: event.target.value }))
                 }
                 placeholder="50,00"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 theme-ring"
               />
             </label>
             <label className="space-y-2">
@@ -732,7 +732,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                   setBannerForm((current) => ({ ...current, totalBudget: event.target.value }))
                 }
                 placeholder="300,00"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 theme-ring"
               />
             </label>
             <label className="space-y-2">
@@ -745,7 +745,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                   setBannerForm((current) => ({ ...current, bid: event.target.value }))
                 }
                 placeholder="1,50"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 theme-ring"
               />
             </label>
           </div>
@@ -756,7 +756,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                 setBannerForm((current) => ({ ...current, paymentProvider: event.target.value }))
               }
               placeholder="Provedor: mercado-pago ou stripe"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 theme-ring"
             />
             <input
               value={bannerForm.checkoutUrl}
@@ -770,7 +770,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                 }))
               }
               placeholder="Link de checkout"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 theme-ring"
             />
           </div>
         </div>
@@ -778,7 +778,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
           type="button"
           onClick={() => void submitBanner()}
           disabled={processingKey === 'banner:create' || processingKey === `banner:${editingBannerId}:save`}
-          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#28B8C7] px-4 text-sm font-bold text-white shadow-md disabled:opacity-60"
+          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl theme-bg px-4 text-sm font-bold text-white shadow-md disabled:opacity-60"
         >
           {editingBannerId ? <PencilLine size={16} /> : <Plus size={16} />}
           {editingBannerId
@@ -830,7 +830,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-lg font-bold text-[#28B8C7]">{banner.name}</p>
+                      <p className="text-lg font-bold theme-text">{banner.name}</p>
                       <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
                         {banner.region?.label || 'Todas as regioes'}
                       </p>
@@ -859,14 +859,14 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                       href={banner.targetUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-cyan-600 hover:text-cyan-700"
+                      className="mt-3 inline-flex items-center gap-2 text-sm font-medium theme-text theme-text"
                     >
                       <ImagePlus size={14} />
                       Abrir destino
                     </a>
                   ) : (
                     <div className="mt-3 space-y-2">
-                      <p className="text-sm font-medium text-cyan-600">
+                      <p className="text-sm font-medium theme-text">
                         {banner._count?.registrations ?? 0} cadastro(s) de interesse registrados.
                       </p>
                       {banner.registrations && banner.registrations.length > 0 ? (
@@ -934,7 +934,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                   className={`inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl px-4 text-sm font-bold transition disabled:opacity-60 ${
                     banner.isActive
                       ? 'bg-red-50 text-red-700 hover:bg-red-100'
-                      : 'bg-[#28B8C7] text-white hover:bg-[#1E96A4]'
+                      : 'theme-bg text-white theme-bg-hover'
                   }`}
                 >
                   {processingKey === `banner:${banner.id}:toggle`

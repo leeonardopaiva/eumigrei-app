@@ -57,11 +57,12 @@ body {
 
 .theme-bg {
   background-color: var(--accent);
+  background-image: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
   color: #fff;
 }
 
 .theme-bg-hover:hover {
-  background-color: var(--accent-strong);
+  filter: brightness(1.06);
 }
 
 .theme-soft-surface {
