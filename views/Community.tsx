@@ -203,8 +203,8 @@ const Community: React.FC<{
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Emigrei',
-          text: 'Entre para a comunidade brasileira no exterior pela Emigrei.',
+          title: 'Gringoou',
+          text: 'Entre para a comunidade brasileira no exterior pela Gringoou.',
           url: referralSummary.referralUrl,
         });
         return;
@@ -471,7 +471,7 @@ const Community: React.FC<{
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Publicacao na Emigrei',
+          title: 'Publicacao na Gringoou',
           text: post.content,
           url: postUrl,
         });
@@ -619,7 +619,7 @@ const Community: React.FC<{
               <div className="mb-1 flex items-center gap-2">
                 <UserPlus size={16} className="text-white/90" />
                 <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">
-                  Indique a Emigrei
+                  Indique a Gringoou
                 </span>
               </div>
               <h4 className="mb-2 text-sm font-bold">
@@ -639,7 +639,7 @@ const Community: React.FC<{
           </div>
           <div className="mt-4 rounded-2xl bg-white/12 p-3">
             <p className="truncate text-xs font-semibold text-white/90">
-              {referralSummary.referralUrl ?? `https://emigrei.com.br/convite/${user.username}`}
+              {referralSummary.referralUrl ?? `https://gringoou.com.br/convite/${user.username}`}
             </p>
             <div className="mt-3 flex gap-2">
               <button

@@ -8,7 +8,7 @@ const emailServerPort = process.env.EMAIL_SERVER_PORT;
 const emailServerUser = process.env.EMAIL_SERVER_USER;
 const emailServerPassword = process.env.EMAIL_SERVER_PASSWORD;
 
-export const emailFrom = process.env.EMAIL_FROM || 'Emigrei <no-reply@emigrei.local>';
+export const emailFrom = process.env.EMAIL_FROM || 'Gringoou <no-reply@gringoou.local>';
 
 export const isEmailServerConfigured = Boolean(
   emailServerHost &&
@@ -34,7 +34,7 @@ export const emailProviderServer = {
 
 const buildMagicLinkEmailText = (url: string) =>
   [
-    'Seu link de acesso para a Emigrei',
+    'Seu link de acesso para a Gringoou',
     '',
     'Use o link abaixo para entrar na plataforma:',
     url,
@@ -46,7 +46,7 @@ const buildMagicLinkEmailHtml = (url: string) => `
   <div style="background:#f6f8fc;padding:32px 16px;font-family:Arial,sans-serif;color:#1f2937;">
     <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:24px;padding:32px;border:1px solid #e5e7eb;">
       <p style="margin:0 0 12px;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#28B8C7;font-weight:700;">
-        Emigrei
+        Gringoou
       </p>
       <h1 style="margin:0 0 12px;font-size:24px;line-height:1.3;color:#0f172a;">
         Seu link de acesso chegou
@@ -58,7 +58,7 @@ const buildMagicLinkEmailHtml = (url: string) => `
         href="${url}"
         style="display:inline-block;background:#28B8C7;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:16px;font-weight:700;"
       >
-        Entrar na Emigrei
+        Entrar na Gringoou
       </a>
       <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#64748b;">
         Se voce nao solicitou este acesso, pode ignorar este email com tranquilidade.
@@ -136,7 +136,7 @@ export const sendMagicLinkVerification = async ({
 
   await sendTransactionalEmail({
     to: normalizedEmail,
-    subject: 'Seu link de acesso para a Emigrei',
+    subject: 'Seu link de acesso para a Gringoou',
     text: buildMagicLinkEmailText(url),
     html: buildMagicLinkEmailHtml(url),
     devLabel: 'Magic link',

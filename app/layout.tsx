@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Emigrei - Comunidade Brasileira',
+  title: 'Gringoou - Comunidade Brasileira',
   description:
     'Uma plataforma completa para a comunidade brasileira no exterior, oferecendo servicos de moradia, empregos, negocios locais, noticias e rede social.',
 };

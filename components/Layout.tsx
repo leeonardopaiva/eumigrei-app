@@ -122,6 +122,8 @@ const SidebarContent: React.FC<{
   const publicProfileHref =
     isProfessionalTheme && professionalIdentity
       ? professionalIdentity.publicPath
+      : isProfessionalTheme
+        ? '/negocios'
       : user.username
         ? `/perfil/${encodeURIComponent(user.username)}`
         : '/profile';
@@ -280,6 +282,8 @@ const Layout: React.FC<LayoutWithUserProps> = ({
   const publicProfileHref =
     isProfessionalTheme && professionalIdentity
       ? professionalIdentity.publicPath
+      : isProfessionalTheme
+        ? '/negocios'
       : user.username
         ? `/perfil/${encodeURIComponent(user.username)}`
         : '/profile';

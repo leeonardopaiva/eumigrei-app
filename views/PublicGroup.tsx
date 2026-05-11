@@ -213,7 +213,7 @@ const PublicGroup: React.FC<PublicGroupProps> = ({ slug, viewer, embedded = fals
               {group.description ? (
                 <p className="text-base leading-7 text-slate-700">{group.description}</p>
               ) : (
-                <p className="text-base leading-7 text-slate-500">Grupo publico da comunidade Emigrei.</p>
+                <p className="text-base leading-7 text-slate-500">Grupo publico da comunidade Gringoou.</p>
               )}
 
               {viewer ? (

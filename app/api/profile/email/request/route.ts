@@ -18,7 +18,7 @@ export const runtime = 'nodejs';
 
 const buildEmailChangeText = (url: string) =>
   [
-    'Confirmacao de troca de email na Emigrei',
+    'Confirmacao de troca de email na Gringoou',
     '',
     'Recebemos um pedido para alterar o email da sua conta.',
     'Use o link abaixo para confirmar a mudanca:',
@@ -31,7 +31,7 @@ const buildEmailChangeHtml = (url: string) => `
   <div style="background:#f6f8fc;padding:32px 16px;font-family:Arial,sans-serif;color:#1f2937;">
     <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:24px;padding:32px;border:1px solid #e5e7eb;">
       <p style="margin:0 0 12px;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#28B8C7;font-weight:700;">
-        Emigrei
+        Gringoou
       </p>
       <h1 style="margin:0 0 12px;font-size:24px;line-height:1.3;color:#0f172a;">
         Confirme seu novo email
@@ -149,7 +149,7 @@ export async function POST(request: Request) {
 
   await sendTransactionalEmail({
     to: nextEmail,
-    subject: 'Confirme seu novo email na Emigrei',
+    subject: 'Confirme seu novo email na Gringoou',
     text: buildEmailChangeText(confirmationUrl),
     html: buildEmailChangeHtml(confirmationUrl),
     devLabel: 'Troca de email',

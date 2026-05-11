@@ -730,7 +730,7 @@ const Registration: React.FC<RegistrationProps> = ({
                     <p className="px-2 text-[11px] font-medium text-slate-400">
                       Esse nome vai identificar seu perfil publico e futuros links como
                       {' '}
-                      `emigrei.com.br/{normalizedUsername || 'joao'}`
+                      `gringoou.com.br/{normalizedUsername || 'joao'}`
                     </p>
                     {usernameFeedback ? (
                       <div

@@ -231,7 +231,7 @@ const Profile: React.FC<{
   }, [profile.username]);
 
   const publicProfileUrl = useMemo(
-    () => (profile.username ? `https://emigrei.com.br/${profile.username}` : 'https://emigrei.com.br/seu-perfil'),
+    () => (profile.username ? `https://gringoou.com.br/${profile.username}` : 'https://gringoou.com.br/seu-perfil'),
     [profile.username],
   );
 
@@ -381,7 +381,7 @@ const Profile: React.FC<{
   };
 
   const avatarImage = profile.image || DEFAULT_AVATAR_URL;
-  const referralUrl = referralSummary.referralUrl || (profile.username ? `https://emigrei.com.br/convite/${profile.username}` : 'https://emigrei.com.br/convite/seu-nome-publico');
+  const referralUrl = referralSummary.referralUrl || (profile.username ? `https://gringoou.com.br/convite/${profile.username}` : 'https://gringoou.com.br/convite/seu-nome-publico');
   const professionalIdentity = professionalProfile.identity;
   const isProfessionalView =
     canUseProfessionalMode && personaMode === 'professional' && Boolean(professionalIdentity);

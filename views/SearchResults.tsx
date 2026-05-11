@@ -151,7 +151,7 @@ const SearchResults: React.FC = () => {
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar na Emigrei"
+            placeholder="Buscar na Gringoou"
             className="w-full rounded-2xl bg-slate-100/90 py-4 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
           />
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
