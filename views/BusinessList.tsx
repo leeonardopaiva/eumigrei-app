@@ -1,5 +1,6 @@
 ﻿import React, { startTransition, useDeferredValue, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useToast } from '../components/feedback/ToastProvider';
 import StarRating from '../components/engagement/StarRating';
@@ -70,6 +71,7 @@ const BusinessList: React.FC<BusinessListProps> = ({
   professionalIdentity = null,
 }) => {
   const { data: session, update } = useSession();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [activeFilter, setActiveFilter] = useState('Todos');
@@ -98,6 +100,12 @@ const BusinessList: React.FC<BusinessListProps> = ({
       };
     });
   };
+
+  useEffect(() => {
+    if (searchParams.get('create') === '1') {
+      setShowCreateForm(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (session?.user?.regionKey) {
@@ -283,26 +291,20 @@ const BusinessList: React.FC<BusinessListProps> = ({
         <button
           type="button"
           onClick={() => setShowCreateForm((current) => !current)}
-          className={`w-full rounded-3xl border p-4 text-left transition ${
-            isProfessionalMode
-              ? 'border-blue-100 bg-blue-50/60 hover:bg-blue-50'
-              : 'border-slate-100 bg-white hover:bg-slate-50'
-          }`}
+          className="w-full rounded-3xl border border-transparent bg-gradient-to-r from-[#345CFF] to-[#5B4BFF] p-4 text-left text-white shadow-lg shadow-[#345CFF]/30 transition hover:brightness-105"
         >
           <div className="flex items-center gap-4">
-            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
-              isProfessionalMode ? 'bg-white text-[#0F4C81]' : 'theme-soft-surface'
-            }`}>
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 text-white">
               <Plus size={20} />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/75">
                 Cadastre seu negocio
               </p>
-              <p className={`mt-1 text-sm font-bold ${isProfessionalMode ? 'text-[#0F4C81]' : 'text-slate-800'}`}>
+              <p className="mt-1 text-sm font-bold text-white">
                 Tem uma empresa ou negocio? Crie sua pagina sem custo.
               </p>
-              <p className="mt-1 text-xs font-medium leading-relaxed text-slate-500">
+              <p className="mt-1 text-xs font-medium leading-relaxed text-white/85">
                 {showCreateForm ? 'Toque para fechar o modal.' : 'Toque para abrir o cadastro em modal.'}
               </p>
             </div>

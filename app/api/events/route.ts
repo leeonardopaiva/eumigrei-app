@@ -65,10 +65,25 @@ export async function GET(request: Request) {
       visibilityScope: true,
       status: true,
       createdById: true,
+      businessId: true,
       favorites: {
-        where: { userId: viewerId || '__no-user__' },
-        select: { id: true },
-        take: 1,
+        select: {
+          userId: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 6,
+      },
+      _count: {
+        select: {
+          favorites: true,
+        },
       },
     },
   });
@@ -96,12 +111,26 @@ export async function GET(request: Request) {
       : new Set<string>();
 
   return NextResponse.json({
-    events: events.map(({ createdById, favorites, visibilityScope, ...event }) => ({
-      ...event,
-      isFavorite: favorites.length > 0,
-      canEdit: isAdmin || createdById === viewerId || businessEditableEventIds.has(event.id),
-      isPendingReview: event.status === EventStatus.PENDING_REVIEW,
-    })),
+    events: events.map(({ createdById, businessId, favorites, visibilityScope, _count, ...event }) => {
+      const canEdit = isAdmin || createdById === viewerId || businessEditableEventIds.has(event.id);
+      const canViewInterestedUsers = isAdmin;
+      const canUnlockInterestedUsers = !isAdmin && canEdit && Boolean(businessId);
+
+      return {
+        ...event,
+        isFavorite: Boolean(viewerId && favorites.some((favorite) => favorite.userId === viewerId)),
+        interestCount: _count.favorites,
+        interestPreview: canViewInterestedUsers
+          ? favorites
+              .map((favorite) => favorite.user)
+              .filter((user): user is { id: string; name: string | null; image: string | null } => Boolean(user))
+          : favorites.map((favorite) => ({ id: favorite.userId, name: null, image: null })),
+        canViewInterestedUsers,
+        canUnlockInterestedUsers,
+        canEdit,
+        isPendingReview: event.status === EventStatus.PENDING_REVIEW,
+      };
+    }),
     scope,
   });
 }

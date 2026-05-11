@@ -81,14 +81,7 @@ const navigationItems: NavigationItem[] = [
     disabled: true,
     badge: '',
   },
-  {
-    href: '/noticias',
-    label: 'Notícias',
-    icon: <Newspaper size={18} />,
-    disabled: true,
-    badge: '',
-  },
-  { href: '/profile', label: 'Meu perfil', icon: <UserIcon size={18} /> },
+  { href: '/noticias', label: 'Notícias', icon: <Newspaper size={18} />, disabled: true, badge: '' },
 ];
 
 const SidebarContent: React.FC<{
@@ -207,7 +200,31 @@ const SidebarContent: React.FC<{
               onClick={onItemClick}
             />
           ) : null}
+          <MenuListItem
+            href="/profile"
+            label={isProfessionalTheme ? 'Meu negocio' : 'Meu perfil'}
+            icon={<UserIcon size={18} />}
+            active={isActive('/profile')}
+            onClick={onItemClick}
+          />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Link
+          href="/negocios?create=1"
+          onClick={onItemClick}
+          className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#2563EB] via-[#3B82F6] to-[#6366F1] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#2563EB]/30 transition hover:brightness-105"
+        >
+          Cadastrar meu negocio
+        </Link>
+        <Link
+          href="/eventos?create=1"
+          onClick={onItemClick}
+          className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#F97316] via-[#FB923C] to-[#F59E0B] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#F97316]/30 transition hover:brightness-105"
+        >
+          Cadastrar meu evento
+        </Link>
       </div>
 
       {onSignOut ? (
@@ -354,7 +371,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
               <NavItem href="/negocios" icon={<Store size={20} />} active={isActive('/negocios')} accentColorClass={accentColorClass} />
               <NavItem href="/community" icon={<Users size={20} />} active={isActive('/community')} accentColorClass={accentColorClass} />
               <NavItem href="/eventos" icon={<Calendar size={20} />} active={isActive('/eventos')} accentColorClass={accentColorClass} />
-              <NavItem href="/profile" icon={<UserIcon size={20} />} active={isActive('/profile')} accentColorClass={accentColorClass} />
+              <NavItem href={publicProfileHref} icon={<UserIcon size={20} />} active={isActive('/profile') || isActive('/perfil')} accentColorClass={accentColorClass} />
             </nav>
           </div>
         </div>

@@ -1,12 +1,13 @@
 import React, { startTransition, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import StarRating from '../components/engagement/StarRating';
 import { useToast } from '../components/feedback/ToastProvider';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import FieldErrorMessage from '../components/forms/FieldErrorMessage';
 import ImageGalleryField from '../components/forms/ImageGalleryField';
-import { Heart, MapPin, Plus } from 'lucide-react';
+import { Check, Heart, MapPin, Plus } from 'lucide-react';
 import RegionSelector from '../components/RegionSelector';
 import UnifiedSearchInput from '../components/search/UnifiedSearchInput';
 import {
@@ -98,6 +99,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({
   professionalIdentity = null,
 }) => {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('Proximos');
   const [search, setSearch] = useState('');
@@ -106,6 +108,8 @@ const Marketplace: React.FC<MarketplaceProps> = ({
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [togglingInterestId, setTogglingInterestId] = useState<string | null>(null);
+  const [expandedInterestId, setExpandedInterestId] = useState<string | null>(null);
   const [createForm, setCreateForm] = useState(emptyForm);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<EventField>>({});
   const isProfessionalMode = personaMode === 'professional' && Boolean(professionalIdentity);
@@ -125,6 +129,12 @@ const Marketplace: React.FC<MarketplaceProps> = ({
       };
     });
   };
+
+  useEffect(() => {
+    if (searchParams.get('create') === '1') {
+      setShowCreateForm(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (session?.user?.regionKey) {
@@ -263,6 +273,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({
   };
 
   const handleFavoriteToggle = async (eventItem: EventItem) => {
+    setTogglingInterestId(eventItem.id);
     try {
       const response = await fetch(`/api/events/${eventItem.slug || eventItem.id}/favorite`, {
         method: eventItem.isFavorite ? 'DELETE' : 'POST',
@@ -280,6 +291,10 @@ const Marketplace: React.FC<MarketplaceProps> = ({
             ? {
                 ...item,
                 isFavorite: Boolean(payload?.isFavorite),
+                interestCount: Math.max(
+                  (item.interestCount ?? 0) + (payload?.isFavorite ? 1 : -1),
+                  0,
+                ),
               }
             : item,
         ),
@@ -287,6 +302,8 @@ const Marketplace: React.FC<MarketplaceProps> = ({
     } catch (error) {
       console.error('Failed to toggle event favorite from list:', error);
       showToast('Nao foi possivel atualizar seus favoritos.', 'error');
+    } finally {
+      setTogglingInterestId(null);
     }
   };
 
@@ -346,26 +363,20 @@ const Marketplace: React.FC<MarketplaceProps> = ({
         <button
           type="button"
           onClick={() => setShowCreateForm((current) => !current)}
-          className={`w-full rounded-3xl border p-4 text-left transition ${
-            isProfessionalMode
-              ? 'border-blue-100 bg-blue-50/60 hover:bg-blue-50'
-              : 'border-slate-100 bg-white hover:bg-slate-50'
-          }`}
+          className="w-full rounded-3xl border border-transparent bg-gradient-to-r from-[#0EA5A4] to-[#16A34A] p-4 text-left text-white shadow-lg shadow-[#16A34A]/30 transition hover:brightness-105"
         >
           <div className="flex items-center gap-4">
-            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
-              isProfessionalMode ? 'bg-white text-[#0F4C81]' : 'theme-soft-surface'
-            }`}>
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 text-white">
               <Plus size={20} />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/75">
                 Cadastre seu evento
               </p>
-              <p className={`mt-1 text-sm font-bold ${isProfessionalMode ? 'text-[#0F4C81]' : 'text-slate-800'}`}>
+              <p className="mt-1 text-sm font-bold text-white">
                 Divulgue seu evento para a comunidade local.
               </p>
-              <p className="mt-1 text-xs font-medium leading-relaxed text-slate-500">
+              <p className="mt-1 text-xs font-medium leading-relaxed text-white/85">
                 {showCreateForm ? 'Toque para fechar o modal.' : 'Toque para abrir o cadastro em modal.'}
               </p>
             </div>
@@ -526,6 +537,11 @@ const Marketplace: React.FC<MarketplaceProps> = ({
         {displayedEvents.map((item) => (
           <EventCard
             key={item.id}
+            interestExpanded={expandedInterestId === item.id}
+            onToggleInterestPreview={() =>
+              setExpandedInterestId((current) => (current === item.id ? null : item.id))
+            }
+            interestLoading={togglingInterestId === item.id}
             item={item}
             href={`/eventos/${item.slug || item.id}`}
             title={item.title}
@@ -551,6 +567,9 @@ const formatEventDate = (value: string) => {
 
 const EventCard: React.FC<{
   item: EventItem;
+  interestExpanded: boolean;
+  onToggleInterestPreview: () => void;
+  interestLoading: boolean;
   href: string;
   title: string;
   date: string;
@@ -558,7 +577,19 @@ const EventCard: React.FC<{
   region: string;
   img: string;
   onToggleFavorite: () => void;
-}> = ({ item, href, title, date, location, region, img, onToggleFavorite }) => (
+}> = ({
+  item,
+  interestExpanded,
+  onToggleInterestPreview,
+  interestLoading,
+  href,
+  title,
+  date,
+  location,
+  region,
+  img,
+  onToggleFavorite,
+}) => (
     <div
       className={`relative flex min-h-32 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:border-slate-200 ${
         item.status === 'PENDING_REVIEW' || item.isPendingReview ? 'bg-slate-50 opacity-65 grayscale' : ''
@@ -569,7 +600,7 @@ const EventCard: React.FC<{
         <div className="relative z-10 flex flex-1 flex-col justify-between p-4">
             <div>
                 <div className="flex items-start justify-between gap-3">
-                    <h4 className="font-bold text-cyan-900 text-sm leading-tight">{title}</h4>
+                    <h4 className="font-bold theme-text text-sm leading-tight">{title}</h4>
                     {item.status === 'PENDING_REVIEW' || item.isPendingReview ? null : (
                       <button
                           type="button"
@@ -587,15 +618,53 @@ const EventCard: React.FC<{
                   </span>
                 ) : null}
                 <p className="text-slate-500 text-[10px] mt-1 font-medium">{date}</p>
-                <div className="flex items-center gap-1 text-cyan-600 text-[10px] font-bold mt-2">
+                <div className="flex items-center gap-1 theme-text text-[10px] font-bold mt-2">
                     <MapPin size={10} fill="currentColor" /> {location}
                 </div>
                 <p className="mt-1 text-[10px] text-slate-400">{region}</p>
                 <div className="mt-2">
                     <StarRating average={item.ratingAverage ?? 0} count={item.ratingCount ?? 0} compact />
                 </div>
+                <div className="mt-3 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={onToggleInterestPreview}
+                    className="relative z-30 flex items-center rounded-full border border-slate-200 bg-white px-2 py-1"
+                    aria-label="Ver interessados"
+                  >
+                    {(item.interestPreview ?? []).slice(0, 4).map((person, index) => (
+                      <img
+                        key={person.id}
+                        src={person.image || `https://picsum.photos/seed/${person.id}/40`}
+                        alt={item.canViewInterestedUsers ? person.name || 'Participante' : 'Participante'}
+                        className={`h-6 w-6 rounded-full border-2 border-white object-cover ${item.canViewInterestedUsers ? '' : 'blur-[2px]'}`}
+                        style={{ marginLeft: index === 0 ? 0 : -8 }}
+                      />
+                    ))}
+                    <span className="ml-2 text-[11px] font-bold text-slate-600">
+                      {item.interestCount ?? 0}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onToggleFavorite}
+                    disabled={interestLoading}
+                    className="relative z-30 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-bold text-slate-700 disabled:opacity-60"
+                  >
+                    {interestLoading ? '...' : item.isFavorite ? <><Check size={12} className="text-emerald-600" /> Interessados</> : 'Confirmar interesse'}
+                  </button>
+                </div>
+                {interestExpanded ? (
+                  <p className="mt-1 text-[10px] text-slate-500">
+                    {item.canViewInterestedUsers
+                      ? (item.interestPreview ?? []).map((person) => person.name || 'Usuario').join(', ') || 'Sem nomes disponiveis.'
+                      : item.canUnlockInterestedUsers
+                        ? 'Lista de pessoas: recurso premium em breve. Hoje exibimos apenas a quantidade.'
+                        : `${item.interestCount ?? 0} pessoas confirmaram interesse.`}
+                  </p>
+                ) : null}
             </div>
-            <span className="self-end bg-cyan-600 text-white px-4 py-1.5 rounded-xl text-[10px] font-bold shadow-sm">
+            <span className="theme-bg self-end px-4 py-1.5 rounded-xl text-[10px] font-bold text-white shadow-sm">
                 {item.canEdit ? 'Editar evento' : 'Ver evento'}
             </span>
         </div>

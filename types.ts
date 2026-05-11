@@ -275,6 +275,14 @@ export interface EventItem {
   publicPath?: string;
   city?: string;
   state?: string;
+  interestCount?: number;
+  interestPreview?: Array<{
+    id: string;
+    name?: string | null;
+    image?: string | null;
+  }>;
+  canViewInterestedUsers?: boolean;
+  canUnlockInterestedUsers?: boolean;
 }
 
 export interface BannerAd {
