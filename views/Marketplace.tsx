@@ -649,9 +649,14 @@ const EventCard: React.FC<{
                     type="button"
                     onClick={onToggleFavorite}
                     disabled={interestLoading}
-                    className="relative z-30 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-bold text-slate-700 disabled:opacity-60"
+                    title={item.isFavorite ? 'Interessados' : 'Confirmar interesse'}
+                    className={`relative z-30 inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[10px] font-bold disabled:opacity-60 ${
+                      item.isFavorite
+                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                        : 'border border-slate-200 bg-white text-slate-700'
+                    }`}
                   >
-                    {interestLoading ? '...' : item.isFavorite ? <><Check size={12} className="text-emerald-600" /> Interessados</> : 'Confirmar interesse'}
+                    {interestLoading ? '...' : item.isFavorite ? <Check size={16} className="text-white" /> : 'Confirmar interesse'}
                   </button>
                 </div>
                 {interestExpanded ? (
@@ -664,7 +669,7 @@ const EventCard: React.FC<{
                   </p>
                 ) : null}
             </div>
-            <span className="theme-bg self-end px-4 py-1.5 rounded-xl text-[10px] font-bold text-white shadow-sm">
+            <span className="theme-bg mt-3 self-end px-4 py-1.5 rounded-xl text-[10px] font-bold text-white shadow-sm">
                 {item.canEdit ? 'Editar evento' : 'Ver evento'}
             </span>
         </div>
