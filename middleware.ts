@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-const CANONICAL_HOST = 'www.emigrei.com';
-const APEX_HOST = 'emigrei.com';
+const CANONICAL_HOST = 'gringoou.com';
+const REDIRECT_HOSTS = new Set(['www.gringoou.com', 'emigrei.com', 'www.emigrei.com']);
 
 export function middleware(request: NextRequest) {
   const host = request.headers.get('host')?.split(':')[0].toLowerCase();
 
-  if (host !== APEX_HOST) {
+  if (!host || !REDIRECT_HOSTS.has(host)) {
     return NextResponse.next();
   }
 

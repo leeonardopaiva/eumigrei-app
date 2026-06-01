@@ -131,7 +131,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({
   };
 
   useEffect(() => {
-    if (searchParams.get('create') === '1') {
+    if (searchParams?.get('create') === '1') {
       setShowCreateForm(true);
     }
   }, [searchParams]);

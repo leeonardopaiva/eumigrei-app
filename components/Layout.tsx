@@ -146,22 +146,25 @@ const SidebarContent: React.FC<{
   };
 
   return (
-    <div className="space-y-4 p-5 pb-20 pt-10 lg:flex lg:h-full lg:flex-col lg:justify-between lg:p-8">
+    <div className="space-y-4 p-5 pb-20 pt-8 lg:flex lg:h-full lg:flex-col lg:justify-between lg:p-7">
       <div className="space-y-4">
-        <div className="mb-8 flex flex-col gap-6">
+        <div className="mb-6 flex flex-col gap-5">
           <Logo size="md" professional={isProfessionalTheme} />
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-sm">
             <Link href={publicProfileHref} onClick={onItemClick} className="relative transition hover:opacity-90">
               <img
                 src={activeAvatar}
-                className="h-14 w-14 rounded-full border-2 border-white object-cover shadow-md"
+                className="h-11 w-11 rounded-full border border-slate-200 object-cover shadow-sm"
                 alt={activeName}
                 onError={handleAvatarError}
               />
             </Link>
-            <div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                Bem-vindo
+              </p>
               <div className="flex items-center gap-1">
-                <h2 className={`text-xl font-bold ${accentColorClass}`}>{activeName}</h2>
+                <h2 className={`truncate text-base font-bold ${accentColorClass}`}>{activeName}</h2>
                 {canUseProfessionalMode && onPersonaModeChange ? (
                   <PersonaModeDropdown
                     value={personaMode}
@@ -175,14 +178,14 @@ const SidebarContent: React.FC<{
                   />
                 ) : null}
               </div>
-              <p className={`text-[10px] font-medium uppercase tracking-wider ${isProfessionalTheme ? 'theme-text-soft' : 'text-slate-500'}`}>
+              <p className={`truncate text-[11px] font-medium ${isProfessionalTheme ? 'theme-text-soft' : 'text-slate-500'}`}>
                 {activeSubtitle}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white/80 p-1.5 shadow-sm backdrop-blur-md">
+        <div className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
           {navigationItems.map((item) => (
             <MenuListItem
               key={item.href}
@@ -219,14 +222,14 @@ const SidebarContent: React.FC<{
         <Link
           href="/negocios?create=1"
           onClick={onItemClick}
-          className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#2563EB] via-[#3B82F6] to-[#6366F1] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#2563EB]/30 transition hover:brightness-105"
+          className="inline-flex w-full items-center justify-center rounded-xl border border-[#00509D]/15 bg-white px-4 py-3 text-sm font-bold text-[#00509D] shadow-sm transition hover:bg-[#F2F7FF]"
         >
           Cadastrar meu negocio
         </Link>
         <Link
           href="/eventos?create=1"
           onClick={onItemClick}
-          className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#F97316] via-[#FB923C] to-[#F59E0B] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#F97316]/30 transition hover:brightness-105"
+          className="inline-flex w-full items-center justify-center rounded-xl border border-[#F97316]/15 bg-white px-4 py-3 text-sm font-bold text-[#C45A00] shadow-sm transition hover:bg-[#FFF6ED]"
         >
           Cadastrar meu evento
         </Link>
@@ -252,7 +255,7 @@ const SidebarContent: React.FC<{
           window.dispatchEvent(new CustomEvent('gringoou:open-suggestion-modal'));
           window.dispatchEvent(new CustomEvent('emigrei:open-suggestion-modal'));
         }}
-        className="theme-soft-surface mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold shadow-sm"
+        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
       >
         <MessageSquarePlus size={16} />
         Enviar sugestao
@@ -292,7 +295,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
 
   return (
     <div className="app-shell min-h-screen bg-[#f9f9f9]" data-persona={isProfessionalTheme ? 'professional' : 'personal'}>
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-[#f9f9f9] font-sans shadow-xl lg:max-w-none lg:bg-transparent lg:shadow-none">
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-[#f9f9f9] font-sans shadow-xl lg:max-w-[1440px] lg:bg-transparent lg:shadow-none">
         {isMenuOpen ? (
           <div
             className="fixed inset-0 z-50 animate-in bg-black/40 backdrop-blur-sm fade-in duration-300"
@@ -336,7 +339,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
           </header>
 
           <main className="scrollbar-hide flex-1 overflow-y-auto">
-            <div className="w-full lg:px-8">{children}</div>
+            <div className="mx-auto w-full max-w-7xl px-0 lg:px-8">{children}</div>
           </main>
 
           <SuggestionButton />

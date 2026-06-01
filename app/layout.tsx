@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
-import { Inter } from 'next/font/google';
+import { Sora } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 
-const inter = Inter({
+const sora = Sora({
   subsets: ['latin'],
   display: 'swap',
+  weight: ['400', '500', '600', '700', '800'],
 });
 
 export const metadata: Metadata = {
@@ -22,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className={`${inter.className} bg-[#F6FBFC]`}>
+      <body className={`${sora.className} bg-[#F6FBFC]`}>
         <Script src="https://cdn.tailwindcss.com" strategy="beforeInteractive" />
         <Providers>{children}</Providers>
       </body>

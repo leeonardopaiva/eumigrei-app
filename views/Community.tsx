@@ -19,7 +19,7 @@ const Community: React.FC<{
 }> = ({ user, personaMode = 'personal', professionalIdentity = null }) => {
   const { showToast } = useToast();
   const searchParams = useSearchParams();
-  const targetPostId = searchParams.get('post');
+  const targetPostId = searchParams?.get('post');
   const [composerMode, setComposerMode] = useState<ComposerMode>('text');
   const [postContent, setPostContent] = useState('');
   const [postImageUrl, setPostImageUrl] = useState('');
@@ -639,7 +639,7 @@ const Community: React.FC<{
           </div>
           <div className="mt-4 rounded-2xl bg-white/12 p-3">
             <p className="truncate text-xs font-semibold text-white/90">
-              {referralSummary.referralUrl ?? `https://gringoou.com.br/convite/${user.username}`}
+              {referralSummary.referralUrl ?? `https://gringoou.com/convite/${user.username}`}
             </p>
             <div className="mt-3 flex gap-2">
               <button

@@ -380,7 +380,7 @@ export const buildAdminImportTemplate = async () => {
   });
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'Emigrei';
+  workbook.creator = 'Gringoou';
   workbook.created = new Date();
 
   const readme = workbook.addWorksheet(SHEET_NAMES.readme);

@@ -48,9 +48,11 @@ const SuggestionButton: React.FC = () => {
   React.useEffect(() => {
     const openFromNavigation = () => setOpen(true);
 
+    window.addEventListener('gringoou:open-suggestion-modal', openFromNavigation);
     window.addEventListener('emigrei:open-suggestion-modal', openFromNavigation);
 
     return () => {
+      window.removeEventListener('gringoou:open-suggestion-modal', openFromNavigation);
       window.removeEventListener('emigrei:open-suggestion-modal', openFromNavigation);
     };
   }, []);

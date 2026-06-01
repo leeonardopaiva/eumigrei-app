@@ -16,7 +16,7 @@ export async function GET() {
   return new NextResponse(buffer, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': 'attachment; filename="emigrei-import-template.xlsx"',
+      'Content-Disposition': 'attachment; filename="gringoou-import-template.xlsx"',
       'Cache-Control': 'no-store',
     },
   });

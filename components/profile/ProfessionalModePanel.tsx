@@ -82,7 +82,7 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
       try {
         await navigator.share({
           title: 'Vitrine profissional',
-          text: 'Confira minha vitrine profissional na Emigrei.',
+          text: 'Confira minha vitrine profissional na Gringoou.',
           url: publicProfessionalUrl,
         });
         return;

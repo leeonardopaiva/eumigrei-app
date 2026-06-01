@@ -27,7 +27,7 @@ const EMAIL_AUTH_ENABLED = false;
 const PASSWORD_AUTH_ENABLED = false;
 const DEV_AUTH_ENABLED =
   process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_DEV_AUTH_ENABLED === 'true';
-const PERSONA_MODE_STORAGE_KEY = 'emigrei:persona-mode';
+const PERSONA_MODE_STORAGE_KEY = 'gringoou:persona-mode';
 const RESERVED_PUBLIC_ROUTES = new Set([
   'admin',
   'community',
@@ -67,7 +67,7 @@ const buildCurrentUser = (sessionUser: {
   role?: string | null;
 }): User => ({
   id: sessionUser.id,
-  name: sessionUser.name || 'Comunidade Emigrei',
+  name: sessionUser.name || 'Comunidade Gringoou',
   username: sessionUser.username,
   role: mapUserRole(sessionUser.role),
   avatar: sessionUser.image || DEFAULT_AVATAR_URL,

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
+  MapPin,
   ChevronDown,
   ExternalLink,
   Building2,
@@ -196,25 +197,27 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
   };
 
   return (
-    <div className="animate-in space-y-5 px-5 fade-in slide-in-from-bottom-4 duration-500">
-      <div className="mt-4">
-        <p className="text-lg font-medium text-slate-500">Ola, {user.name}!</p>
+    <div className="animate-in space-y-5 px-5 fade-in slide-in-from-bottom-4 duration-500 lg:px-0">
+      <div className="mt-3">
         <button
           type="button"
           onClick={() => {
             setEditingRegion((current) => !current);
           }}
-          className="mt-1 inline-flex items-center gap-1.5 text-left text-2xl font-bold text-[#333] transition hover:text-[#28B8C7]"
+          className="inline-flex items-center gap-2 text-left text-sm font-semibold text-[#1f2a37] transition hover:text-[#00509D]"
         >
-          <span>{user.location}</span>
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#EAF4FF] text-[#00509D]">
+            <MapPin size={16} />
+          </span>
+          <span className="leading-none">{user.location}</span>
           <ChevronDown
-            size={18}
-            className={`text-slate-400 transition-transform ${editingRegion ? 'rotate-180' : ''}`}
+            size={16}
+            className={`text-[#00509D] transition-transform ${editingRegion ? 'rotate-180' : ''}`}
           />
         </button>
 
         {editingRegion ? (
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mt-3">
             <RegionSelector
               value={selectedRegionKey}
               onChange={(region) => {

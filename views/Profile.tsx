@@ -177,7 +177,7 @@ const Profile: React.FC<{
   }, [showToast, user]);
 
   useEffect(() => {
-    const emailChangeStatus = searchParams.get('emailChange');
+    const emailChangeStatus = searchParams?.get('emailChange');
     if (!emailChangeStatus) return;
 
     if (emailChangeStatus === 'success') {
@@ -191,7 +191,7 @@ const Profile: React.FC<{
   }, [router, searchParams, showToast, update]);
 
   useEffect(() => {
-    const editSection = searchParams.get('edit');
+    const editSection = searchParams?.get('edit');
 
     if (!editSection || loading) {
       return;
@@ -231,7 +231,7 @@ const Profile: React.FC<{
   }, [profile.username]);
 
   const publicProfileUrl = useMemo(
-    () => (profile.username ? `https://gringoou.com.br/${profile.username}` : 'https://gringoou.com.br/seu-perfil'),
+    () => (profile.username ? `https://gringoou.com/${profile.username}` : 'https://gringoou.com/seu-perfil'),
     [profile.username],
   );
 
@@ -381,7 +381,7 @@ const Profile: React.FC<{
   };
 
   const avatarImage = profile.image || DEFAULT_AVATAR_URL;
-  const referralUrl = referralSummary.referralUrl || (profile.username ? `https://gringoou.com.br/convite/${profile.username}` : 'https://gringoou.com.br/convite/seu-nome-publico');
+  const referralUrl = referralSummary.referralUrl || (profile.username ? `https://gringoou.com/convite/${profile.username}` : 'https://gringoou.com/convite/seu-nome-publico');
   const professionalIdentity = professionalProfile.identity;
   const isProfessionalView =
     canUseProfessionalMode && personaMode === 'professional' && Boolean(professionalIdentity);

@@ -102,7 +102,7 @@ const BusinessList: React.FC<BusinessListProps> = ({
   };
 
   useEffect(() => {
-    if (searchParams.get('create') === '1') {
+    if (searchParams?.get('create') === '1') {
       setShowCreateForm(true);
     }
   }, [searchParams]);

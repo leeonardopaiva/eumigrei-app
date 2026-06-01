@@ -59,7 +59,7 @@ const formatDateTime = (value: string) =>
 const SearchResults: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const queryFromUrl = searchParams.get('q')?.trim() ?? '';
+  const queryFromUrl = searchParams?.get('q')?.trim() ?? '';
   const [query, setQuery] = useState(queryFromUrl);
   const [activeTab, setActiveTab] = useState<'all' | 'businesses' | 'events' | 'posts'>('all');
   const [loading, setLoading] = useState(false);
