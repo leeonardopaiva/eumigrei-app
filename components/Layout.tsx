@@ -31,20 +31,23 @@ interface LogoProps {
 }
 
 export const Logo: React.FC<LogoProps> = ({ size = 'md', className = '', professional = false }) => {
-  const textClass = {
-    sm: 'text-2xl',
-    md: 'text-3xl',
-    lg: 'text-4xl',
+  const sizeClass = {
+    sm: 'h-7',
+    md: 'h-9',
+    lg: 'h-11',
   }[size];
 
   return (
     <Link href="/" aria-label="Home">
-      <span
-        className={`inline-block select-none font-black tracking-tight transition-all duration-300 ${
-          professional ? 'text-[#145DA0]' : 'theme-text'
-        } ${textClass} ${className}`}
-      >
-        Gringoou
+      <span className={`inline-flex items-center ${className}`}>
+        <img
+          src="/assets/logo26.png"
+          alt="Gringoou"
+          className={`${sizeClass} w-auto select-none object-contain transition-all duration-300 ${
+            professional ? 'opacity-95' : ''
+          }`}
+        />
+        <span className="sr-only">Gringoou</span>
       </span>
     </Link>
   );
@@ -246,6 +249,7 @@ const SidebarContent: React.FC<{
         type="button"
         onClick={() => {
           onItemClick?.();
+          window.dispatchEvent(new CustomEvent('gringoou:open-suggestion-modal'));
           window.dispatchEvent(new CustomEvent('emigrei:open-suggestion-modal'));
         }}
         className="theme-soft-surface mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold shadow-sm"
@@ -271,25 +275,15 @@ const Layout: React.FC<LayoutWithUserProps> = ({
   const isProfessionalTheme = canUseProfessionalMode && personaMode === 'professional';
   const accentColorClass = 'theme-text';
   const accentSolidClass = 'theme-bg';
-  const activeName =
-    isProfessionalTheme && professionalIdentity ? professionalIdentity.name : user.name;
-  const activeAvatar =
-    isProfessionalTheme && professionalIdentity?.imageUrl ? professionalIdentity.imageUrl : user.avatar;
-  const activeLocation =
-    isProfessionalTheme && professionalIdentity?.locationLabel
-      ? professionalIdentity.locationLabel
-      : user.location;
+  const panelClass = 'border-slate-200';
   const publicProfileHref =
     isProfessionalTheme && professionalIdentity
       ? professionalIdentity.publicPath
       : isProfessionalTheme
         ? '/negocios'
-      : user.username
-        ? `/perfil/${encodeURIComponent(user.username)}`
-        : '/profile';
-  const panelClass = isProfessionalTheme
-    ? 'border-blue-100/80 bg-blue-50/80'
-    : 'border-white/50 bg-white/85';
+        : user.username
+          ? `/perfil/${encodeURIComponent(user.username)}`
+          : '/profile';
 
   const isActive = (path: string) =>
     path === '/' ? pathname === path : pathname === path || pathname.startsWith(`${path}/`);
@@ -297,8 +291,8 @@ const Layout: React.FC<LayoutWithUserProps> = ({
   const handleMenuItemClick = () => setIsMenuOpen(false);
 
   return (
-    <div className="app-shell min-h-screen bg-texture" data-persona={isProfessionalTheme ? 'professional' : 'personal'}>
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-texture font-sans shadow-xl lg:max-w-none lg:bg-transparent lg:shadow-none">
+    <div className="app-shell min-h-screen bg-[#f9f9f9]" data-persona={isProfessionalTheme ? 'professional' : 'personal'}>
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-[#f9f9f9] font-sans shadow-xl lg:max-w-none lg:bg-transparent lg:shadow-none">
         {isMenuOpen ? (
           <div
             className="fixed inset-0 z-50 animate-in bg-black/40 backdrop-blur-sm fade-in duration-300"
@@ -307,7 +301,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
         ) : null}
 
         <div
-          className={`fixed inset-y-0 left-0 z-[60] w-[85%] max-w-[380px] overflow-y-auto border-r border-slate-200 bg-white/90 shadow-xl backdrop-blur-xl transition-transform duration-300 ease-out ${
+          className={`fixed inset-y-0 left-0 z-[60] w-[85%] max-w-[380px] overflow-y-auto border-r border-slate-200 bg-[#f9f9f9] shadow-xl transition-transform duration-300 ease-out ${
             isMenuOpen ? 'translate-x-0' : '-translate-x-full'
           } ${panelClass}`}
         >
@@ -326,7 +320,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
         </div>
 
         <div className="relative flex min-h-screen flex-1 flex-col">
-          <header className="sticky top-0 z-40 flex items-center justify-between bg-transparent px-5 pb-2 pt-6 lg:border-b lg:border-slate-200/80 lg:bg-white/88 lg:px-8 lg:py-5 lg:backdrop-blur-xl">
+          <header className="sticky top-0 z-40 flex items-center justify-between bg-[#f9f9f9] px-5 pb-2 pt-6 lg:border-b lg:border-slate-200 lg:px-8 lg:py-5">
             <div className="flex items-center gap-4">
               <button
                 type="button"
@@ -338,29 +332,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
               <Logo size="sm" professional={isProfessionalTheme} />
             </div>
 
-            <div className="hidden items-center gap-3 lg:flex">
-              <FriendRequestBell />
-              <div className="flex items-center gap-3 rounded-2xl border border-slate-200 px-3 py-2 shadow-sm">
-                <Link href={publicProfileHref} className="transition hover:opacity-90">
-                  <img
-                    src={activeAvatar}
-                    className="h-10 w-10 rounded-full object-cover"
-                    alt={activeName}
-                    onError={handleAvatarError}
-                  />
-                </Link>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-slate-800">{activeName}</p>
-                  <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">
-                    {activeLocation}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="lg:hidden">
-              <FriendRequestBell />
-            </div>
+            <FriendRequestBell />
           </header>
 
           <main className="scrollbar-hide flex-1 overflow-y-auto">

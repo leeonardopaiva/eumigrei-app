@@ -13,38 +13,32 @@ body {
 }
 
 .app-shell {
-  --accent: #5b4bff;
-  --accent-strong: #345cff;
-  --accent-soft: #eef2ff;
-  --accent-soft-border: #d8e0ff;
-  --accent-ring: rgba(91, 75, 255, 0.18);
-  --accent-shadow: rgba(91, 75, 255, 0.22);
-  --accent-text-soft: rgba(52, 92, 255, 0.72);
-  --accent-gradient-start: rgba(91, 75, 255, 0.12);
-  --accent-gradient-end: rgba(52, 92, 255, 0.08);
+  --accent: #00509d;
+  --accent-strong: #0869d6;
+  --accent-soft: #eaf4ff;
+  --accent-soft-border: #cfe4ff;
+  --accent-ring: rgba(8, 105, 214, 0.18);
+  --accent-shadow: rgba(8, 105, 214, 0.22);
+  --accent-text-soft: rgba(8, 105, 214, 0.72);
+  --accent-gradient-start: rgba(8, 105, 214, 0.12);
+  --accent-gradient-end: rgba(0, 80, 157, 0.08);
 }
 
 .app-shell[data-persona='professional'] {
-  --accent: #145da0;
-  --accent-strong: #0f4c81;
+  --accent: #0f2b3d;
+  --accent-strong: #00509d;
   --accent-soft: #eff6ff;
   --accent-soft-border: #bfdbfe;
-  --accent-ring: rgba(15, 76, 129, 0.18);
-  --accent-shadow: rgba(15, 76, 129, 0.22);
-  --accent-text-soft: rgba(15, 76, 129, 0.72);
-  --accent-gradient-start: rgba(15, 76, 129, 0.12);
-  --accent-gradient-end: rgba(20, 93, 160, 0.08);
+  --accent-ring: rgba(0, 80, 157, 0.18);
+  --accent-shadow: rgba(0, 80, 157, 0.22);
+  --accent-text-soft: rgba(0, 80, 157, 0.72);
+  --accent-gradient-start: rgba(0, 80, 157, 0.12);
+  --accent-gradient-end: rgba(15, 43, 61, 0.08);
 }
 
 .bg-texture {
-  background-color: #f4f6fa;
-  background-image:
-    radial-gradient(circle at top left, var(--accent-gradient-start), transparent 28%),
-    radial-gradient(circle at bottom right, var(--accent-gradient-end), transparent 22%),
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
-  background-position: center, center, top left;
-  background-repeat: no-repeat, no-repeat, repeat;
-  background-size: 100% 100%, 100% 100%, 220px 220px;
+  background-color: #f9f9f9;
+  background-image: none;
 }
 
 .theme-text {
