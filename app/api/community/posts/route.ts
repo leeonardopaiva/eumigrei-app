@@ -7,6 +7,20 @@ import { communityPostSchema } from '@/lib/validators';
 
 const DAILY_POST_LIMIT = 3;
 const LIKERS_PREVIEW_LIMIT = 8;
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 20;
+
+const parsePagination = (searchParams: URLSearchParams) => {
+  const rawLimit = Number(searchParams.get('limit') ?? DEFAULT_LIMIT);
+  const rawOffset = Number(searchParams.get('offset') ?? 0);
+
+  const limit = Number.isFinite(rawLimit)
+    ? Math.min(Math.max(Math.trunc(rawLimit), 1), MAX_LIMIT)
+    : DEFAULT_LIMIT;
+  const offset = Number.isFinite(rawOffset) ? Math.max(Math.trunc(rawOffset), 0) : 0;
+
+  return { limit, offset };
+};
 
 const mapCommunityPost = (
   post: {
@@ -122,6 +136,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const regionKey = searchParams.get('region') ?? session?.user?.regionKey;
   const isAdmin = session?.user?.role === 'ADMIN';
+  const { limit, offset } = parsePagination(searchParams);
 
   const posts = await prisma.communityPost.findMany({
     where: {
@@ -137,7 +152,8 @@ export async function GET(request: Request) {
       ...(regionKey ? { regionKey } : {}),
     },
     orderBy: [{ createdAt: 'desc' }],
-    take: 20,
+    take: limit + 1,
+    skip: offset,
     include: {
       author: {
         select: {
@@ -194,8 +210,13 @@ export async function GET(request: Request) {
     },
   });
 
+  const hasMore = posts.length > limit;
+  const pagePosts = hasMore ? posts.slice(0, limit) : posts;
+
   return NextResponse.json({
-    posts: posts.map((post) => mapCommunityPost(post, session)),
+    posts: pagePosts.map((post) => mapCommunityPost(post, session)),
+    hasMore,
+    nextOffset: offset + pagePosts.length,
   });
 }
 

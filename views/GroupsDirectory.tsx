@@ -1,0 +1,247 @@
+'use client';
+
+import React, { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { MapPin, UsersRound } from 'lucide-react';
+import { useIntersectionTrigger } from '../hooks/useIntersectionTrigger';
+import { loadRegionGroups } from '../lib/content-api';
+import type { RegionalGroupCard } from '../lib/content-contracts';
+import type { User } from '../types';
+
+const getInitials = (name: string) =>
+  name
+    .split(' ')
+    .map((part) => part.trim()[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
+const formatCompactMemberCount = (count: number) => {
+  if (count < 1000) {
+    return `${count}`;
+  }
+
+  const compactValue = count / 1000;
+  const formattedValue = Number.isInteger(compactValue) ? compactValue.toFixed(0) : compactValue.toFixed(1);
+
+  return `${formattedValue.replace('.', ',')}k`;
+};
+
+const GroupsDirectory: React.FC<{ user: User }> = ({ user }) => {
+  const [groups, setGroups] = useState<RegionalGroupCard[]>([]);
+  const [loadingInitial, setLoadingInitial] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [nextOffset, setNextOffset] = useState(0);
+
+  const loadGroupsPage = useCallback(
+    async ({ offset, replace }: { offset: number; replace: boolean }) => {
+      if (!user.regionKey) {
+        setGroups([]);
+        setLoadingInitial(false);
+        setLoadingMore(false);
+        setHasMore(false);
+        setNextOffset(0);
+        return;
+      }
+
+      if (replace) {
+        setLoadingInitial(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      try {
+        const payload = await loadRegionGroups({
+          regionKey: user.regionKey,
+          limit: 8,
+          offset,
+        });
+
+        setGroups((current) => (replace ? payload.groups : [...current, ...payload.groups]));
+        setHasMore(payload.hasMore);
+        setNextOffset(payload.nextOffset);
+      } catch (error) {
+        console.error('Failed to load groups:', error);
+        if (replace) {
+          setGroups([]);
+          setHasMore(false);
+          setNextOffset(0);
+        }
+      } finally {
+        setLoadingInitial(false);
+        setLoadingMore(false);
+      }
+    },
+    [user.regionKey],
+  );
+
+  const reloadGroups = useCallback(async () => {
+    setGroups([]);
+    setHasMore(true);
+    setNextOffset(0);
+    await loadGroupsPage({ offset: 0, replace: true });
+  }, [loadGroupsPage]);
+
+  const loadMoreGroups = useCallback(async () => {
+    if (!hasMore || loadingInitial || loadingMore) {
+      return;
+    }
+
+    await loadGroupsPage({ offset: nextOffset, replace: false });
+  }, [hasMore, loadGroupsPage, loadingInitial, loadingMore, nextOffset]);
+
+  const sentinelRef = useIntersectionTrigger(
+    () => {
+      if (!hasMore || loadingInitial || loadingMore) {
+        return;
+      }
+
+      void loadMoreGroups();
+    },
+    { enabled: Boolean(user.regionKey) && hasMore },
+  );
+
+  useEffect(() => {
+    void reloadGroups();
+  }, [reloadGroups, user.regionKey]);
+
+  return (
+    <div className="animate-in space-y-5 px-5 fade-in slide-in-from-bottom-4 duration-500 lg:px-0">
+      <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#EAF4FF] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-[#00509D]">
+              <UsersRound size={13} />
+              Grupos
+            </div>
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+                Grupos populares
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                Priorizamos os grupos com mais membros e os mais recentes da sua região. Quando não houver
+                volume local suficiente, mostramos sugestões públicas da comunidade.
+              </p>
+            </div>
+          </div>
+
+          {user.regionKey ? (
+            <div className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-600">
+              <MapPin size={16} className="text-[#00509D]" />
+              {user.location}
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">Para explorar agora</h2>
+            <p className="text-[11px] text-slate-500">Cards compactos, pensados para descoberta rápida</p>
+          </div>
+          <span className="text-xs font-semibold text-slate-400">
+            {groups.length} grupo{groups.length === 1 ? '' : 's'}
+          </span>
+        </div>
+
+        {loadingInitial ? (
+          <div className="grid grid-cols-2 gap-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="h-24 animate-pulse rounded-2xl bg-white shadow-sm" />
+            ))}
+          </div>
+        ) : groups.length === 0 ? (
+          <div className="rounded-[28px] border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
+            Nenhum grupo disponível para exibir agora.
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+            {groups.map((group: RegionalGroupCard) => {
+              const previewMembers = group.memberPreviews.slice(0, 4);
+              const missingAvatars = Math.max(group.memberCount - previewMembers.length, 0);
+
+              return (
+                <Link
+                  key={group.id}
+                  href={group.publicPath}
+                  className="group flex flex-col gap-3 rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                >
+                  <div className="relative aspect-[16/11] w-full overflow-hidden rounded-[20px] bg-slate-100">
+                    {group.imageUrl ? (
+                      <img src={group.imageUrl} alt={group.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#EAF4FF] to-[#D9ECFF] text-sm font-bold text-[#00509D]">
+                        {getInitials(group.name)}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-bold text-slate-900">{group.name}</p>
+                    <p className="mt-0.5 line-clamp-1 text-[11px] text-slate-500">
+                      {group.regionLabel || 'Toda a comunidade'}
+                    </p>
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+                        <UsersRound size={12} className="text-[#00509D]" />
+                        <span>{formatCompactMemberCount(group.memberCount)} membros</span>
+                      </div>
+                      {group.category ? (
+                        <span className="truncate text-[11px] font-medium text-slate-400">{group.category}</span>
+                      ) : null}
+                    </div>
+
+                    <div className="mt-2 flex items-center">
+                      <div className="flex items-center">
+                        {previewMembers.map((member, index) => (
+                          <div
+                            key={member.id}
+                            className={`relative h-6 w-6 overflow-hidden rounded-full border-2 border-white bg-slate-100 ${
+                              index === 0 ? '' : '-ml-2'
+                            }`}
+                          >
+                            {member.image ? (
+                              <img
+                                src={member.image}
+                                alt={member.name || 'Membro do grupo'}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-slate-200 text-[9px] font-bold text-slate-600">
+                                {getInitials(member.name || 'Membro')}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+
+                        {missingAvatars > 0 ? (
+                          <div className="-ml-2 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-white bg-[#EAF4FF] px-1 text-[9px] font-bold text-[#00509D]">
+                            +{missingAvatars}
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+            </div>
+            {loadingMore ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-4 text-center text-xs font-semibold text-slate-500">
+                Carregando mais grupos...
+              </div>
+            ) : null}
+            {hasMore ? <div ref={sentinelRef} className="h-1" aria-hidden="true" /> : null}
+          </>
+        )}
+      </section>
+    </div>
+  );
+};
+
+export default GroupsDirectory;
+

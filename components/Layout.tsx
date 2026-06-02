@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Briefcase,
   Calendar,
@@ -95,6 +95,7 @@ const SidebarContent: React.FC<{
   professionalIdentity?: ProfessionalProfileIdentity | null;
   accentColorClass: string;
   isActive: (path: string) => boolean;
+  onNavigate: (href: string) => void;
   onPersonaModeChange?: (mode: PersonaMode) => void;
   onItemClick?: () => void;
   onSignOut?: () => void;
@@ -106,6 +107,7 @@ const SidebarContent: React.FC<{
   professionalIdentity,
   accentColorClass,
   isActive,
+  onNavigate,
   onPersonaModeChange,
   onItemClick,
   onSignOut,
@@ -195,7 +197,7 @@ const SidebarContent: React.FC<{
               active={isActive(item.href)}
               disabled={item.disabled}
               badge={item.badge}
-              onClick={onItemClick}
+              onClick={() => onNavigate(item.href)}
               onDisabledClick={() => handleDisabledNavigation(item)}
             />
           ))}
@@ -205,7 +207,7 @@ const SidebarContent: React.FC<{
               label="Admin"
               icon={<ShieldCheck size={18} />}
               active={isActive('/admin')}
-              onClick={onItemClick}
+              onClick={() => onNavigate('/admin')}
             />
           ) : null}
           <MenuListItem
@@ -213,26 +215,26 @@ const SidebarContent: React.FC<{
             label={isProfessionalTheme ? 'Meu negocio' : 'Meu perfil'}
             icon={<UserIcon size={18} />}
             active={isActive('/profile')}
-            onClick={onItemClick}
+            onClick={() => onNavigate('/profile')}
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Link
-          href="/negocios?create=1"
-          onClick={onItemClick}
+        <button
+          type="button"
+          onClick={() => onNavigate('/negocios?create=1')}
           className="inline-flex w-full items-center justify-center rounded-xl border border-[#00509D]/15 bg-white px-4 py-3 text-sm font-bold text-[#00509D] shadow-sm transition hover:bg-[#F2F7FF]"
         >
           Cadastrar meu negocio
-        </Link>
-        <Link
-          href="/eventos?create=1"
-          onClick={onItemClick}
+        </button>
+        <button
+          type="button"
+          onClick={() => onNavigate('/eventos?create=1')}
           className="inline-flex w-full items-center justify-center rounded-xl border border-[#F97316]/15 bg-white px-4 py-3 text-sm font-bold text-[#C45A00] shadow-sm transition hover:bg-[#FFF6ED]"
         >
           Cadastrar meu evento
-        </Link>
+        </button>
       </div>
 
       {onSignOut ? (
@@ -274,6 +276,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
   onSignOut,
 }) => {
   const pathname = usePathname() || '/';
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isProfessionalTheme = canUseProfessionalMode && personaMode === 'professional';
   const accentColorClass = 'theme-text';
@@ -291,7 +294,10 @@ const Layout: React.FC<LayoutWithUserProps> = ({
   const isActive = (path: string) =>
     path === '/' ? pathname === path : pathname === path || pathname.startsWith(`${path}/`);
 
-  const handleMenuItemClick = () => setIsMenuOpen(false);
+  const handleNavigate = (href: string) => {
+    setIsMenuOpen(false);
+    router.push(href);
+  };
 
   return (
     <div className="app-shell min-h-screen bg-[#f9f9f9]" data-persona={isProfessionalTheme ? 'professional' : 'personal'}>
@@ -316,8 +322,9 @@ const Layout: React.FC<LayoutWithUserProps> = ({
             professionalIdentity={professionalIdentity}
             accentColorClass={accentColorClass}
             isActive={isActive}
+            onNavigate={handleNavigate}
             onPersonaModeChange={onPersonaModeChange}
-            onItemClick={handleMenuItemClick}
+            onItemClick={() => setIsMenuOpen(false)}
             onSignOut={onSignOut}
           />
         </div>
@@ -346,11 +353,11 @@ const Layout: React.FC<LayoutWithUserProps> = ({
 
           <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-6 lg:hidden">
             <nav className={`flex w-full max-w-[360px] items-center justify-between rounded-full border border-white/10 px-2 py-2 shadow-xl ${accentSolidClass}`}>
-              <NavItem href="/" icon={<HomeIcon size={20} />} active={isActive('/')} accentColorClass={accentColorClass} />
-              <NavItem href="/negocios" icon={<Store size={20} />} active={isActive('/negocios')} accentColorClass={accentColorClass} />
-              <NavItem href="/community" icon={<Users size={20} />} active={isActive('/community')} accentColorClass={accentColorClass} />
-              <NavItem href="/eventos" icon={<Calendar size={20} />} active={isActive('/eventos')} accentColorClass={accentColorClass} />
-              <NavItem href={publicProfileHref} icon={<UserIcon size={20} />} active={isActive('/profile') || isActive('/perfil')} accentColorClass={accentColorClass} />
+              <NavItem href="/" icon={<HomeIcon size={20} />} active={isActive('/')} accentColorClass={accentColorClass} onNavigate={handleNavigate} />
+              <NavItem href="/negocios" icon={<Store size={20} />} active={isActive('/negocios')} accentColorClass={accentColorClass} onNavigate={handleNavigate} />
+              <NavItem href="/community" icon={<Users size={20} />} active={isActive('/community')} accentColorClass={accentColorClass} onNavigate={handleNavigate} />
+              <NavItem href="/eventos" icon={<Calendar size={20} />} active={isActive('/eventos')} accentColorClass={accentColorClass} onNavigate={handleNavigate} />
+              <NavItem href={publicProfileHref} icon={<UserIcon size={20} />} active={isActive('/profile') || isActive('/perfil')} accentColorClass={accentColorClass} onNavigate={handleNavigate} />
             </nav>
           </div>
         </div>
@@ -398,20 +405,28 @@ const MenuListItem: React.FC<{
   }
 
   return (
-    <Link href={href} onClick={onClick} className={classes}>
+    <button type="button" onClick={onClick} className={classes}>
       {content}
-    </Link>
+    </button>
   );
 };
 
-const NavItem: React.FC<{ href: string; icon: React.ReactNode; active: boolean; accentColorClass: string }> = ({
+const NavItem: React.FC<{
+  href: string;
+  icon: React.ReactNode;
+  active: boolean;
+  accentColorClass: string;
+  onNavigate: (href: string) => void;
+}> = ({
   href,
   icon,
   active,
   accentColorClass,
+  onNavigate,
 }) => (
-  <Link
-    href={href}
+  <button
+    type="button"
+    onClick={() => onNavigate(href)}
     className={`flex items-center justify-center transition-all duration-300 ${
       active
         ? `h-11 w-11 scale-105 rounded-full bg-white ${accentColorClass} shadow-sm`
@@ -419,7 +434,7 @@ const NavItem: React.FC<{ href: string; icon: React.ReactNode; active: boolean; 
     }`}
   >
     {icon}
-  </Link>
+  </button>
 );
 
 export default Layout;

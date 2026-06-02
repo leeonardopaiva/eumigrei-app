@@ -1,25 +1,14 @@
 ﻿'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
-import { ShieldAlert } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import Layout from './components/Layout';
-import AdminPanel from './views/AdminPanel';
-import Home from './views/Home';
-import Community from './views/Community';
-import Marketplace from './views/Marketplace';
-import Profile from './views/Profile';
-import SearchResults from './views/SearchResults';
-import BusinessList from './views/BusinessList';
-import BusinessDetail from './views/BusinessDetail';
-import EventDetail from './views/EventDetail';
-import PublicProfile from './views/PublicProfile';
-import PublicProfessionalProfile from './views/PublicProfessionalProfile';
-import PublicGroup from './views/PublicGroup';
-import Registration from './views/Registration';
+import AppContent from './components/app/AppContent';
+import AuthWorkspace from './components/app/AuthWorkspace';
+import PublicEntry from './components/app/PublicEntry';
 import { DEFAULT_AVATAR_URL } from './lib/avatar';
+import { parseAppRoute } from './lib/app-route';
 import { UserRole, type PersonaMode, type ProfessionalProfileIdentity, type User } from './types';
 
 const GOOGLE_AUTH_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED !== 'false';
@@ -28,22 +17,6 @@ const PASSWORD_AUTH_ENABLED = false;
 const DEV_AUTH_ENABLED =
   process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_DEV_AUTH_ENABLED === 'true';
 const PERSONA_MODE_STORAGE_KEY = 'gringoou:persona-mode';
-const RESERVED_PUBLIC_ROUTES = new Set([
-  'admin',
-  'community',
-  'marketplace',
-  'buscar',
-  'noticias',
-  'eventos',
-  'negocios',
-  'perfil',
-  'profile',
-  'profissional',
-  'vagas',
-  'convite',
-  'grupos',
-]);
-
 const mapUserRole = (role?: string | null): UserRole => {
   switch (role) {
     case UserRole.ADMIN:
@@ -77,26 +50,6 @@ const buildCurrentUser = (sessionUser: {
   phone: sessionUser.phone,
 });
 
-const AdminAccessDenied: React.FC = () => (
-  <div className="px-5 pt-4">
-    <div className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm">
-      <div className="inline-flex h-14 w-14 items-center justify-center rounded-3xl bg-red-50 text-red-600">
-        <ShieldAlert size={28} />
-      </div>
-      <h1 className="mt-5 text-2xl font-bold text-[#28B8C7]">Acesso restrito</h1>
-      <p className="mt-2 text-sm leading-relaxed text-slate-600">
-        Seu usuario nao possui permissao de administrador para acessar esta area.
-      </p>
-      <Link
-        href="/"
-        className="mt-5 inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#28B8C7] px-5 text-sm font-bold text-white"
-      >
-        Voltar para home
-      </Link>
-    </div>
-  </div>
-);
-
 const App: React.FC = () => {
   const pathname = usePathname() || '/';
   const { data: session, status, update } = useSession();
@@ -116,20 +69,12 @@ const App: React.FC = () => {
   const [personaModeReady, setPersonaModeReady] = useState(false);
   const [professionalIdentity, setProfessionalIdentity] = useState<ProfessionalProfileIdentity | null>(null);
   const [professionalProfileLoaded, setProfessionalProfileLoaded] = useState(false);
-  const segments = pathname.split('/').filter(Boolean);
-  const rootSegment = segments[0];
-  const referralUsername =
-    rootSegment === 'convite' && segments.length >= 2 ? decodeURIComponent(segments[1]) : null;
-  const publicProfileUsername =
-    rootSegment === 'perfil' && segments.length >= 2
-      ? decodeURIComponent(segments[1])
-      : segments.length === 1 && rootSegment && !RESERVED_PUBLIC_ROUTES.has(rootSegment)
-        ? decodeURIComponent(rootSegment)
-        : null;
-  const professionalProfileUsername =
-    rootSegment === 'profissional' && segments.length >= 2 ? decodeURIComponent(segments[1]) : null;
-  const groupSlug =
-    rootSegment === 'grupos' && segments.length >= 2 ? decodeURIComponent(segments[1]) : null;
+  const {
+    referralUsername,
+    publicProfileUsername,
+    professionalProfileUsername,
+    groupSlug,
+  } = parseAppRoute(pathname);
   const sessionRole = mapUserRole(session?.user?.role);
   const canUseProfessionalMode = sessionRole === UserRole.BUSINESS_OWNER || sessionRole === UserRole.ADMIN;
 
@@ -442,21 +387,16 @@ const App: React.FC = () => {
     return null;
   }
 
-  if (professionalProfileUsername && !session?.user) {
-    return <PublicProfessionalProfile username={professionalProfileUsername} />;
-  }
-
-  if (groupSlug && !session?.user) {
-    return <PublicGroup slug={groupSlug} />;
-  }
-
-  if (publicProfileUsername && !session?.user) {
-    return <PublicProfile username={publicProfileUsername} />;
-  }
+  const currentUser = session?.user ? buildCurrentUser(session.user) : null;
 
   if (!session?.user) {
+    if (publicProfileUsername || professionalProfileUsername || groupSlug) {
+      return <PublicEntry pathname={pathname} />;
+    }
+
     return (
-      <Registration
+      <AuthWorkspace
+        referralUsername={referralUsername}
         mode="signin"
         googleEnabled={GOOGLE_AUTH_ENABLED}
         emailEnabled={EMAIL_AUTH_ENABLED}
@@ -469,14 +409,14 @@ const App: React.FC = () => {
         submitting={authSubmitting}
         error={registrationError}
         notice={registrationNotice}
-        referralUsername={referralUsername}
       />
     );
   }
 
   if (!session.user.onboardingCompleted || !session.user.username) {
     return (
-      <Registration
+      <AuthWorkspace
+        referralUsername={referralUsername}
         mode="complete-profile"
         googleEnabled={GOOGLE_AUTH_ENABLED}
         emailEnabled={EMAIL_AUTH_ENABLED}
@@ -487,7 +427,6 @@ const App: React.FC = () => {
         submitting={savingProfile}
         error={registrationError}
         notice={registrationNotice}
-        referralUsername={referralUsername}
         defaultValues={{
           name: session.user.name || '',
           username: session.user.username || '',
@@ -499,118 +438,43 @@ const App: React.FC = () => {
     );
   }
 
-  const currentUser = buildCurrentUser(session.user);
   const effectiveCanUseProfessionalMode =
     canUseProfessionalMode && (Boolean(professionalIdentity) || !professionalProfileLoaded);
   const effectivePersonaMode: PersonaMode =
     effectiveCanUseProfessionalMode && personaMode === 'professional' ? 'professional' : 'personal';
 
-  if (groupSlug) {
+  if (publicProfileUsername || professionalProfileUsername || groupSlug) {
     return (
-      <Layout
-        user={currentUser}
+      <PublicEntry
+        pathname={pathname}
+        currentUser={currentUser!}
         personaMode={effectivePersonaMode}
         canUseProfessionalMode={canUseProfessionalMode}
         professionalIdentity={professionalIdentity}
         onPersonaModeChange={handlePersonaModeChange}
         onSignOut={() => signOut({ callbackUrl: '/' })}
-      >
-        <PublicGroup slug={groupSlug} viewer={currentUser} embedded />
-      </Layout>
+      />
     );
   }
-
-  if (professionalProfileUsername) {
-    return (
-      <Layout
-        user={currentUser}
-        personaMode={effectivePersonaMode}
-        canUseProfessionalMode={canUseProfessionalMode}
-        professionalIdentity={professionalIdentity}
-        onPersonaModeChange={handlePersonaModeChange}
-        onSignOut={() => signOut({ callbackUrl: '/' })}
-      >
-        <PublicProfessionalProfile username={professionalProfileUsername} viewer={currentUser} embedded />
-      </Layout>
-    );
-  }
-
-  if (publicProfileUsername) {
-    return (
-      <Layout
-        user={currentUser}
-        personaMode={effectivePersonaMode}
-        canUseProfessionalMode={canUseProfessionalMode}
-        professionalIdentity={professionalIdentity}
-        onPersonaModeChange={handlePersonaModeChange}
-        onSignOut={() => signOut({ callbackUrl: '/' })}
-      >
-        <PublicProfile username={publicProfileUsername} viewer={currentUser} embedded />
-      </Layout>
-    );
-  }
-
-  const content = (() => {
-    if (segments.length === 0) {
-      return <Home user={currentUser} />;
-    }
-
-    if (rootSegment === 'negocios' && segments.length === 1) {
-      return <BusinessList personaMode={effectivePersonaMode} professionalIdentity={professionalIdentity} />;
-    }
-
-    if (rootSegment === 'negocios' && segments.length === 2) {
-      return <BusinessDetail businessId={decodeURIComponent(segments[1])} user={currentUser} />;
-    }
-
-    if ((rootSegment === 'eventos' || rootSegment === 'marketplace') && segments.length === 2) {
-      return <EventDetail eventId={decodeURIComponent(segments[1])} user={currentUser} />;
-    }
-
-    switch (rootSegment) {
-      case 'admin':
-        return currentUser.role === UserRole.ADMIN ? (
-          <AdminPanel user={currentUser} />
-        ) : (
-          <AdminAccessDenied />
-        );
-      case 'community':
-        return (
-          <Community
-            user={currentUser}
-            personaMode={effectivePersonaMode}
-            professionalIdentity={professionalIdentity}
-          />
-        );
-      case 'buscar':
-        return <SearchResults />;
-      case 'marketplace':
-      case 'eventos':
-        return <Marketplace personaMode={effectivePersonaMode} professionalIdentity={professionalIdentity} />;
-      case 'profile':
-        return (
-          <Profile
-            user={currentUser}
-            personaMode={personaMode}
-            canUseProfessionalMode={canUseProfessionalMode}
-            onPersonaModeChange={handlePersonaModeChange}
-          />
-        );
-      default:
-        return <Home user={currentUser} />;
-    }
-  })();
 
   return (
     <Layout
-      user={currentUser}
+      user={currentUser!}
       personaMode={effectivePersonaMode}
       canUseProfessionalMode={canUseProfessionalMode}
       professionalIdentity={professionalIdentity}
       onPersonaModeChange={handlePersonaModeChange}
       onSignOut={() => signOut({ callbackUrl: '/' })}
     >
-      {content}
+      <AppContent
+        currentUser={currentUser!}
+        pathname={pathname}
+        personaMode={personaMode}
+        effectivePersonaMode={effectivePersonaMode}
+        professionalIdentity={professionalIdentity}
+        canUseProfessionalMode={canUseProfessionalMode}
+        onPersonaModeChange={handlePersonaModeChange}
+      />
     </Layout>
   );
 };

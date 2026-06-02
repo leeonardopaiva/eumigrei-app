@@ -1,5 +1,4 @@
-'use client';
-
+﻿'use client';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -10,6 +9,7 @@ import {
   ExternalLink,
   Building2,
   Briefcase,
+  MessageSquare,
   Users,
   CalendarDays,
   Newspaper,
@@ -20,10 +20,33 @@ import {
 import { useToast } from '../components/feedback/ToastProvider';
 import RegionSelector from '../components/RegionSelector';
 import UnifiedSearchInput from '../components/search/UnifiedSearchInput';
+import { useRegionBanners, useRegionCommunityPosts, useRegionGroups } from '../hooks/useRegionContent';
+import { DEFAULT_AVATAR_URL } from '../lib/avatar';
+import { formatRelativeTime } from '../components/community/utils';
 import { trackAnalyticsEvent } from '../lib/analytics';
 import { BannerAd, User } from '../types';
 
 const animatedSearchTerms = ['restaurantes', 'bares', 'eventos', 'pessoas'];
+
+const getInitials = (name: string) =>
+  name
+    .split(' ')
+    .map((part) => part.trim()[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
+const formatCompactMemberCount = (count: number) => {
+  if (count < 1000) {
+    return `${count}`;
+  }
+
+  const compactValue = count / 1000;
+  const formattedValue = Number.isInteger(compactValue) ? compactValue.toFixed(0) : compactValue.toFixed(1);
+
+  return `${formattedValue.replace('.', ',')}k`;
+};
 
 const Home: React.FC<{ user: User }> = ({ user }) => {
   const router = useRouter();
@@ -32,11 +55,13 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
   const [editingRegion, setEditingRegion] = useState(false);
   const [selectedRegionKey, setSelectedRegionKey] = useState(user.regionKey || '');
   const [savingRegion, setSavingRegion] = useState(false);
-  const [banners, setBanners] = useState<BannerAd[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
   const [submittingBannerId, setSubmittingBannerId] = useState<string | null>(null);
   const [searchPlaceholderIndex, setSearchPlaceholderIndex] = useState(0);
+  const { data: banners } = useRegionBanners('home', user.regionKey);
+  const { data: communityPosts } = useRegionCommunityPosts(user.regionKey, 4);
+  const { data: popularGroups } = useRegionGroups(user.regionKey, 2);
 
   useEffect(() => {
     setSelectedRegionKey(user.regionKey || '');
@@ -63,37 +88,6 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
       window.clearInterval(intervalId);
     };
   }, [banners.length]);
-
-  useEffect(() => {
-    let ignore = false;
-
-    const fetchBanners = async () => {
-      try {
-        const response = await fetch('/api/banners?placement=home', { cache: 'no-store' });
-        const payload = await response.json().catch(() => null);
-
-        if (!response.ok) {
-          throw new Error(payload?.error ?? 'Nao foi possivel carregar banners.');
-        }
-
-        if (!ignore) {
-          setBanners(Array.isArray(payload?.banners) ? payload.banners : []);
-        }
-      } catch (error) {
-        console.error('Failed to load home banners:', error);
-
-        if (!ignore) {
-          setBanners([]);
-        }
-      }
-    };
-
-    void fetchBanners();
-
-    return () => {
-      ignore = true;
-    };
-  }, [user.regionKey]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -265,9 +259,9 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
       />
 
       <div className="grid grid-cols-3 gap-3">
-        <ServiceCard href="/negocios" icon={Building2} label="Negocios" />
-        <ServiceCard href="/community" icon={Users} label="Comunidade" />
-        <ServiceCard href="/eventos" icon={CalendarDays} label="Eventos" />
+        <ServiceCard href="/negocios" icon={Building2} label="Negocios" onActivate={() => router.push('/negocios')} />
+        <ServiceCard href="/community" icon={Users} label="Comunidade" onActivate={() => router.push('/community')} />
+        <ServiceCard href="/eventos" icon={CalendarDays} label="Eventos" onActivate={() => router.push('/eventos')} />
         <ServiceCard
           href="/vagas"
           icon={Briefcase}
@@ -283,7 +277,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
           onDisabledClick={() => handleDisabledFeatureClick('marketplace', 'Marketplace')}
         />
         <ServiceCard
-          href="/modaria"
+          href="/moradia"
           icon={Newspaper}
           label="Moradia"
           disabled
@@ -359,7 +353,146 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
         </div>
       ) : null}
 
-      <div className="h-10" />
+      {communityPosts.length > 0 ? (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Comunidade agora</h3>
+              <p className="text-[11px] text-slate-500">Os 4 posts mais recentes</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => router.push('/community')}
+              className="text-sm font-semibold text-[#00509D]"
+            >
+              Ver tudo
+            </button>
+          </div>
+          <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            {communityPosts.map((post) => (
+              <Link
+                key={post.id}
+                href={`/community?post=${encodeURIComponent(post.id)}`}
+                className="flex items-start gap-3 px-3 py-3.5 transition hover:bg-slate-50 sm:px-4"
+              >
+                <img
+                  src={post.author.image || DEFAULT_AVATAR_URL}
+                  alt={post.author.name}
+                  className="h-9 w-9 flex-none rounded-full object-cover"
+                />
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-[13px] font-bold text-slate-900">{post.author.name}</p>
+                    <span className="text-[10px] text-slate-300">•</span>
+                    <p className="whitespace-nowrap text-[11px] text-slate-500">
+                      {formatRelativeTime(post.createdAt)}
+                    </p>
+                  </div>
+                  <p className="mt-1 line-clamp-2 text-[13px] leading-5 text-slate-600">{post.content}</p>
+                </div>
+
+                <div className="ml-1 mt-0.5 flex flex-none flex-col items-end gap-2">
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-[#F4F8FF] px-3 py-1.5 text-[11px] font-bold text-[#00509D]">
+                    <MessageSquare size={14} className="text-[#00509D]" />
+                    <span>{post.commentCount} comentários</span>
+                  </div>
+                  {post.imageUrl ? (
+                    <img
+                      src={post.imageUrl}
+                      alt="Miniatura do post"
+                      className="h-10 w-10 rounded-full border border-slate-100 object-cover"
+                    />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full border border-dashed border-slate-200 bg-slate-50" />
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {popularGroups.length > 0 ? (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Grupos populares</h3>
+              <p className="text-[11px] text-slate-500">Mais ativos e recentes na sua região</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => router.push('/grupos')}
+              className="text-sm font-semibold text-[#00509D]"
+            >
+              Ver tudo
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {popularGroups.map((group) => {
+              const previewMembers = group.memberPreviews.slice(0, 4);
+              const missingAvatars = Math.max(group.memberCount - previewMembers.length, 0);
+
+              return (
+                <Link
+                  key={group.id}
+                  href={group.publicPath}
+                  className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-3.5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                >
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-slate-100">
+                    {group.imageUrl ? (
+                      <img src={group.imageUrl} alt={group.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#EAF4FF] to-[#D9ECFF] text-sm font-bold text-[#00509D]">
+                        {getInitials(group.name)}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-bold text-slate-900">{group.name}</p>
+                    <p className="mt-0.5 text-[11px] font-medium text-slate-500">
+                      {formatCompactMemberCount(group.memberCount)} membros
+                    </p>
+
+                    <div className="mt-2 flex items-center">
+                      <div className="flex items-center">
+                        {previewMembers.map((member, index) => (
+                          <div
+                            key={member.id}
+                            className={`relative h-6 w-6 overflow-hidden rounded-full border-2 border-white bg-slate-100 ${
+                              index === 0 ? '' : '-ml-2'
+                            }`}
+                          >
+                            {member.image ? (
+                              <img
+                                src={member.image}
+                                alt={member.name || 'Membro do grupo'}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-slate-200 text-[9px] font-bold text-slate-600">
+                                {getInitials(member.name || 'Membro')}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+
+                        {missingAvatars > 0 ? (
+                          <div className="-ml-2 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-white bg-[#EAF4FF] px-1 text-[9px] font-bold text-[#00509D]">
+                            +{missingAvatars}
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 };
@@ -370,12 +503,14 @@ const ServiceCard: React.FC<{
   label: string;
   disabled?: boolean;
   onDisabledClick?: () => void;
+  onActivate?: () => void;
 }> = ({
   href,
   icon: Icon,
   label,
   disabled = false,
   onDisabledClick,
+  onActivate,
 }) => {
   const classes = `flex flex-col items-center justify-center gap-2 rounded-2xl border p-4 shadow-sm transition-all ${
     disabled
@@ -408,6 +543,14 @@ const ServiceCard: React.FC<{
   if (disabled) {
     return (
       <button type="button" aria-disabled="true" onClick={onDisabledClick} className={classes}>
+        {content}
+      </button>
+    );
+  }
+
+  if (onActivate) {
+    return (
+      <button type="button" onClick={onActivate} className={classes}>
         {content}
       </button>
     );

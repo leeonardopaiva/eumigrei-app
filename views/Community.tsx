@@ -1,4 +1,5 @@
-import React, { startTransition, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Copy, ExternalLink, Share2, UserPlus } from 'lucide-react';
 import CommunityComposer from '@/components/community/CommunityComposer';
@@ -6,7 +7,10 @@ import FeedPostCard from '@/components/community/FeedPostCard';
 import type { ComposerMode } from '@/components/community/utils';
 import { isYoutubeUrl } from '@/components/community/utils';
 import { useToast } from '@/components/feedback/ToastProvider';
+import { useIntersectionTrigger } from '@/hooks/useIntersectionTrigger';
+import { useRegionBanners } from '@/hooks/useRegionContent';
 import { normalizeUrlFieldValue } from '@/lib/forms/validation';
+import { loadRegionCommunityPosts } from '@/lib/content-api';
 import { trackAnalyticsEvent } from '@/lib/analytics';
 import type { BannerAd, PersonaMode, Post, ProfessionalProfileIdentity, ReferralSummary, User } from '@/types';
 
@@ -27,10 +31,15 @@ const Community: React.FC<{
   const [postPersonaMode, setPostPersonaMode] = useState<PersonaMode>(
     personaMode === 'professional' ? 'professional' : 'personal',
   );
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [banners, setBanners] = useState<BannerAd[]>([]);
   const [publishing, setPublishing] = useState(false);
   const [submittingBannerId, setSubmittingBannerId] = useState<string | null>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [loadingMorePosts, setLoadingMorePosts] = useState(false);
+  const [postsHasMore, setPostsHasMore] = useState(true);
+  const [postsNextOffset, setPostsNextOffset] = useState(0);
+  const targetPostAutoLoadAttemptsRef = useRef(0);
+  const targetPostScrollIdRef = useRef<string | null>(null);
   const [referralSummary, setReferralSummary] = useState<ReferralSummary>({
     referralUrl: null,
     registrationCount: 0,
@@ -49,80 +58,120 @@ const Community: React.FC<{
   const activeRegionKey = isProfessionalMode
     ? professionalIdentity?.regionKey || user.regionKey || ''
     : user.regionKey || '';
+  const feedRegionKey = activeRegionKey || user.regionKey || null;
+  const { data: banners } = useRegionBanners('feed', feedRegionKey);
+  const sentinelRef = useIntersectionTrigger(
+    () => {
+      if (!postsHasMore || postsLoading || loadingMorePosts) {
+        return;
+      }
+
+      void loadMorePosts();
+    },
+    { enabled: Boolean(feedRegionKey) && postsHasMore, rootMargin: '0px 0px 240px 0px' },
+  );
 
   useEffect(() => {
     setPostPersonaMode(personaMode === 'professional' ? 'professional' : 'personal');
   }, [personaMode]);
 
-  const loadPosts = async (options?: { silent?: boolean }) => {
-    try {
-      const query = activeRegionKey ? `?region=${encodeURIComponent(activeRegionKey)}` : '';
-      const response = await fetch(`/api/community/posts${query}`, { cache: 'no-store' });
-      const payload = await response.json().catch(() => null);
 
-      if (!response.ok) {
-        throw new Error(payload?.error ?? 'Nao foi possivel carregar a comunidade.');
+  const loadPostsPage = useCallback(
+    async ({ offset, replace }: { offset: number; replace: boolean }) => {
+      if (!feedRegionKey) {
+        setPosts([]);
+        setPostsLoading(false);
+        setLoadingMorePosts(false);
+        setPostsHasMore(false);
+        setPostsNextOffset(0);
+        return;
       }
 
-      startTransition(() => {
-        setPosts(payload.posts ?? []);
-      });
-    } catch (error) {
-      console.error('Failed to load community feed:', error);
-
-      if (!options?.silent) {
-        showToast('Nao foi possivel carregar a comunidade.', 'error');
+      if (replace) {
+        setPostsLoading(true);
+      } else {
+        setLoadingMorePosts(true);
       }
-    }
-  };
 
-  useEffect(() => {
-    void loadPosts({ silent: true });
-  }, [activeRegionKey, user.username]);
+      try {
+        const payload = await loadRegionCommunityPosts({
+          regionKey: feedRegionKey,
+          limit: 5,
+          offset,
+        });
 
-  useEffect(() => {
-    if (!targetPostId || posts.length === 0) {
+        setPosts((current) => (replace ? payload.posts : [...current, ...payload.posts]));
+        setPostsHasMore(payload.hasMore);
+        setPostsNextOffset(payload.nextOffset);
+      } catch (error) {
+        console.error('Failed to load community posts:', error);
+        if (replace) {
+          setPosts([]);
+          setPostsHasMore(false);
+          setPostsNextOffset(0);
+        }
+      } finally {
+        setPostsLoading(false);
+        setLoadingMorePosts(false);
+      }
+    },
+    [feedRegionKey],
+  );
+
+  const reloadPosts = useCallback(async () => {
+    targetPostAutoLoadAttemptsRef.current = 0;
+    targetPostScrollIdRef.current = null;
+    setPosts([]);
+    setPostsHasMore(true);
+    setPostsNextOffset(0);
+    await loadPostsPage({ offset: 0, replace: true });
+  }, [loadPostsPage]);
+
+  const loadMorePosts = useCallback(async () => {
+    if (!postsHasMore || postsLoading || loadingMorePosts) {
       return;
     }
 
+    await loadPostsPage({ offset: postsNextOffset, replace: false });
+  }, [loadPostsPage, loadingMorePosts, postsHasMore, postsLoading, postsNextOffset]);
+  useEffect(() => {
+    if (!targetPostId) {
+      return;
+    }
+
+    const targetElement = document.getElementById(`post-${targetPostId}`);
+
+    if (!targetElement) {
+      if (
+        !postsLoading &&
+        postsHasMore &&
+        !loadingMorePosts &&
+        targetPostAutoLoadAttemptsRef.current < 2
+      ) {
+        targetPostAutoLoadAttemptsRef.current += 1;
+        void loadMorePosts();
+      }
+      return;
+    }
+
+    if (targetPostScrollIdRef.current === targetPostId) {
+      return;
+    }
+
+    targetPostScrollIdRef.current = targetPostId;
+
     window.requestAnimationFrame(() => {
-      document.getElementById(`post-${targetPostId}`)?.scrollIntoView({
+      targetElement.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
       });
     });
-  }, [posts.length, targetPostId]);
+  }, [loadMorePosts, loadingMorePosts, posts, postsHasMore, postsLoading, targetPostId]);
+
 
   useEffect(() => {
-    let ignore = false;
-
-    const loadFeedBanners = async () => {
-      try {
-        const response = await fetch('/api/banners?placement=feed', { cache: 'no-store' });
-        const payload = await response.json().catch(() => null);
-
-        if (!response.ok) {
-          throw new Error(payload?.error ?? 'Nao foi possivel carregar banners do feed.');
-        }
-
-        if (!ignore) {
-          setBanners(Array.isArray(payload?.banners) ? payload.banners : []);
-        }
-      } catch (error) {
-        console.error('Failed to load community banners:', error);
-
-        if (!ignore) {
-          setBanners([]);
-        }
-      }
-    };
-
-    void loadFeedBanners();
-
-    return () => {
-      ignore = true;
-    };
-  }, [user.regionKey]);
+    void reloadPosts();
+  }, [feedRegionKey, reloadPosts]);
 
   useEffect(() => {
     let ignore = false;
@@ -285,11 +334,7 @@ const Community: React.FC<{
 
       showToast(payload?.message ?? 'Post publicado.', 'success');
 
-      if (payload?.post?.status === 'PUBLISHED') {
-        setPosts((current) => [payload.post, ...current]);
-      } else {
-        await loadPosts({ silent: true });
-      }
+      await reloadPosts();
 
       resetComposer();
     } catch (error) {
@@ -309,23 +354,7 @@ const Community: React.FC<{
         throw new Error(payload?.error ?? 'Nao foi possivel curtir o post.');
       }
 
-      setPosts((current) =>
-        current.map((post) =>
-          post.id === postId
-            ? {
-                ...post,
-                viewerHasLiked: payload.liked,
-                likeCount:
-                  typeof payload?.likeCount === 'number'
-                    ? payload.likeCount
-                    : payload.liked
-                      ? post.likeCount + 1
-                      : Math.max(post.likeCount - 1, 0),
-                likedBy: Array.isArray(payload?.likedBy) ? payload.likedBy : post.likedBy,
-              }
-            : post,
-        ),
-      );
+      await reloadPosts();
     } catch (error) {
       console.error('Failed to toggle like:', error);
       showToast('Nao foi possivel curtir esse post agora.', 'error');
@@ -345,17 +374,7 @@ const Community: React.FC<{
         throw new Error(payload?.error ?? 'Nao foi possivel comentar.');
       }
 
-      setPosts((current) =>
-        current.map((post) =>
-          post.id === postId
-            ? {
-                ...post,
-                commentCount: post.commentCount + 1,
-                comments: [...post.comments, payload.comment].slice(-3),
-              }
-            : post,
-        ),
-      );
+      await reloadPosts();
     } catch (error) {
       showToast('Nao foi possivel comentar agora.', 'error');
       throw error;
@@ -385,7 +404,7 @@ const Community: React.FC<{
       }
 
       showToast(payload?.message ?? 'Publicacao atualizada.', 'success');
-      await loadPosts({ silent: true });
+      await reloadPosts();
     } catch (error) {
       showToast(
         error instanceof Error ? error.message : 'Nao foi possivel atualizar a publicacao.',
@@ -405,7 +424,7 @@ const Community: React.FC<{
       }
 
       showToast(payload?.message ?? 'Publicacao removida.', 'success');
-      setPosts((current) => current.filter((post) => post.id !== postId));
+      await reloadPosts();
     } catch (error) {
       showToast(
         error instanceof Error ? error.message : 'Nao foi possivel remover a publicacao.',
@@ -429,7 +448,7 @@ const Community: React.FC<{
       }
 
       showToast(payload?.message ?? 'Comentario atualizado.', 'success');
-      await loadPosts({ silent: true });
+      await reloadPosts();
     } catch (error) {
       showToast(
         error instanceof Error ? error.message : 'Nao foi possivel atualizar o comentario.',
@@ -451,7 +470,7 @@ const Community: React.FC<{
       }
 
       showToast(payload?.message ?? 'Comentario removido.', 'success');
-      await loadPosts({ silent: true });
+      await reloadPosts();
     } catch (error) {
       showToast(
         error instanceof Error ? error.message : 'Nao foi possivel remover o comentario.',
@@ -668,7 +687,7 @@ const Community: React.FC<{
       </div>
 
       <div className="space-y-4 px-5 pb-20">
-        {displayedPosts.length === 0 ? (
+        {displayedPosts.length === 0 && !postsLoading ? (
           <div className="rounded-3xl border border-dashed border-slate-200 bg-white px-5 py-8 text-center text-sm font-medium text-slate-500">
             Ninguem publicou por aqui ainda. Seja o primeiro da sua regiao.
           </div>
@@ -705,6 +724,17 @@ const Community: React.FC<{
             </React.Fragment>
           );
         })}
+        {postsLoading ? (
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-white px-5 py-6 text-center text-sm font-medium text-slate-500">
+            Carregando publicacoes...
+          </div>
+        ) : null}
+        {loadingMorePosts ? (
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-white px-5 py-5 text-center text-xs font-semibold text-slate-500">
+            Carregando mais publicacoes...
+          </div>
+        ) : null}
+        {postsHasMore ? <div ref={sentinelRef} className="h-1" aria-hidden="true" /> : null}
       </div>
     </div>
   );
@@ -756,3 +786,5 @@ const FeedBannerCard: React.FC<{
 );
 
 export default Community;
+
+

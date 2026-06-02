@@ -1,4 +1,4 @@
-import { CommunityGroupMemberRole } from '@prisma/client';
+import { CommunityGroupMemberRole, Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -9,45 +9,84 @@ import { communityGroupSchema } from '@/lib/validators';
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const search = searchParams.get('search')?.trim();
+  const region = searchParams.get('region')?.trim();
+  const rawLimit = Number(searchParams.get('limit') ?? 24);
+  const rawOffset = Number(searchParams.get('offset') ?? 0);
+  const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(Math.trunc(rawLimit), 1), 24) : 24;
+  const offset = Number.isFinite(rawOffset) ? Math.max(Math.trunc(rawOffset), 0) : 0;
+
+  const baseWhere: Prisma.CommunityGroupWhereInput = {
+    isPublic: true,
+    ...(search
+      ? {
+          OR: [
+              { name: { contains: search, mode: 'insensitive' as const } },
+              { category: { contains: search, mode: 'insensitive' as const } },
+              { description: { contains: search, mode: 'insensitive' as const } },
+            ],
+          }
+      : {}),
+  };
+
+  const groupSelect = {
+    id: true,
+    name: true,
+    slug: true,
+    description: true,
+    imageUrl: true,
+    category: true,
+    regionKey: true,
+    createdAt: true,
+    region: {
+      select: {
+        label: true,
+      },
+    },
+    _count: {
+      select: {
+        members: true,
+      },
+    },
+    members: {
+      orderBy: {
+        createdAt: 'desc' as const,
+      },
+      take: 4,
+      select: {
+        id: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            image: true,
+            locationLabel: true,
+          },
+        },
+      },
+    },
+  } as const;
 
   const groups = await prisma.communityGroup.findMany({
     where: {
-      isPublic: true,
-      ...(search
+      ...baseWhere,
+      ...(region
         ? {
-            OR: [
-              { name: { contains: search, mode: 'insensitive' } },
-              { category: { contains: search, mode: 'insensitive' } },
-              { description: { contains: search, mode: 'insensitive' } },
-            ],
+            regionKey: region,
           }
         : {}),
     },
     orderBy: [{ createdAt: 'desc' }],
-    take: 24,
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      imageUrl: true,
-      category: true,
-      regionKey: true,
-      region: {
-        select: {
-          label: true,
-        },
-      },
-      _count: {
-        select: {
-          members: true,
-        },
-      },
-    },
+    take: limit + 1,
+    skip: offset,
+    select: groupSelect,
   });
 
+  const hasMore = groups.length > limit;
+  const pageGroups = hasMore ? groups.slice(0, limit) : groups;
+
   return NextResponse.json({
-    groups: groups.map((group) => ({
+    groups: pageGroups.map((group) => ({
       id: group.id,
       name: group.name,
       slug: group.slug,
@@ -57,8 +96,18 @@ export async function GET(request: Request) {
       regionKey: group.regionKey,
       regionLabel: group.region?.label ?? null,
       memberCount: group._count.members,
+      createdAt: group.createdAt,
+      memberPreviews: group.members.map((membership) => ({
+        id: membership.user.id,
+        name: membership.user.name,
+        username: membership.user.username,
+        image: membership.user.image,
+        locationLabel: membership.user.locationLabel,
+      })),
       publicPath: `/grupos/${group.slug}`,
     })),
+    hasMore,
+    nextOffset: offset + pageGroups.length,
   });
 }
 

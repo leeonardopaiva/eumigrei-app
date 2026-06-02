@@ -2,7 +2,7 @@
 
 ## Rodar localmente
 
-1. Instale as dependências:
+1. Instale as dependencias:
    `npm install`
 2. Configure o arquivo `.env.local` com pelo menos:
    `NEXTAUTH_URL=http://localhost:3000`
@@ -16,7 +16,20 @@
 5. Abra:
    `http://localhost:3000`
 
-## Produção
+## Modo de manutencao
 
-- Domínio final: `https://gringoou.com`
-- Callback do Google em produção: `https://gringoou.com/api/auth/callback/google`
+Se quiser bloquear o acesso da plataforma temporariamente:
+
+1. Defina no `.env.local`:
+   `MAINTENANCE_MODE=true`
+2. Adicione seu email em:
+   `MAINTENANCE_ALLOWLIST_EMAILS="seuemail@dominio.com"`
+3. Opcionalmente, adicione IDs de usuario em:
+   `MAINTENANCE_ALLOWLIST_USER_IDS="user-id-1,user-id-2"`
+4. Na Vercel, cadastre as mesmas variaveis em **Project Settings > Environment Variables** para o ambiente desejado.
+5. Faça um novo deploy para aplicar.
+
+## Producao
+
+- Dominio final: `https://gringoou.com`
+- Callback do Google em producao: `https://gringoou.com/api/auth/callback/google`
