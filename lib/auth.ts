@@ -105,6 +105,7 @@ export const authOptions: NextAuthOptions = {
         GoogleProvider({
           clientId: googleClientId!,
           clientSecret: googleClientSecret!,
+          allowDangerousEmailAccountLinking: true,
         }),
       ]
       : []),
