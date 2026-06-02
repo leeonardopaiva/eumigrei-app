@@ -78,6 +78,7 @@ const App: React.FC = () => {
   const autoGoogleSelectTriggeredRef = useRef(false);
   const sessionRole = mapUserRole(session?.user?.role);
   const canUseProfessionalMode = sessionRole === UserRole.BUSINESS_OWNER || sessionRole === UserRole.ADMIN;
+  const authCallbackUrl = pathname === '/login' ? '/' : pathname || '/';
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -203,7 +204,7 @@ const App: React.FC = () => {
     try {
       await signIn(
         'google',
-        { callbackUrl: pathname || '/' },
+        { callbackUrl: authCallbackUrl },
         selectAccount ? { prompt: 'select_account' } : undefined,
       );
     } catch (error) {
@@ -260,7 +261,7 @@ const App: React.FC = () => {
       const result = await signIn('email', {
         email: normalizedEmail,
         redirect: false,
-        callbackUrl: pathname || '/',
+        callbackUrl: authCallbackUrl,
       });
 
       if (!result || result.error) {
@@ -297,7 +298,7 @@ const App: React.FC = () => {
       email: email.trim().toLowerCase(),
       password,
       redirect: false,
-      callbackUrl: pathname || '/',
+      callbackUrl: authCallbackUrl,
     });
 
     if (!result || result.error) {
@@ -485,7 +486,7 @@ const App: React.FC = () => {
         canUseProfessionalMode={canUseProfessionalMode}
         professionalIdentity={professionalIdentity}
         onPersonaModeChange={handlePersonaModeChange}
-        onSignOut={() => signOut({ callbackUrl: '/?switchAccount=1' })}
+        onSignOut={() => signOut({ callbackUrl: '/login?switchAccount=1' })}
       />
     );
   }
@@ -497,7 +498,7 @@ const App: React.FC = () => {
       canUseProfessionalMode={canUseProfessionalMode}
       professionalIdentity={professionalIdentity}
       onPersonaModeChange={handlePersonaModeChange}
-      onSignOut={() => signOut({ callbackUrl: '/?switchAccount=1' })}
+      onSignOut={() => signOut({ callbackUrl: '/login?switchAccount=1' })}
     >
       <AppContent
         currentUser={currentUser!}
