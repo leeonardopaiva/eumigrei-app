@@ -18,26 +18,6 @@ const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 const passwordAuthEnabled = process.env.NEXT_PUBLIC_PASSWORD_AUTH_ENABLED !== 'false';
 const sessionMaxAgeSeconds = 8 * 60 * 60;
 
-const parseCsv = (value?: string | null) =>
-  (value || '')
-    .split(',')
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean);
-
-const isAllowedIdentity = (email?: string | null, userId?: string | null) => {
-  const allowlistedEmails = parseCsv(process.env.MAINTENANCE_ALLOWLIST_EMAILS);
-  const allowlistedUserIds = parseCsv(process.env.MAINTENANCE_ALLOWLIST_USER_IDS);
-
-  if (!allowlistedEmails.length && !allowlistedUserIds.length) {
-    return true;
-  }
-
-  return Boolean(
-    (email && allowlistedEmails.includes(email.trim().toLowerCase())) ||
-      (userId && allowlistedUserIds.includes(userId.trim().toLowerCase())),
-  );
-};
-
 export const isGoogleAuthConfigured = Boolean(
   googleClientId && googleClientSecret && process.env.NEXTAUTH_SECRET,
 );
@@ -131,10 +111,6 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user }) {
-      if (!isAllowedIdentity(user.email, user.id)) {
-        return '/access-blocked?reason=access_denied';
-      }
-
       if (user.id && isConfiguredAdminEmail(user.email)) {
         await syncAdminRole(user.id, user.email);
       }

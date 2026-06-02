@@ -45,6 +45,22 @@ const buildMaintenanceResponse = (request: NextRequest) => {
   return NextResponse.redirect(url, 307);
 };
 
+const buildAccessBlockedResponse = (request: NextRequest) => {
+  const pathname = request.nextUrl.pathname;
+
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.json(
+      { error: 'Seu acesso nao esta liberado.' },
+      { status: 403 },
+    );
+  }
+
+  const url = request.nextUrl.clone();
+  url.pathname = '/access-blocked';
+  url.search = '';
+  return NextResponse.redirect(url, 307);
+};
+
 export async function middleware(request: NextRequest) {
   const host = request.headers.get('host')?.split(':')[0].toLowerCase();
 
@@ -55,24 +71,6 @@ export async function middleware(request: NextRequest) {
       const maintenanceEnabled = isTruthyEnv(process.env.MAINTENANCE_MODE);
       const isAllowed = isAllowedDuringMaintenance(token?.email ?? null, token?.sub ?? null);
 
-      if (!isAllowed) {
-        if (isApiRequest) {
-          return NextResponse.json(
-            {
-              error: maintenanceEnabled
-                ? 'A plataforma esta temporariamente restrita.'
-                : 'Nao autenticado.',
-            },
-            { status: maintenanceEnabled ? 503 : 401 },
-          );
-        }
-
-        const url = request.nextUrl.clone();
-        url.pathname = '/login';
-        url.search = '';
-        return NextResponse.redirect(url, 307);
-      }
-
       if (!token) {
         if (isApiRequest) {
           return NextResponse.json({ error: 'Nao autenticado.' }, { status: 401 });
@@ -82,6 +80,21 @@ export async function middleware(request: NextRequest) {
         url.pathname = '/login';
         url.search = '';
         return NextResponse.redirect(url, 307);
+      }
+
+      if (!isAllowed) {
+        if (isApiRequest) {
+          return NextResponse.json(
+            {
+              error: maintenanceEnabled
+                ? 'A plataforma esta temporariamente restrita.'
+                : 'Seu acesso nao esta liberado.',
+            },
+            { status: maintenanceEnabled ? 503 : 403 },
+          );
+        }
+
+        return buildAccessBlockedResponse(request);
       }
     }
 
