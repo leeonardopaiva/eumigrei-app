@@ -5,6 +5,7 @@ const CANONICAL_HOST = 'gringoou.com';
 const REDIRECT_HOSTS = new Set(['emigrei.com', 'www.emigrei.com']);
 const PUBLIC_ASSET_PREFIXES = ['/_next/', '/assets/', '/favicon', '/robots.txt', '/sitemap.xml'];
 const PUBLIC_AUTH_PATHS = ['/api/auth', '/maintenance'];
+const PUBLIC_ENTRY_PATHS = ['/'];
 
 const isTruthyEnv = (value?: string | null) =>
   Boolean(value && ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase()));
@@ -16,6 +17,7 @@ const parseCsv = (value?: string | null) =>
     .filter(Boolean);
 
 const isPublicPath = (pathname: string) =>
+  PUBLIC_ENTRY_PATHS.includes(pathname) ||
   PUBLIC_ASSET_PREFIXES.some((prefix) => pathname.startsWith(prefix)) ||
   PUBLIC_AUTH_PATHS.some((prefix) => pathname.startsWith(prefix));
 
