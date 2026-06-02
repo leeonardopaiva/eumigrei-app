@@ -54,7 +54,7 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login',
-    error: '/login',
+    error: '/access-blocked',
   },
   providers: [
     ...(isPasswordAuthConfigured
@@ -132,7 +132,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user }) {
       if (!isAllowedIdentity(user.email, user.id)) {
-        return '/login?error=access_denied';
+        return '/access-blocked?reason=access_denied';
       }
 
       if (user.id && isConfiguredAdminEmail(user.email)) {
