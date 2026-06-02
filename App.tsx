@@ -423,15 +423,11 @@ const App: React.FC = () => {
 
   const currentUser = session?.user ? buildCurrentUser(session.user) : null;
 
-  if (!session?.user) {
-    if (publicProfileUsername || professionalProfileUsername || groupSlug) {
-      return <PublicEntry pathname={pathname} />;
-    }
-
+  if (pathname === '/login') {
     return (
       <AuthWorkspace
         referralUsername={referralUsername}
-        mode="signin"
+        mode={session?.user?.onboardingCompleted && session?.user?.username ? 'signin' : 'signin'}
         googleEnabled={GOOGLE_AUTH_ENABLED}
         emailEnabled={EMAIL_AUTH_ENABLED}
         passwordEnabled={PASSWORD_AUTH_ENABLED}
@@ -445,6 +441,14 @@ const App: React.FC = () => {
         notice={registrationNotice}
       />
     );
+  }
+
+  if (!session?.user) {
+    if (publicProfileUsername || professionalProfileUsername || groupSlug) {
+      return <PublicEntry pathname={pathname} />;
+    }
+
+    return null;
   }
 
   if (!session.user.onboardingCompleted || !session.user.username) {
