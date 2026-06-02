@@ -274,7 +274,18 @@ const Registration: React.FC<RegistrationProps> = ({
     }
   };
 
-  const submitGoogleLogin = () => onGoogleLogin();
+  const submitGoogleLogin = () => {
+    onGoogleLogin();
+  };
+
+  const submitGoogleSelectAccount = () => {
+    if (onGoogleSelectAccount) {
+      onGoogleSelectAccount();
+      return;
+    }
+
+    onGoogleLogin();
+  };
 
   const submitEmailLogin = async (email: string) => {
     const normalizedEmail = email.trim();
@@ -330,6 +341,20 @@ const Registration: React.FC<RegistrationProps> = ({
                     className="h-14 w-full max-w-[360px] rounded-full bg-[#00509D] px-6 text-base font-semibold text-white shadow-[0_16px_40px_rgba(0,80,157,0.16)]"
                   >
                     {submitting ? 'Entrando...' : 'Continuar com Google'}
+                  </Button>
+                ) : null}
+
+                {googleEnabled ? (
+                  <Button
+                    type="button"
+                    fullWidth
+                    size="lg"
+                    variant="ghost"
+                    isDisabled={submitting}
+                    onPress={submitGoogleSelectAccount}
+                    className="h-12 w-full max-w-[360px] rounded-full border border-[#00509D]/15 bg-white px-6 text-sm font-semibold text-[#00509D] shadow-none hover:bg-[#F2F7FF]"
+                  >
+                    Trocar conta Google
                   </Button>
                 ) : null}
 

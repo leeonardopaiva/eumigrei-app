@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import Layout from './components/Layout';
@@ -75,6 +75,7 @@ const App: React.FC = () => {
     professionalProfileUsername,
     groupSlug,
   } = parseAppRoute(pathname);
+  const autoGoogleSelectTriggeredRef = useRef(false);
   const sessionRole = mapUserRole(session?.user?.role);
   const canUseProfessionalMode = sessionRole === UserRole.BUSINESS_OWNER || sessionRole === UserRole.ADMIN;
 
@@ -210,6 +211,38 @@ const App: React.FC = () => {
       setRegistrationError('Nao foi possivel entrar com Google agora.');
     }
   };
+
+  useEffect(() => {
+    if (!session?.user && typeof window !== 'undefined') {
+      const switchAccountRequested = new URLSearchParams(window.location.search).get('switchAccount') === '1';
+
+      if (
+        switchAccountRequested &&
+        !publicProfileUsername &&
+        !professionalProfileUsername &&
+        !groupSlug &&
+        !autoGoogleSelectTriggeredRef.current
+      ) {
+        autoGoogleSelectTriggeredRef.current = true;
+        void handleGoogleLogin(true);
+      }
+    }
+
+    if (
+      session?.user ||
+      publicProfileUsername ||
+      professionalProfileUsername ||
+      groupSlug
+    ) {
+      return;
+    }
+  }, [
+    groupSlug,
+    handleGoogleLogin,
+    professionalProfileUsername,
+    publicProfileUsername,
+    session?.user,
+  ]);
 
   const requestMagicLink = async (email: string, isLocalTest = false) => {
     const normalizedEmail = email.trim().toLowerCase();
@@ -452,7 +485,7 @@ const App: React.FC = () => {
         canUseProfessionalMode={canUseProfessionalMode}
         professionalIdentity={professionalIdentity}
         onPersonaModeChange={handlePersonaModeChange}
-        onSignOut={() => signOut({ callbackUrl: '/' })}
+        onSignOut={() => signOut({ callbackUrl: '/?switchAccount=1' })}
       />
     );
   }
@@ -464,7 +497,7 @@ const App: React.FC = () => {
       canUseProfessionalMode={canUseProfessionalMode}
       professionalIdentity={professionalIdentity}
       onPersonaModeChange={handlePersonaModeChange}
-      onSignOut={() => signOut({ callbackUrl: '/' })}
+      onSignOut={() => signOut({ callbackUrl: '/?switchAccount=1' })}
     >
       <AppContent
         currentUser={currentUser!}
