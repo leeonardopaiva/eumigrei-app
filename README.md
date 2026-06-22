@@ -22,11 +22,9 @@ Se quiser bloquear o acesso da plataforma temporariamente:
 
 1. Defina no `.env.local`:
    `MAINTENANCE_MODE=true`
-2. Adicione seu email em:
-   `MAINTENANCE_ALLOWLIST_EMAILS="seuemail@dominio.com"`
-3. Opcionalmente, adicione IDs de usuario em:
-   `MAINTENANCE_ALLOWLIST_USER_IDS="user-id-1,user-id-2"`
-4. Na Vercel, cadastre as mesmas variaveis em **Project Settings > Environment Variables** para o ambiente desejado.
+2. O acesso normal fica liberado para usuarios autenticados.
+3. Durante manutencao, somente usuarios com papel `ADMIN` conseguem entrar.
+4. Na Vercel, cadastre a variavel em **Project Settings > Environment Variables** para o ambiente desejado.
 5. Faça um novo deploy para aplicar.
 
 ## Producao

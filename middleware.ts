@@ -9,25 +9,9 @@ const PUBLIC_AUTH_PATHS = ['/api/auth', '/login', '/access-blocked', '/maintenan
 const isTruthyEnv = (value?: string | null) =>
   Boolean(value && ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase()));
 
-const parseCsv = (value?: string | null) =>
-  (value || '')
-    .split(',')
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean);
-
 const isPublicPath = (pathname: string) =>
   PUBLIC_ASSET_PREFIXES.some((prefix) => pathname.startsWith(prefix)) ||
   PUBLIC_AUTH_PATHS.some((prefix) => pathname.startsWith(prefix));
-
-const isAllowedDuringMaintenance = (tokenEmail?: string | null, tokenUserId?: string | null) => {
-  const allowlistedEmails = parseCsv(process.env.MAINTENANCE_ALLOWLIST_EMAILS);
-  const allowlistedUserIds = parseCsv(process.env.MAINTENANCE_ALLOWLIST_USER_IDS);
-
-  return Boolean(
-    (tokenEmail && allowlistedEmails.includes(tokenEmail.trim().toLowerCase())) ||
-      (tokenUserId && allowlistedUserIds.includes(tokenUserId.trim().toLowerCase())),
-  );
-};
 
 const buildMaintenanceResponse = (request: NextRequest) => {
   const pathname = request.nextUrl.pathname;
@@ -69,7 +53,7 @@ export async function middleware(request: NextRequest) {
       const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
       const isApiRequest = request.nextUrl.pathname.startsWith('/api/');
       const maintenanceEnabled = isTruthyEnv(process.env.MAINTENANCE_MODE);
-      const isAllowed = isAllowedDuringMaintenance(token?.email ?? null, token?.sub ?? null);
+      const isAdmin = token?.role === 'ADMIN';
 
       if (!token) {
         if (isApiRequest) {
@@ -82,19 +66,17 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url, 307);
       }
 
-      if (!isAllowed) {
+      if (maintenanceEnabled && !isAdmin) {
         if (isApiRequest) {
           return NextResponse.json(
             {
-              error: maintenanceEnabled
-                ? 'A plataforma esta temporariamente restrita.'
-                : 'Seu acesso nao esta liberado.',
+              error: 'A plataforma esta temporariamente em manutencao.',
             },
-            { status: maintenanceEnabled ? 503 : 403 },
+            { status: 503 },
           );
         }
 
-        return buildAccessBlockedResponse(request);
+        return buildMaintenanceResponse(request);
       }
     }
 
