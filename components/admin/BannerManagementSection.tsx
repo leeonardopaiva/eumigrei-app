@@ -596,7 +596,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                     campaignStatus: event.target.value as BannerFormState['campaignStatus'],
                   }))
                 }
-                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm font-bold text-slate-600 outline-none focus:ring-2 theme-ring"
+                className="theme-outline-ring h-11 w-full appearance-none rounded-full border-2 border-border bg-surface px-4 text-body-sm font-semibold text-foreground outline-none"
               >
                 <option value="DRAFT">Rascunho</option>
                 <option value="ACTIVE">Ativa</option>
@@ -616,7 +616,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                     objective: event.target.value as BannerFormState['objective'],
                   }))
                 }
-                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm font-bold text-slate-600 outline-none focus:ring-2 theme-ring"
+                className="theme-outline-ring h-11 w-full appearance-none rounded-full border-2 border-border bg-surface px-4 text-body-sm font-semibold text-foreground outline-none"
               >
                 <option value="TRAFFIC">Trafego</option>
                 <option value="LEAD">Leads</option>
@@ -635,7 +635,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                     paymentStatus: event.target.value as BannerFormState['paymentStatus'],
                   }))
                 }
-                className="w-full rounded-2xl border border-white bg-white px-4 py-3 text-sm font-bold text-slate-600 outline-none focus:ring-2 theme-ring"
+                className="theme-outline-ring h-11 w-full appearance-none rounded-full border-2 border-border bg-surface px-4 text-body-sm font-semibold text-foreground outline-none"
               >
                 <option value="NOT_REQUIRED">Sem cobranca</option>
                 <option value="PENDING">Aguardando pagamento</option>
@@ -701,7 +701,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                     billingMode: event.target.value as BannerFormState['billingMode'],
                   }))
                 }
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 outline-none focus:ring-2 theme-ring"
+                className="theme-outline-ring h-11 w-full appearance-none rounded-full border-2 border-border bg-surface px-4 text-body-sm font-semibold text-foreground outline-none"
               >
                 <option value="FLAT">Pacote fixo</option>
                 <option value="CPC">CPC</option>

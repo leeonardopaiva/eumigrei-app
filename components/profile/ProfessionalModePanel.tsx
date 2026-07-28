@@ -100,24 +100,24 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
         <div className="mt-5 grid grid-cols-2 gap-3">
           <div className="rounded-[24px] border border-white/80 bg-white p-4 shadow-sm">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Negocios</p>
-            <p className="mt-2 text-3xl font-bold text-[#0F4C81]">{professionalProfile.businessCount}</p>
+            <p className="mt-2 text-h2 font-bold text-foreground">{professionalProfile.businessCount}</p>
           </div>
           <div className="rounded-[24px] border border-white/80 bg-white p-4 shadow-sm">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Eventos</p>
-            <p className="mt-2 text-3xl font-bold text-[#0F4C81]">{professionalProfile.eventCount}</p>
+            <p className="mt-2 text-h2 font-bold text-foreground">{professionalProfile.eventCount}</p>
           </div>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
             href="/negocios"
-            className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#0F4C81] px-4 text-sm font-bold text-white shadow-md shadow-[#0F4C81]/20"
+            className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand-500 px-4 text-sm font-bold text-white shadow-sm"
           >
             Abrir negocios
           </Link>
           <Link
             href="/eventos"
-            className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-blue-100 bg-white px-4 text-sm font-bold text-[#0F4C81]"
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-brand-100 bg-surface px-4 text-sm font-bold text-brand-500"
           >
             Abrir eventos
           </Link>
@@ -125,14 +125,14 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
             <>
               <Link
                 href={`/profissional/${username}`}
-                className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-blue-100 bg-white px-4 text-sm font-bold text-[#0F4C81]"
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-brand-100 bg-surface px-4 text-sm font-bold text-brand-500"
               >
                 Ver vitrine publica
               </Link>
               <button
                 type="button"
                 onClick={() => void handleCopyProfessionalUrl()}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 text-sm font-bold text-[#0F4C81]"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-100 bg-surface px-4 text-sm font-bold text-brand-500"
               >
                 <Copy size={14} />
                 Copiar link
@@ -140,7 +140,7 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
               <button
                 type="button"
                 onClick={() => void handleShareProfessionalUrl()}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 text-sm font-bold text-[#0F4C81]"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-100 bg-surface px-4 text-sm font-bold text-brand-500"
               >
                 <Share2 size={14} />
                 Compartilhar
@@ -167,7 +167,7 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-base font-bold text-[#0F4C81]">{business.name}</p>
+                      <p className="text-base font-bold text-foreground">{business.name}</p>
                       <p className="mt-1 text-sm text-slate-500">{business.category}</p>
                     </div>
                     <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-slate-600 shadow-sm">
@@ -178,7 +178,7 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
                   <p className="mt-1 text-xs text-slate-400">Atualizado em {formatDateTime(business.updatedAt)}</p>
                   <Link
                     href={business.publicPath}
-                    className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-white px-3 py-2 text-xs font-bold text-[#0F4C81]"
+                    className="mt-4 inline-flex items-center gap-2 rounded-full border border-brand-100 bg-surface px-3 py-2 text-xs font-bold text-brand-500"
                   >
                     Gerenciar negocio
                     <ExternalLink size={14} />
@@ -211,7 +211,7 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-base font-bold text-[#0F4C81]">{event.title}</p>
+                      <p className="text-base font-bold text-foreground">{event.title}</p>
                       <p className="mt-1 text-sm text-slate-500">{event.locationLabel || 'Sem regiao definida'}</p>
                     </div>
                     <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-slate-600 shadow-sm">
@@ -221,7 +221,7 @@ const ProfessionalModePanel: React.FC<ProfessionalModePanelProps> = ({
                   <p className="mt-3 text-sm text-slate-500">Comeca em {formatDateTime(event.startsAt)}</p>
                   <Link
                     href={event.publicPath}
-                    className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-white px-3 py-2 text-xs font-bold text-[#0F4C81]"
+                    className="mt-4 inline-flex items-center gap-2 rounded-full border border-brand-100 bg-surface px-3 py-2 text-xs font-bold text-brand-500"
                   >
                     Abrir evento
                     <ExternalLink size={14} />

@@ -140,7 +140,7 @@ const SearchResults: React.FC = () => {
     <div className="animate-in space-y-6 px-5 py-4 fade-in duration-500">
       <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold text-cyan-900">Busca</h1>
+          <h1 className="text-h2 font-bold text-foreground">Busca</h1>
           <p className="mt-1 text-sm text-slate-500">
             Encontre negocios, eventos e conversas da comunidade.
           </p>
@@ -152,7 +152,7 @@ const SearchResults: React.FC = () => {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Buscar na Gringoou"
-            className="w-full rounded-2xl bg-slate-100/90 py-4 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+            className="w-full rounded-full bg-bg py-4 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-brand-200"
           />
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
         </form>
@@ -217,8 +217,8 @@ const SearchResults: React.FC = () => {
                       className="w-28 shrink-0 self-stretch object-cover"
                     />
                     <div className="min-w-0 flex-1 p-4">
-                      <h2 className="text-sm font-bold text-cyan-900">{business.name}</h2>
-                      <p className="mt-1 text-xs font-bold uppercase tracking-wide text-cyan-700">
+                      <h2 className="text-body-sm font-bold text-foreground">{business.name}</h2>
+                      <p className="mt-1 text-caption font-bold uppercase tracking-wide text-brand-500">
                         {business.category}
                       </p>
                       <p className="mt-2 line-clamp-2 text-sm text-slate-600">
@@ -257,7 +257,7 @@ const SearchResults: React.FC = () => {
                       className="w-28 shrink-0 self-stretch object-cover"
                     />
                     <div className="min-w-0 flex-1 p-4">
-                      <h2 className="text-sm font-bold text-cyan-900">{event.title}</h2>
+                      <h2 className="text-body-sm font-bold text-foreground">{event.title}</h2>
                       <div className="mt-2 flex items-center gap-1 text-[11px] font-medium text-slate-500">
                         <Clock3 size={12} />
                         <span>{formatDateTime(event.startsAt)}</span>
@@ -313,7 +313,7 @@ const SearchResults: React.FC = () => {
                     </Link>
                     <Link href={`/community?post=${post.id}`} className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <h2 className="truncate text-sm font-bold text-cyan-900">
+                        <h2 className="truncate text-body-sm font-bold text-foreground">
                           {post.author.name || 'Usuario da comunidade'}
                         </h2>
                         {post.author.username ? (
@@ -349,7 +349,7 @@ const SearchTab: React.FC<{ label: string; active: boolean; onClick: () => void 
     onClick={onClick}
     className={`whitespace-nowrap rounded-2xl border px-4 py-2 text-xs font-bold transition ${
       active
-        ? 'border-cyan-700 bg-cyan-600 text-white'
+        ? 'border-brand-500 bg-brand-500 text-white'
         : 'border-slate-200 bg-white text-slate-700'
     }`}
   >
@@ -363,7 +363,7 @@ const SectionHeader: React.FC<{ icon: React.ReactNode; title: string; count: num
   count,
 }) => (
   <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-500">
-    <span className="text-cyan-700">{icon}</span>
+    <span className="text-brand-500">{icon}</span>
     <span>{title}</span>
     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500">
       {count}

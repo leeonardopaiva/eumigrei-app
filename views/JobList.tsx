@@ -1,60 +1,53 @@
+'use client';
 
 import React, { useState } from 'react';
-import { Search, Briefcase } from 'lucide-react';
+import { Briefcase } from 'lucide-react';
+import UnifiedSearchInput from '../components/search/UnifiedSearchInput';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Tabs } from '../components/ui/Tabs';
+import { STATIC_JOBS } from '../lib/static-catalog';
+
+const jobFilters = [
+  { label: 'Tempo integral', value: 'integral' },
+  { label: 'Meio período', value: 'parcial' },
+  { label: 'Freelancer', value: 'freelancer' },
+];
 
 const JobList: React.FC = () => {
-  const [activeFilter, setActiveFilter] = useState('Tempo Integral');
-
-  const jobs = [
-    { id: '1', title: 'Atendente de Restaurante', company: 'Basil Café', salary: '$20 - $22/hora', img: 'https://picsum.photos/seed/job1/200' },
-    { id: '2', title: 'Assistente Administrativo', company: 'RB Logistics', salary: '$18 - $20/hora', img: 'https://picsum.photos/seed/job2/200' },
-    { id: '3', title: 'Motorista Particular', company: 'Transporte Rosa', salary: '$26 - $30/hora', img: 'https://picsum.photos/seed/job3/200' },
-    { id: '4', title: 'Manicure', company: 'Saló Viviane', salary: '$16 - $18/hora', img: 'https://picsum.photos/seed/job4/200' },
-    { id: '5', title: 'Faxineiro(a)', company: 'Cristal Limposse', salary: '$18 - $22/hora', img: 'https://picsum.photos/seed/job5/200' },
-  ];
+  const [activeFilter, setActiveFilter] = useState('integral');
+  const [search, setSearch] = useState('');
 
   return (
-    <div className="px-5 space-y-6 animate-in fade-in duration-500 pb-20">
-      <div className="mt-4">
-        <h1 className="text-2xl font-bold text-cyan-900 mb-4">Vagas</h1>
-        <div className="relative">
-          <input type="text" placeholder="Buscar vagas brasileiras..." className="w-full bg-slate-100/80 rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-0" />
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-        </div>
+    <div className="animate-in space-y-5 px-5 pb-24 fade-in duration-500">
+      <header className="mt-4 space-y-1">
+        <h1 className="text-h2 font-bold text-foreground">Vagas</h1>
+        <p className="text-body-sm text-muted-foreground">Oportunidades para a comunidade brasileira.</p>
+      </header>
+
+      <UnifiedSearchInput value={search} onChange={setSearch} staticPlaceholder="Buscar vagas brasileiras..." />
+      <div className="scrollbar-hide overflow-x-auto">
+        <Tabs items={jobFilters} value={activeFilter} onChange={setActiveFilter} />
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {['Tempo Integral', 'Meio Período', 'Freelancer'].map(f => (
-          <button 
-            key={f}
-            onClick={() => setActiveFilter(f)}
-            className={`px-6 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap shadow-sm border ${activeFilter === f ? 'bg-cyan-600 text-white border-cyan-700' : 'bg-white text-cyan-900 border-slate-100'}`}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
-
-      <div className="space-y-4">
-        <h2 className="font-bold text-cyan-900">Vagas Disponíveis</h2>
-        {jobs.map(job => (
-          <div key={job.id} className="bg-white rounded-3xl p-4 shadow-sm border border-slate-50 flex gap-4">
-            <img src={job.img} className="w-20 h-20 rounded-2xl object-cover" alt={job.title} />
-            <div className="flex-1 flex flex-col justify-between">
+      <section className="space-y-3" aria-labelledby="jobs-title">
+        <h2 id="jobs-title" className="text-body-sm font-bold text-foreground">Vagas disponíveis</h2>
+        {STATIC_JOBS.map((job) => (
+          <Card key={job.id} padded={false} className="flex min-h-32 border border-border shadow-xs">
+            <img src={job.img} className="w-28 shrink-0 object-cover sm:w-36" alt={job.title} />
+            <div className="flex min-w-0 flex-1 flex-col justify-between p-4">
               <div>
-                <h4 className="font-bold text-cyan-900 text-sm leading-tight">{job.title}</h4>
-                <div className="flex items-center gap-1 text-cyan-600 text-[10px] font-bold mt-1">
-                  <Briefcase size={10} fill="currentColor" className="opacity-70" /> {job.company}
-                </div>
-                <p className="text-slate-500 text-[10px] mt-1">{job.salary}</p>
+                <h3 className="text-body-sm font-bold leading-snug text-foreground">{job.title}</h3>
+                <p className="mt-1 flex items-center gap-1.5 text-caption font-semibold text-brand-500">
+                  <Briefcase size={13} aria-hidden="true" /> {job.company}
+                </p>
+                <p className="mt-1 text-caption text-muted-foreground">{job.salary}</p>
               </div>
-              <button className="self-end bg-cyan-600 text-white px-4 py-1.5 rounded-xl text-[10px] font-bold shadow-sm">
-                Ver vaga
-              </button>
+              <Button size="xs" className="mt-3 self-end">Ver vaga</Button>
             </div>
-          </div>
+          </Card>
         ))}
-      </div>
+      </section>
     </div>
   );
 };

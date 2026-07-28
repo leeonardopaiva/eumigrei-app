@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Crosshair, MapPin, Search } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Check, ChevronDown, Crosshair, MapPin, Search } from 'lucide-react';
 import {
   DEFAULT_REGION_OPTIONS,
   findNearestRegion,
@@ -38,6 +38,26 @@ const RegionSelector: React.FC<RegionSelectorProps> = ({
   const [isLocating, setIsLocating] = useState(false);
   const [locationNotice, setLocationNotice] = useState<string | null>(null);
   const [hasAttemptedAutoDetect, setHasAttemptedAutoDetect] = useState(false);
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) setOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open]);
 
   useEffect(() => {
     let ignore = false;
@@ -146,75 +166,81 @@ const RegionSelector: React.FC<RegionSelectorProps> = ({
       : filteredRegions;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-bold text-slate-700">{label}</p>
-          {hint ? <p className="text-xs text-slate-400">{hint}</p> : null}
-        </div>
-        <button
-          type="button"
-          onClick={() => void detectUserRegion()}
-          disabled={disabled || isLocating}
-          className="theme-soft-surface inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-bold disabled:opacity-60"
-        >
-          <Crosshair size={14} />
-          {isLocating ? 'Localizando...' : 'Usar localizacao'}
-        </button>
+    <div ref={containerRef} className="relative space-y-2">
+      <div>
+        <p className="text-body-sm font-bold text-foreground">{label}</p>
+        {hint ? <p className="text-caption text-muted-foreground">{hint}</p> : null}
       </div>
 
-      <div className="relative">
-        <input
-          type="text"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Buscar regiao"
-          disabled={disabled}
-          className="theme-outline-ring w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none"
-        />
-        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-      </div>
-
-      <select
-        value={value || ''}
-        onChange={(event) => {
-          if (!event.target.value && allowEmpty) {
-            onClear?.();
-            return;
-          }
-
-          const region = getRegionByKey(event.target.value, regionPool);
-          if (region) {
-            onChange(region);
-          }
-        }}
+      <button
+        type="button"
         disabled={disabled}
-        className="theme-outline-ring w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-900 outline-none"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className="theme-outline-ring flex h-11 w-full items-center gap-3 rounded-full border-2 border-border bg-surface px-4 text-left text-body-sm text-foreground transition disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {allowEmpty ? (
-          <option value="">{emptyLabel}</option>
-        ) : (
-          <option value="" disabled>
-            Selecione uma regiao
-          </option>
-        )}
-        {visibleRegions.map((region) => (
-          <option key={region.key} value={region.key}>
-            {region.label}
-          </option>
-        ))}
-      </select>
+        <MapPin size={16} className="shrink-0 text-brand-500" />
+        <span className={`min-w-0 flex-1 truncate ${selectedRegion ? 'font-semibold' : 'text-muted-foreground'}`}>
+          {selectedRegion?.label || (allowEmpty ? emptyLabel : 'Selecione uma regiao')}
+        </span>
+        <ChevronDown size={16} className={`shrink-0 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
 
-      {selectedRegion ? (
-        <div className="inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
-          <MapPin size={16} className="theme-text" />
-          {selectedRegion.label}
-        </div>
-      ) : null}
+      {open ? (
+        <div className="absolute left-0 top-full z-[140] mt-2 w-full min-w-[280px] overflow-hidden rounded-2xl border border-border bg-surface p-3 shadow-lg">
+          <div className="relative">
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar regiao"
+              autoFocus
+              className="theme-outline-ring h-10 w-full rounded-full border-2 border-border bg-white pl-10 pr-3 text-body-sm text-foreground outline-none placeholder:text-muted-foreground"
+            />
+            <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          </div>
 
-      {locationNotice ? (
-        <div className="theme-soft-surface rounded-2xl border px-4 py-3 text-sm font-medium">
-          {locationNotice}
+          <button
+            type="button"
+            onClick={() => void detectUserRegion()}
+            disabled={disabled || isLocating}
+            className="mt-2 inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-caption font-semibold text-brand-500 transition hover:bg-brand-100 disabled:opacity-50"
+          >
+            <Crosshair size={14} />
+            {isLocating ? 'Localizando...' : 'Usar minha localizacao'}
+          </button>
+
+          <div className="mt-2 max-h-56 overflow-y-auto" role="listbox">
+            {allowEmpty ? (
+              <button
+                type="button"
+                role="option"
+                aria-selected={!value}
+                onClick={() => { onClear?.(); setOpen(false); setSearch(''); }}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-body-sm text-foreground transition hover:bg-brand-100"
+              >
+                <span className="flex-1">{emptyLabel}</span>
+                {!value ? <Check size={15} className="text-brand-500" /> : null}
+              </button>
+            ) : null}
+            {visibleRegions.map((region) => (
+              <button
+                key={region.key}
+                type="button"
+                role="option"
+                aria-selected={region.key === value}
+                onClick={() => { onChange(region); setOpen(false); setSearch(''); }}
+                className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-body-sm transition hover:bg-brand-100 ${region.key === value ? 'bg-brand-100 font-semibold text-brand-600' : 'text-foreground'}`}
+              >
+                <span className="min-w-0 flex-1 truncate">{region.label}</span>
+                {region.key === value ? <Check size={15} className="text-brand-500" /> : null}
+              </button>
+            ))}
+            {visibleRegions.length === 0 ? <p className="px-3 py-4 text-center text-caption text-muted-foreground">Nenhuma regiao encontrada.</p> : null}
+          </div>
+
+          {locationNotice ? <p className="mt-2 rounded-xl bg-brand-100 px-3 py-2 text-caption font-medium text-brand-600">{locationNotice}</p> : null}
         </div>
       ) : null}
     </div>

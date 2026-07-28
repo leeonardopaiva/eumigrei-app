@@ -301,7 +301,7 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
         }}
         likesPreview={
           supportsHover && likesOpen && likesPreviewContent ? (
-            <div className="absolute left-0 top-8 z-20 w-[260px] rounded-3xl border border-slate-100 bg-white p-4 shadow-2xl">
+            <div className="absolute left-0 top-8 z-20 w-[260px] rounded-card border border-border bg-surface p-4 shadow-md">
               {likesPreviewContent}
             </div>
           ) : null
@@ -313,7 +313,7 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
         <button
           type="button"
           onClick={() => setCommentsExpanded((current) => !current)}
-          className="w-fit text-xs font-bold text-cyan-600 transition hover:text-cyan-700"
+          className="w-fit text-xs font-bold text-brand-500 transition hover:text-brand-600"
         >
           {commentsExpanded ? 'Ocultar comentarios' : collapsedCommentsLabel}
         </button>
@@ -331,7 +331,7 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
                 rows={3}
                 value={editingCommentContent}
                 onChange={(event) => setEditingCommentContent(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600 outline-none focus:ring-2 focus:ring-cyan-200"
+                className="w-full rounded-md border border-input bg-surface px-3 py-2 text-[11px] text-foreground outline-none focus:ring-2 focus:ring-brand-200"
               />
             ) : (
               <p className="text-[11px] leading-tight text-slate-600">{comment.content}</p>
@@ -373,7 +373,7 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
                   type="button"
                   onClick={() => void handleSaveComment()}
                   disabled={savingCommentId === comment.id}
-                  className="rounded-2xl bg-cyan-600 px-4 py-2 text-[11px] font-bold text-white disabled:opacity-60"
+                  className="rounded-full bg-brand-500 px-4 py-2 text-[11px] font-bold text-white disabled:opacity-60"
                 >
                   {savingCommentId === comment.id ? 'Salvando...' : 'Salvar'}
                 </button>
@@ -403,7 +403,7 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
 
       {!supportsHover && likesOpen && likesPreviewContent ? (
         <div className="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/35 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-[32px] bg-white p-5 shadow-2xl">
+          <div className="w-full max-w-sm rounded-sheet bg-surface p-5 shadow-lg">
             <div className="mb-3 flex justify-end">
               <button
                 type="button"

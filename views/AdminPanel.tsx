@@ -1286,7 +1286,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                   | 'analytics',
               )
             }
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-[#5B4BFF]"
+            className="theme-outline-ring h-11 w-full appearance-none rounded-full border-2 border-border bg-surface px-4 text-body-sm font-semibold text-foreground outline-none"
           >
             {sectionTabs.map((tab) => (
               <option key={tab.id} value={tab.id}>
@@ -2290,7 +2290,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                 <select
                   value={analyticsDays}
                   onChange={(event) => setAnalyticsDays(event.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
+                  className="theme-outline-ring h-11 w-full appearance-none rounded-full border-2 border-border bg-surface px-4 text-body-sm font-semibold text-foreground outline-none"
                 >
                   <option value="7">7 dias</option>
                   <option value="30">30 dias</option>
@@ -2303,7 +2303,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                 <select
                   value={analyticsTypeFilter}
                   onChange={(event) => setAnalyticsTypeFilter(event.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
+                  className="theme-outline-ring h-11 w-full appearance-none rounded-full border-2 border-border bg-surface px-4 text-body-sm font-semibold text-foreground outline-none"
                 >
                   <option value="">Todos</option>
                   <option value="search_query">Buscas</option>
@@ -2317,7 +2317,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
                 <select
                   value={analyticsRegionFilter}
                   onChange={(event) => setAnalyticsRegionFilter(event.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
+                  className="theme-outline-ring h-11 w-full appearance-none rounded-full border-2 border-border bg-surface px-4 text-body-sm font-semibold text-foreground outline-none"
                 >
                   <option value="">Todas</option>
                   {(dashboard?.regions ?? []).map((region) => (
@@ -2903,7 +2903,7 @@ const FormSelect: React.FC<{
   <select
     value={value}
     onChange={(event) => onChange(event.target.value)}
-    className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 theme-ring"
+    className="theme-outline-ring h-11 w-full appearance-none rounded-full border-2 border-border bg-surface px-4 text-body-sm text-foreground outline-none"
   >
     {options.map((option) => (
       <option key={option} value={option}>

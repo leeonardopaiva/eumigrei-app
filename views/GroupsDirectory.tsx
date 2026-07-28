@@ -112,7 +112,7 @@ const GroupsDirectory: React.FC<{ user: User }> = ({ user }) => {
       <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#EAF4FF] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-[#00509D]">
+            <div className="inline-flex items-center gap-2 rounded-full bg-brand-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-brand-500">
               <UsersRound size={13} />
               Grupos
             </div>
@@ -129,7 +129,7 @@ const GroupsDirectory: React.FC<{ user: User }> = ({ user }) => {
 
           {user.regionKey ? (
             <div className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-600">
-              <MapPin size={16} className="text-[#00509D]" />
+              <MapPin size={16} className="text-brand-500" />
               {user.location}
             </div>
           ) : null}
@@ -174,7 +174,7 @@ const GroupsDirectory: React.FC<{ user: User }> = ({ user }) => {
                     {group.imageUrl ? (
                       <img src={group.imageUrl} alt={group.name} className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#EAF4FF] to-[#D9ECFF] text-sm font-bold text-[#00509D]">
+                      <div className="flex h-full w-full items-center justify-center bg-brand-100 text-sm font-bold text-brand-500">
                         {getInitials(group.name)}
                       </div>
                     )}
@@ -187,7 +187,7 @@ const GroupsDirectory: React.FC<{ user: User }> = ({ user }) => {
                     </p>
                     <div className="mt-1 flex items-center justify-between gap-2">
                       <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
-                        <UsersRound size={12} className="text-[#00509D]" />
+                        <UsersRound size={12} className="text-brand-500" />
                         <span>{formatCompactMemberCount(group.memberCount)} membros</span>
                       </div>
                       {group.category ? (
@@ -219,7 +219,7 @@ const GroupsDirectory: React.FC<{ user: User }> = ({ user }) => {
                         ))}
 
                         {missingAvatars > 0 ? (
-                          <div className="-ml-2 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-white bg-[#EAF4FF] px-1 text-[9px] font-bold text-[#00509D]">
+                          <div className="-ml-2 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-white bg-brand-100 px-1 text-[9px] font-bold text-brand-500">
                             +{missingAvatars}
                           </div>
                         ) : null}

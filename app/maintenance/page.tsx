@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function MaintenancePage() {
   return (
-    <main className="min-h-screen bg-[#f9f9f9] px-6 py-10">
+    <main className="min-h-screen bg-bg px-6 py-10">
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-2xl items-center justify-center">
         <div className="w-full max-w-lg rounded-[32px] bg-white px-8 py-10 text-center shadow-sm sm:px-10 sm:py-12">
           <div className="flex justify-center">

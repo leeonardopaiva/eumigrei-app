@@ -363,20 +363,20 @@ const Marketplace: React.FC<MarketplaceProps> = ({
         <button
           type="button"
           onClick={() => setShowCreateForm((current) => !current)}
-          className="w-full rounded-3xl border border-transparent bg-gradient-to-r from-[#0EA5A4] to-[#16A34A] p-4 text-left text-white shadow-lg shadow-[#16A34A]/30 transition hover:brightness-105"
+          className="w-full rounded-card bg-secondary p-4 text-left text-foreground transition hover:brightness-95"
         >
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 text-white">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface text-brand-500">
               <Plus size={20} />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/75">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-600">
                 Cadastre seu evento
               </p>
-              <p className="mt-1 text-sm font-bold text-white">
+              <p className="mt-1 text-sm font-bold text-foreground">
                 Divulgue seu evento para a comunidade local.
               </p>
-              <p className="mt-1 text-xs font-medium leading-relaxed text-white/85">
+              <p className="mt-1 text-xs font-medium leading-relaxed text-muted-foreground">
                 {showCreateForm ? 'Toque para fechar o modal.' : 'Toque para abrir o cadastro em modal.'}
               </p>
             </div>

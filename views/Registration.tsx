@@ -4,6 +4,8 @@ import { Button, Card, Input, Separator } from '@heroui/react';
 import FieldErrorMessage from '../components/forms/FieldErrorMessage';
 import RegionSelector from '../components/RegionSelector';
 import { Logo } from '../components/Layout';
+import GoogleIcon from '../components/icons/GoogleIcon';
+import { GringoouLogo } from '../components/icons/GringoouLogo';
 import {
   COUNTRY_CALLING_CODE_OPTIONS,
   findCountryByIso2,
@@ -68,7 +70,7 @@ type PasswordAuthView = 'none' | 'signin' | 'signup';
 
 const fieldLabel = 'text-xs font-semibold uppercase tracking-[0.22em] text-slate-500';
 const inputClass =
-  'h-14 rounded-2xl border border-slate-200 bg-white px-5 text-sm shadow-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B84FF]';
+  'h-14 rounded-full border border-input bg-surface px-5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-200';
 const secondaryCardClass = 'border border-slate-200 bg-slate-50 shadow-none';
 
 const Registration: React.FC<RegistrationProps> = ({
@@ -309,37 +311,32 @@ const Registration: React.FC<RegistrationProps> = ({
 
   if (!isOnboarding) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-[#F6F5EF] px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-20 h-72 w-72 -translate-x-1/2 rounded-full bg-[#7CE4E6]/25 blur-3xl" />
-          <div className="absolute right-[-5rem] top-24 h-96 w-96 rounded-full bg-[#2A57FF]/12 blur-3xl" />
-          <div className="absolute left-[-6rem] bottom-[-6rem] h-96 w-96 rounded-full bg-[#2A57FF]/8 blur-3xl" />
-        </div>
-
-        <div className="relative mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl items-center justify-center">
+      <div className="min-h-screen bg-bg px-4 py-8 sm:px-6 sm:py-12">
+        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-xl items-center justify-center">
           <Card
             variant="default"
-            className="w-full max-w-[540px] overflow-hidden rounded-[32px] border border-white/80 bg-[#F9F9F9] shadow-[0_30px_90px_rgba(15,23,42,0.10)]"
+            className="w-full overflow-hidden rounded-sheet border border-border bg-surface shadow-sm"
           >
             <Card.Content className="px-6 py-12 sm:px-12 sm:py-14 lg:px-14 lg:py-16">
               <div className="flex flex-col items-center text-center">
-                <img src="/assets/logo26.png" alt="Gringoou" className="h-16 w-auto sm:h-[4.5rem]" />
+                <GringoouLogo size={48} />
                 <p className="mt-5 max-w-sm text-sm leading-6 text-slate-500 sm:text-base">
                   A rede social do imigrante brasileiro.
                 </p>
               </div>
 
-              <div className="mt-10 flex flex-col items-center gap-4">
+              <div className="mt-10 flex flex-col items-center gap-3">
                 {googleEnabled ? (
                   <Button
                     type="button"
                     fullWidth
                     size="lg"
-                    variant="primary"
+                    variant="ghost"
                     isDisabled={submitting}
                     onPress={submitGoogleLogin}
-                    className="h-14 w-full max-w-[360px] rounded-full bg-[#00509D] px-6 text-base font-semibold text-white shadow-[0_16px_40px_rgba(0,80,157,0.16)]"
+                    className="inline-flex h-14 w-full max-w-[360px] items-center justify-center rounded-full border border-slate-200 bg-white px-6 text-base font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
                   >
+                    <GoogleIcon size={20} className="mr-2" />
                     {submitting ? 'Entrando...' : 'Continuar com Google'}
                   </Button>
                 ) : null}
@@ -352,18 +349,17 @@ const Registration: React.FC<RegistrationProps> = ({
                     variant="ghost"
                     isDisabled={submitting}
                     onPress={submitGoogleSelectAccount}
-                    className="h-12 w-full max-w-[360px] rounded-full border border-[#00509D]/15 bg-white px-6 text-sm font-semibold text-[#00509D] shadow-none hover:bg-[#F2F7FF]"
+                    className="inline-flex h-12 w-full max-w-[360px] items-center justify-center rounded-full border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-700 shadow-none hover:bg-slate-50"
                   >
+                    <GoogleIcon size={16} className="mr-2" />
                     Trocar conta Google
                   </Button>
                 ) : null}
 
                 <div className="flex w-full max-w-[360px] items-center gap-3">
-                  <Separator className="flex-1 bg-slate-200" />
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400">
-                    OU
-                  </span>
-                  <Separator className="flex-1 bg-slate-200" />
+                  <Separator className="flex-1 bg-slate-100" />
+                  <span className="text-xs font-medium text-slate-400">ou</span>
+                  <Separator className="flex-1 bg-slate-100" />
                 </div>
 
                 <Button
@@ -376,6 +372,19 @@ const Registration: React.FC<RegistrationProps> = ({
                 >
                   Entrar com senha
                 </Button>
+
+                {passwordEnabled && passwordAuthView === 'none' ? (
+                  <Button
+                    type="button"
+                    fullWidth
+                    size="lg"
+                    variant="primary"
+                    onPress={() => openPasswordView('signup')}
+                    className="h-14 w-full max-w-[360px] rounded-full bg-brand-500 px-6 text-base font-semibold text-white shadow-sm"
+                  >
+                    Criar minha conta
+                  </Button>
+                ) : null}
 
                 {passwordAuthView === 'signin' ? (
                   <form
@@ -451,7 +460,7 @@ const Registration: React.FC<RegistrationProps> = ({
                       size="lg"
                       variant="primary"
                       isDisabled={submitting}
-                      className="h-14 rounded-full bg-[#00509D] px-6 text-base font-semibold text-white shadow-[0_16px_40px_rgba(0,80,157,0.16)]"
+                      className="h-14 rounded-full bg-brand-500 px-6 text-base font-semibold text-white shadow-sm"
                     >
                       {submitting ? 'Entrando...' : passwordEnabled ? 'Entrar' : 'Receber link'}
                     </Button>
@@ -462,7 +471,7 @@ const Registration: React.FC<RegistrationProps> = ({
                           type="button"
                           variant="ghost"
                           onPress={() => setPasswordAuthView('signup')}
-                          className="px-0 text-sm font-semibold text-[#00509D]"
+                          className="px-0 text-sm font-semibold text-brand-500"
                         >
                           Criar conta
                         </Button>
@@ -610,7 +619,7 @@ const Registration: React.FC<RegistrationProps> = ({
                       size="lg"
                       variant="primary"
                       isDisabled={submitting || loadingCaptcha}
-                      className="h-14 rounded-full bg-[#00509D] px-6 text-base font-semibold text-white shadow-[0_16px_40px_rgba(0,80,157,0.16)]"
+                      className="h-14 rounded-full bg-brand-500 px-6 text-base font-semibold text-white shadow-sm"
                     >
                       {submitting ? 'Criando conta...' : 'Criar conta'}
                     </Button>
@@ -620,7 +629,7 @@ const Registration: React.FC<RegistrationProps> = ({
                         type="button"
                         variant="ghost"
                         onPress={() => setPasswordAuthView('signin')}
-                        className="px-0 text-sm font-semibold text-[#00509D]"
+                        className="px-0 text-sm font-semibold text-brand-500"
                       >
                         Entrar
                       </Button>
@@ -657,21 +666,18 @@ const Registration: React.FC<RegistrationProps> = ({
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(11,132,255,0.16),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(0,80,157,0.10),_transparent_28%),linear-gradient(180deg,#f7fbff_0%,#eef6ff_100%)] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-      <div className="absolute left-[-8rem] top-20 h-64 w-64 rounded-full bg-[#0B84FF]/10 blur-3xl" />
-      <div className="absolute bottom-0 right-[-6rem] h-80 w-80 rounded-full bg-[#00509D]/10 blur-3xl" />
-
-      <div className="relative mx-auto grid min-h-[calc(100vh-3rem)] max-w-6xl items-center gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
-        <div className="hidden lg:flex lg:flex-col lg:gap-6 lg:pr-8">
+    <div className="min-h-screen bg-bg px-4 py-6 sm:px-6 lg:py-10">
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-lg items-center justify-center">
+        <div className="hidden">
           <div className="inline-flex w-fit items-center gap-3 rounded-full border border-white/80 bg-white/70 px-4 py-2 shadow-sm backdrop-blur">
-            <img src="/assets/logo26.png" alt="Gringoou" className="h-7 w-auto" />
+            <GringoouLogo size={22} />
             <span className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">
               Gringoou
             </span>
           </div>
 
           <div className="max-w-2xl space-y-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#0B84FF]">
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-brand-500">
               Comunidade brasileira no exterior
             </p>
             <h1 className="max-w-xl text-5xl font-black leading-[0.96] tracking-tight text-slate-950">
@@ -710,20 +716,18 @@ const Registration: React.FC<RegistrationProps> = ({
 
         <Card
           variant="default"
-          className="relative overflow-hidden border border-white/80 bg-white/90 shadow-[0_40px_120px_rgba(15,23,42,0.16)] backdrop-blur-xl"
+          className="w-full overflow-hidden rounded-sheet border border-border bg-surface shadow-sm"
         >
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#00509D] via-[#0B84FF] to-[#7CC4FF]" />
-          <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[#0B84FF]/10 blur-3xl" />
-          <div className="absolute -bottom-20 -left-10 h-52 w-52 rounded-full bg-[#00509D]/10 blur-3xl" />
 
           <Card.Content className="relative space-y-7 p-5 sm:p-8">
             <div className="flex justify-center">
-              <img src="/assets/logo26.png" alt="Gringoou" className="h-9 w-auto sm:h-11" />
+              <GringoouLogo size={32} />
             </div>
 
             <div className="space-y-3 text-center">
-              <h2 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
-                {isOnboarding ? 'Complete seu perfil' : 'Entre na sua conta'}
+              {isOnboarding ? <div className="mx-auto h-1.5 w-24 overflow-hidden rounded-full bg-slate-100"><div className="h-full w-1/3 rounded-full bg-brand-500" /></div> : null}
+              <h2 className="text-h2 font-bold tracking-tight text-text">
+                {isOnboarding ? 'Para te conectar melhor, precisamos te conhecer!' : 'Entre na sua conta'}
               </h2>
               <p className="mx-auto max-w-md text-sm leading-6 text-slate-600">
                 {isOnboarding
@@ -749,18 +753,18 @@ const Registration: React.FC<RegistrationProps> = ({
                     variant="primary"
                     isDisabled={submitting}
                     onPress={submitGoogleLogin}
-                    className="rounded-2xl bg-[#0B84FF] font-semibold shadow-[0_16px_40px_rgba(11,132,255,0.22)]"
+                    className="rounded-full bg-brand-500 font-semibold shadow-sm"
                   >
                     {submitting ? 'Entrando...' : 'Continuar com Google'}
                   </Button>
                 ) : null}
 
                 <div className="flex items-center gap-3">
-                  <Separator className="flex-1 bg-slate-200" />
+                  <Separator className="flex-1 bg-slate-100" />
                   <span className="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400">
                     ou
                   </span>
-                  <Separator className="flex-1 bg-slate-200" />
+                  <Separator className="flex-1 bg-slate-100" />
                 </div>
 
                 {emailEnabled ? (
@@ -934,7 +938,7 @@ const Registration: React.FC<RegistrationProps> = ({
                           size="lg"
                           variant="primary"
                           isDisabled={submitting}
-                          className="rounded-2xl bg-[#00509D] font-semibold shadow-[0_16px_40px_rgba(0,80,157,0.18)]"
+                   className="rounded-full bg-brand-500 font-semibold shadow-sm"
                         >
                           {submitting ? 'Entrando...' : 'Entrar com email e senha'}
                         </Button>
@@ -1127,7 +1131,7 @@ const Registration: React.FC<RegistrationProps> = ({
                           size="lg"
                           variant="primary"
                           isDisabled={submitting || loadingCaptcha}
-                          className="rounded-2xl bg-[#00509D] font-semibold shadow-[0_16px_40px_rgba(0,80,157,0.18)]"
+                          className="rounded-full bg-brand-500 font-semibold shadow-sm"
                         >
                           {submitting ? 'Criando conta...' : 'Criar conta com email'}
                         </Button>
@@ -1343,13 +1347,13 @@ const Registration: React.FC<RegistrationProps> = ({
                   size="lg"
                   variant="primary"
                   isDisabled={submitting || onboardingBlocked}
-                  className="rounded-2xl bg-[#00509D] font-semibold shadow-[0_16px_40px_rgba(0,80,157,0.18)]"
+                  className="rounded-full bg-brand-500 font-semibold shadow-sm"
                 >
                   {submitting
                     ? 'Salvando...'
                     : checkingUsername
                       ? 'Validando nome...'
-                      : 'Entrar na comunidade'}
+                       : 'Continuar'}
                 </Button>
               </form>
             )}
@@ -1368,7 +1372,7 @@ const Registration: React.FC<RegistrationProps> = ({
 
             <Card variant="secondary" className={`${secondaryCardClass} border-slate-200`}>
               <Card.Content className="flex items-center gap-3 p-4">
-                <Shield size={18} className="flex-shrink-0 text-[#00509D]" />
+                <Shield size={18} className="flex-shrink-0 text-brand-500" />
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                   Ambiente seguro, com autenticação e conteúdo local.
                 </p>

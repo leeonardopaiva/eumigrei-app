@@ -8,11 +8,10 @@ import {
   ChevronDown,
   ExternalLink,
   Building2,
+  House,
   Briefcase,
-  MessageSquare,
   Users,
   CalendarDays,
-  Newspaper,
   ShoppingBag,
   UserPlus,
   type LucideIcon,
@@ -20,33 +19,15 @@ import {
 import { useToast } from '../components/feedback/ToastProvider';
 import RegionSelector from '../components/RegionSelector';
 import UnifiedSearchInput from '../components/search/UnifiedSearchInput';
-import { useRegionBanners, useRegionCommunityPosts, useRegionGroups } from '../hooks/useRegionContent';
-import { DEFAULT_AVATAR_URL } from '../lib/avatar';
-import { formatRelativeTime } from '../components/community/utils';
+import { useRegionBanners, useRegionCommunityPosts } from '../hooks/useRegionContent';
 import { trackAnalyticsEvent } from '../lib/analytics';
-import { BannerAd, User } from '../types';
+import { Button } from '../components/ui/Button';
+import { Modal } from '../components/ui/Modal';
+import { TrendsCarousel, type TrendItem } from '../components/app/TrendsCarousel';
+import { STATIC_HOUSING, STATIC_JOBS } from '../lib/static-catalog';
+import { BannerAd, Business, EventItem, User } from '../types';
 
 const animatedSearchTerms = ['restaurantes', 'bares', 'eventos', 'pessoas'];
-
-const getInitials = (name: string) =>
-  name
-    .split(' ')
-    .map((part) => part.trim()[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-
-const formatCompactMemberCount = (count: number) => {
-  if (count < 1000) {
-    return `${count}`;
-  }
-
-  const compactValue = count / 1000;
-  const formattedValue = Number.isInteger(compactValue) ? compactValue.toFixed(0) : compactValue.toFixed(1);
-
-  return `${formattedValue.replace('.', ',')}k`;
-};
 
 const Home: React.FC<{ user: User }> = ({ user }) => {
   const router = useRouter();
@@ -56,15 +37,45 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
   const [selectedRegionKey, setSelectedRegionKey] = useState(user.regionKey || '');
   const [savingRegion, setSavingRegion] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAiSearchOpen, setIsAiSearchOpen] = useState(false);
+  const [latestBusiness, setLatestBusiness] = useState<Business | null>(null);
+  const [latestEvent, setLatestEvent] = useState<EventItem | null>(null);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
   const [submittingBannerId, setSubmittingBannerId] = useState<string | null>(null);
   const [searchPlaceholderIndex, setSearchPlaceholderIndex] = useState(0);
   const { data: banners } = useRegionBanners('home', user.regionKey);
   const { data: communityPosts } = useRegionCommunityPosts(user.regionKey, 4);
-  const { data: popularGroups } = useRegionGroups(user.regionKey, 2);
+  const latestPost = communityPosts[0];
+  const latestJob = STATIC_JOBS[0];
+  const latestHousing = STATIC_HOUSING[0];
+  const trendItems: TrendItem[] = [
+    { href: latestPost ? `/community?post=${encodeURIComponent(latestPost.id)}` : '/community', category: 'Comunidade', title: latestPost?.content || 'Participe das conversas da comunidade', description: latestPost ? `Por ${latestPost.author.name}` : 'Veja as publicações mais recentes', icon: Users, imageUrl: latestPost?.imageUrl },
+    { href: latestBusiness?.publicPath || (latestBusiness ? `/negocios/${latestBusiness.slug || latestBusiness.id}` : '/negocios'), category: 'Negócios', title: latestBusiness?.name || 'Descubra negócios brasileiros', description: latestBusiness?.category || 'Serviços perto de você', icon: Building2, imageUrl: latestBusiness?.imageUrl },
+    { href: latestEvent?.publicPath || (latestEvent ? `/eventos/${latestEvent.slug || latestEvent.id}` : '/eventos'), category: 'Eventos', title: latestEvent?.title || 'Veja os próximos eventos', description: latestEvent?.venueName || 'Agenda da sua região', icon: CalendarDays, imageUrl: latestEvent?.imageUrl },
+    { href: '/vagas', category: 'Vagas', title: latestJob.title, description: `${latestJob.company} · ${latestJob.salary}`, icon: Briefcase, imageUrl: latestJob.img },
+    { href: '/moradia', category: 'Moradia', title: latestHousing.title, description: `${latestHousing.location} · ${latestHousing.price}`, icon: House, imageUrl: latestHousing.img },
+  ];
 
   useEffect(() => {
     setSelectedRegionKey(user.regionKey || '');
+  }, [user.regionKey]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const regionQuery = user.regionKey ? `?region=${encodeURIComponent(user.regionKey)}` : '';
+
+    void Promise.all([
+      fetch(`/api/businesses${regionQuery}`, { signal: controller.signal }).then((response) => response.ok ? response.json() : null),
+      fetch(`/api/events${regionQuery}`, { signal: controller.signal, cache: 'no-store' }).then((response) => response.ok ? response.json() : null),
+    ]).then(([businessPayload, eventPayload]) => {
+      setLatestBusiness(businessPayload?.businesses?.[0] ?? null);
+      setLatestEvent(eventPayload?.events?.[0] ?? null);
+    }).catch((error) => {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      console.error('Failed to load Home trends:', error);
+    });
+
+    return () => controller.abort();
   }, [user.regionKey]);
 
   useEffect(() => {
@@ -191,27 +202,25 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
   };
 
   return (
-    <div className="animate-in space-y-5 px-5 fade-in slide-in-from-bottom-4 duration-500 lg:px-0">
-      <div className="mt-3">
+    <div className="animate-in space-y-5 px-5 pb-28 fade-in slide-in-from-bottom-4 duration-500 md:pb-0 lg:px-0">
+      <div className="relative mt-3 inline-block">
         <button
           type="button"
           onClick={() => {
             setEditingRegion((current) => !current);
           }}
-          className="inline-flex items-center gap-2 text-left text-sm font-semibold text-[#1f2a37] transition hover:text-[#00509D]"
+          className="inline-flex h-7 items-center gap-1 rounded-full bg-brand-100 px-2.5 text-[11px] font-semibold text-brand-500 transition hover:brightness-95"
         >
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#EAF4FF] text-[#00509D]">
-            <MapPin size={16} />
-          </span>
+          <MapPin size={12} />
           <span className="leading-none">{user.location}</span>
           <ChevronDown
-            size={16}
-            className={`text-[#00509D] transition-transform ${editingRegion ? 'rotate-180' : ''}`}
+            size={12}
+            className={`transition-transform ${editingRegion ? 'rotate-180' : ''}`}
           />
         </button>
 
         {editingRegion ? (
-          <div className="mt-3">
+          <div className="absolute left-0 top-full z-[120] mt-2 w-[min(24rem,calc(100vw-2.5rem))] rounded-2xl border border-border bg-surface p-4 shadow-lg">
             <RegionSelector
               value={selectedRegionKey}
               onChange={(region) => {
@@ -222,25 +231,20 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
             />
 
             <div className="mt-4 flex gap-3">
-              <button
-                type="button"
-                onClick={handleRegionSave}
+              <Button variant="primary" fullWidth loading={savingRegion} onClick={handleRegionSave}>
+                Salvar regiao
+              </Button>
+              <Button
+                variant="secondary"
+                fullWidth
                 disabled={savingRegion}
-                className="theme-bg theme-shadow flex-1 rounded-xl px-4 py-3 text-sm font-bold disabled:opacity-60"
-              >
-                {savingRegion ? 'Salvando...' : 'Salvar regiao'}
-              </button>
-              <button
-                type="button"
                 onClick={() => {
                   setEditingRegion(false);
                   setSelectedRegionKey(user.regionKey || '');
                 }}
-                disabled={savingRegion}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 disabled:opacity-60"
               >
                 Cancelar
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}
@@ -256,7 +260,15 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
           if (!trimmed) return;
           router.push(`/buscar?q=${encodeURIComponent(trimmed)}`);
         }}
+        onFilterClick={() => setIsAiSearchOpen(true)}
       />
+
+      <div className="flex items-center justify-between">
+        <h3 className="text-body-sm font-bold text-text">Categorias</h3>
+        <button type="button" onClick={() => router.push('/buscar')} className="text-body-sm font-semibold text-brand-500">
+          Ver todas
+        </button>
+      </div>
 
       <div className="grid grid-cols-3 gap-3">
         <ServiceCard href="/negocios" icon={Building2} label="Negocios" onActivate={() => router.push('/negocios')} />
@@ -266,8 +278,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
           href="/vagas"
           icon={Briefcase}
           label="Vagas"
-          disabled
-          onDisabledClick={() => handleDisabledFeatureClick('vagas', 'Vagas')}
+          onActivate={() => router.push('/vagas')}
         />
         <ServiceCard
           href="/marketplace"
@@ -278,10 +289,9 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
         />
         <ServiceCard
           href="/moradia"
-          icon={Newspaper}
+          icon={House}
           label="Moradia"
-          disabled
-          onDisabledClick={() => handleDisabledFeatureClick('moradia', 'Moradia')}
+          onActivate={() => router.push('/moradia')}
         />
       </div>
 
@@ -295,7 +305,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
               {banners.map((banner) => (
                 <div
                   key={banner.id}
-                  className="group relative h-[240px] w-full flex-none overflow-hidden rounded-2xl shadow-sm"
+                  className="group relative h-[180px] w-full flex-none overflow-hidden rounded-2xl md:h-[200px]"
                 >
                   <img
                     src={banner.imageUrl}
@@ -303,11 +313,11 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
                     alt={banner.name}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
-                  <div className="absolute left-8 top-8 right-8">
+                  <div className="absolute left-5 right-5 top-5 md:left-6 md:right-6 md:top-6">
                     <div className="inline-flex rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-white backdrop-blur-sm">
                       Patrocinado · {banner.regionLabel || 'Toda a comunidade'}
                     </div>
-                    <h3 className="mt-4 text-3xl font-bold leading-tight text-white drop-shadow-md">
+                    <h3 className="mt-2 line-clamp-2 text-xl font-bold leading-tight text-white md:text-2xl">
                       {banner.name}
                     </h3>
                   </div>
@@ -316,7 +326,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
                       type="button"
                       onClick={() => void handleBannerRegistration(banner)}
                       disabled={submittingBannerId === banner.id}
-                      className="absolute bottom-8 left-8 inline-flex min-h-12 items-center gap-3 rounded-xl bg-[#FF8C00] px-5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#E07B00] disabled:opacity-70"
+                      className="absolute bottom-5 left-5 inline-flex min-h-10 items-center gap-2 rounded-full bg-brand-500 px-4 text-body-sm font-bold text-white transition-colors hover:brightness-105 disabled:opacity-70 md:bottom-6 md:left-6"
                     >
                       <UserPlus size={20} strokeWidth={2.8} />
                       {submittingBannerId === banner.id ? 'Registrando...' : 'Tenho interesse'}
@@ -325,7 +335,7 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
                     <button
                       type="button"
                       onClick={() => handleBannerLinkClick(banner)}
-                      className="absolute bottom-8 left-8 flex h-12 w-12 items-center justify-center rounded-xl bg-[#FF8C00] text-white shadow-sm transition-colors hover:bg-[#E07B00]"
+                      className="absolute bottom-5 left-5 flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-white transition-colors hover:brightness-105 md:bottom-6 md:left-6"
                       aria-label={`Abrir ${banner.name}`}
                     >
                       <ExternalLink size={22} strokeWidth={3} />
@@ -353,146 +363,51 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
         </div>
       ) : null}
 
-      {communityPosts.length > 0 ? (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">Comunidade agora</h3>
-              <p className="text-[11px] text-slate-500">Os 4 posts mais recentes</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => router.push('/community')}
-              className="text-sm font-semibold text-[#00509D]"
-            >
-              Ver tudo
-            </button>
-          </div>
-          <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            {communityPosts.map((post) => (
-              <Link
-                key={post.id}
-                href={`/community?post=${encodeURIComponent(post.id)}`}
-                className="flex items-start gap-3 px-3 py-3.5 transition hover:bg-slate-50 sm:px-4"
-              >
-                <img
-                  src={post.author.image || DEFAULT_AVATAR_URL}
-                  alt={post.author.name}
-                  className="h-9 w-9 flex-none rounded-full object-cover"
-                />
+      <TrendsCarousel items={trendItems} />
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="truncate text-[13px] font-bold text-slate-900">{post.author.name}</p>
-                    <span className="text-[10px] text-slate-300">•</span>
-                    <p className="whitespace-nowrap text-[11px] text-slate-500">
-                      {formatRelativeTime(post.createdAt)}
-                    </p>
-                  </div>
-                  <p className="mt-1 line-clamp-2 text-[13px] leading-5 text-slate-600">{post.content}</p>
-                </div>
-
-                <div className="ml-1 mt-0.5 flex flex-none flex-col items-end gap-2">
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-[#F4F8FF] px-3 py-1.5 text-[11px] font-bold text-[#00509D]">
-                    <MessageSquare size={14} className="text-[#00509D]" />
-                    <span>{post.commentCount} comentários</span>
-                  </div>
-                  {post.imageUrl ? (
-                    <img
-                      src={post.imageUrl}
-                      alt="Miniatura do post"
-                      className="h-10 w-10 rounded-full border border-slate-100 object-cover"
-                    />
-                  ) : (
-                    <div className="h-10 w-10 rounded-full border border-dashed border-slate-200 bg-slate-50" />
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {popularGroups.length > 0 ? (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">Grupos populares</h3>
-              <p className="text-[11px] text-slate-500">Mais ativos e recentes na sua região</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => router.push('/grupos')}
-              className="text-sm font-semibold text-[#00509D]"
-            >
-              Ver tudo
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {popularGroups.map((group) => {
-              const previewMembers = group.memberPreviews.slice(0, 4);
-              const missingAvatars = Math.max(group.memberCount - previewMembers.length, 0);
-
-              return (
-                <Link
-                  key={group.id}
-                  href={group.publicPath}
-                  className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-3.5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+      <Modal
+        open={isAiSearchOpen}
+        onClose={() => setIsAiSearchOpen(false)}
+        title="O que você procura?"
+        description="Pesquise em toda a comunidade ou escolha uma categoria."
+        fullscreen
+      >
+        <div className="mx-auto mt-6 max-w-2xl space-y-8">
+          <UnifiedSearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            staticPlaceholder="Descreva o que você precisa..."
+            onSubmit={() => {
+              const trimmed = searchQuery.trim();
+              if (!trimmed) return;
+              setIsAiSearchOpen(false);
+              router.push(`/buscar?q=${encodeURIComponent(trimmed)}`);
+            }}
+          />
+          <div>
+            <h3 className="mb-3 text-body-sm font-bold text-foreground">Explorar categorias</h3>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {trendItems.map(({ href, category, icon: Icon }) => (
+                <button
+                  key={href}
+                  type="button"
+                  onClick={() => {
+                    setIsAiSearchOpen(false);
+                    router.push(href);
+                  }}
+                  className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-card border border-border bg-surface p-4 text-center text-body-sm font-semibold text-foreground transition hover:border-brand-200 hover:bg-brand-100"
                 >
-                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-slate-100">
-                    {group.imageUrl ? (
-                      <img src={group.imageUrl} alt={group.name} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#EAF4FF] to-[#D9ECFF] text-sm font-bold text-[#00509D]">
-                        {getInitials(group.name)}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-bold text-slate-900">{group.name}</p>
-                    <p className="mt-0.5 text-[11px] font-medium text-slate-500">
-                      {formatCompactMemberCount(group.memberCount)} membros
-                    </p>
-
-                    <div className="mt-2 flex items-center">
-                      <div className="flex items-center">
-                        {previewMembers.map((member, index) => (
-                          <div
-                            key={member.id}
-                            className={`relative h-6 w-6 overflow-hidden rounded-full border-2 border-white bg-slate-100 ${
-                              index === 0 ? '' : '-ml-2'
-                            }`}
-                          >
-                            {member.image ? (
-                              <img
-                                src={member.image}
-                                alt={member.name || 'Membro do grupo'}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center bg-slate-200 text-[9px] font-bold text-slate-600">
-                                {getInitials(member.name || 'Membro')}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-
-                        {missingAvatars > 0 ? (
-                          <div className="-ml-2 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-white bg-[#EAF4FF] px-1 text-[9px] font-bold text-[#00509D]">
-                            +{missingAvatars}
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-brand-500">
+                    <Icon size={19} aria-hidden="true" />
+                  </span>
+                  {category}
+                </button>
+              ))}
+            </div>
           </div>
-        </section>
-      ) : null}
+        </div>
+      </Modal>
+
     </div>
   );
 };
@@ -512,31 +427,24 @@ const ServiceCard: React.FC<{
   onDisabledClick,
   onActivate,
 }) => {
-  const classes = `flex flex-col items-center justify-center gap-2 rounded-2xl border p-4 shadow-sm transition-all ${
+  const classes = `flex flex-col items-center justify-center gap-2 rounded-2xl border p-3 transition-all ${
     disabled
-      ? 'cursor-pointer border-slate-200 bg-white opacity-60'
-      : 'border-slate-200 bg-white hover:border-slate-300 active:scale-95'
+      ? 'cursor-pointer border-slate-200 bg-white opacity-50'
+      : 'border-slate-200 bg-white hover:border-brand-300 active:scale-95'
   }`;
 
   const content = (
     <>
       <div
-        className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+        className={`flex h-11 w-11 items-center justify-center rounded-full ${
           disabled ? 'bg-slate-100 text-slate-400' : 'theme-icon-surface'
         }`}
       >
-        <Icon size={21} strokeWidth={2.2} />
+        <Icon size={20} strokeWidth={2.2} />
       </div>
-      <div className="space-y-1 text-center">
-        <span className={`block text-[11px] font-bold leading-tight ${disabled ? 'text-slate-500' : 'text-[#333]'}`}>
-          {label}
-        </span>
-        {disabled ? (
-          <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">
-            {/* Em breve */}
-          </span>
-        ) : null}
-      </div>
+      <span className={`block text-center text-caption font-bold leading-tight ${disabled ? 'text-slate-400' : 'text-text'}`}>
+        {label}
+      </span>
     </>
   );
 
