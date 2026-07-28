@@ -178,3 +178,17 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+@keyframes landing-float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-0.4deg); }
+  50% { transform: translate3d(0, -9px, 0) rotate(0.4deg); }
+}
+
+@keyframes landing-float-alt {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0.4deg); }
+  50% { transform: translate3d(0, 8px, 0) rotate(-0.4deg); }
+}
+
+@keyframes landing-spin {
+  to { transform: rotate(360deg); }
+}

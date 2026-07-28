@@ -13,12 +13,20 @@ const PUBLIC_ASSET_PREFIXES = [
   '/apple-icon',
   '/manifest.webmanifest',
 ];
-const PUBLIC_AUTH_PATHS = ['/api/auth', '/login', '/access-blocked', '/maintenance', '/styleguide'];
+const PUBLIC_AUTH_PATHS = [
+  '/api/auth',
+  '/login',
+  '/landing',
+  '/access-blocked',
+  '/maintenance',
+  '/styleguide',
+];
 
 const isTruthyEnv = (value?: string | null) =>
   Boolean(value && ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase()));
 
 const isPublicPath = (pathname: string) =>
+  pathname === '/' ||
   PUBLIC_ASSET_PREFIXES.some((prefix) => pathname.startsWith(prefix)) ||
   PUBLIC_AUTH_PATHS.some((prefix) => pathname.startsWith(prefix));
 
