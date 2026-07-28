@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Globe, RefreshCcw, Shield } from 'lucide-react';
-import { Button, Card, Input, Separator } from '@heroui/react';
+import { Button, Card, Input } from '@heroui/react';
 import FieldErrorMessage from '../components/forms/FieldErrorMessage';
 import RegionSelector from '../components/RegionSelector';
 import { Logo } from '../components/Layout';
@@ -357,9 +357,9 @@ const Registration: React.FC<RegistrationProps> = ({
                 ) : null}
 
                 <div className="flex w-full max-w-[360px] items-center gap-3">
-                  <Separator className="flex-1 bg-slate-300/20" />
+                  <div aria-hidden="true" className="h-px flex-1 bg-slate-200/25" />
                   <span className="text-xs font-medium text-slate-400">ou</span>
-                  <Separator className="flex-1 bg-slate-300/20" />
+                  <div aria-hidden="true" className="h-px flex-1 bg-slate-200/25" />
                 </div>
 
                 <Button
@@ -760,11 +760,11 @@ const Registration: React.FC<RegistrationProps> = ({
                 ) : null}
 
                 <div className="flex items-center gap-3">
-                  <Separator className="flex-1 bg-slate-300/20" />
+                  <div aria-hidden="true" className="h-px flex-1 bg-slate-200/25" />
                   <span className="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400">
                     ou
                   </span>
-                  <Separator className="flex-1 bg-slate-300/20" />
+                  <div aria-hidden="true" className="h-px flex-1 bg-slate-200/25" />
                 </div>
 
                 {emailEnabled ? (
