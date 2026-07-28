@@ -4,6 +4,8 @@ import React from 'react';
 import Community from '@/views/Community';
 import GroupsDirectory from '@/views/GroupsDirectory';
 import Home from '@/views/Home';
+import HousingList from '@/views/HousingList';
+import JobList from '@/views/JobList';
 import Profile from '@/views/Profile';
 import SearchResults from '@/views/SearchResults';
 import type { PersonaMode, ProfessionalProfileIdentity, User } from '@/types';
@@ -45,6 +47,10 @@ const UserWorkspace: React.FC<UserWorkspaceProps> = ({
       );
     case 'buscar':
       return <SearchResults />;
+    case 'vagas':
+      return <JobList />;
+    case 'moradia':
+      return <HousingList />;
     case 'profile':
       return (
         <Profile

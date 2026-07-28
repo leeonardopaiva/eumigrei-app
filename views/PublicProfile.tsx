@@ -91,7 +91,7 @@ const formatMembershipDuration = (value: string) => {
   return `Membro ha ${dayDiff} ${dayDiff === 1 ? 'dia' : 'dias'}`;
 };
 
-const PROFILE_GRADIENT_CLASS = 'bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.28),_transparent_30%),linear-gradient(135deg,#28B8C7_0%,#1DA7D5_45%,#0D6EFD_100%)]';
+const PROFILE_GRADIENT_CLASS = 'bg-brand-500';
 
 const getInitials = (name: string) =>
   name
@@ -371,7 +371,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                   {profile.name}
                 </h1>
                 {profile.stats.businessCount > 0 || profile.stats.eventCount > 0 ? (
-                  <BadgeCheck size={28} className="text-[#0D6EFD]" />
+                  <BadgeCheck size={28} className="text-brand-500" />
                 ) : null}
               </div>
 
@@ -404,7 +404,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                 ) : friendStatus === 'signed_out' ? (
                   <Link
                     href="/"
-                    className="inline-flex min-h-12 items-center gap-3 rounded-[22px] bg-[#0D6EFD] px-8 text-base font-bold text-white shadow-lg shadow-[#0D6EFD]/20"
+                    className="inline-flex min-h-12 items-center gap-3 rounded-full bg-brand-500 px-8 text-base font-bold text-white shadow-sm"
                   >
                     <UserPlus size={20} />
                     Entrar para adicionar
@@ -424,7 +424,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                     type="button"
                     onClick={() => void handleFriendAction()}
                     disabled={friendActionLoading}
-                    className="inline-flex min-h-12 items-center gap-3 rounded-[22px] bg-[#0D6EFD] px-8 text-base font-bold text-white shadow-lg shadow-[#0D6EFD]/20 opacity-90"
+                    className="inline-flex min-h-12 items-center gap-3 rounded-full bg-brand-500 px-8 text-base font-bold text-white opacity-90 shadow-sm"
                   >
                     {friendStatus === 'pending_received' ? <UserCheck size={20} /> : <UserPlus size={20} />}
                     {friendActionLoading ? 'Aguarde...' : friendStatus === 'pending_received' ? 'Aceitar conexao' : 'Adicionar'}
@@ -450,12 +450,12 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
                     className={`relative whitespace-nowrap px-4 py-3 text-base font-semibold transition ${
-                      activeTab === tab.id ? 'text-[#0D6EFD]' : 'text-slate-500'
+                      activeTab === tab.id ? 'text-brand-500' : 'text-muted-foreground'
                     }`}
                   >
                     {tab.label}
                     {activeTab === tab.id ? (
-                      <span className="absolute inset-x-3 bottom-0 h-1 rounded-full bg-[#0D6EFD]" />
+                      <span className="absolute inset-x-3 bottom-0 h-1 rounded-full bg-brand-500" />
                     ) : null}
                   </button>
                 ))}
@@ -506,7 +506,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                         {friend.image ? (
                           <img src={friend.image || DEFAULT_AVATAR_URL} alt={friend.name} className="h-14 w-14 rounded-full object-cover" onError={handleAvatarError} />
                         ) : (
-                          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-cyan-50 text-base font-bold text-[#28B8C7]">
+                          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-100 text-base font-bold text-brand-500">
                             {getInitials(friend.name)}
                           </div>
                         )}
@@ -531,7 +531,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                 {isOwnProfile ? (
                   <div className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-50 text-[#28B8C7]">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-md bg-brand-100 text-brand-500">
                         <Plus size={20} />
                       </div>
                       <div>
@@ -602,7 +602,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                             {group.imageUrl ? (
                               <img src={group.imageUrl} alt={group.name} className="h-14 w-14 rounded-2xl object-cover" />
                             ) : (
-                              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-50 text-base font-bold text-[#28B8C7]">
+                              <div className="flex h-14 w-14 items-center justify-center rounded-md bg-brand-100 text-base font-bold text-brand-500">
                                 {getInitials(group.name)}
                               </div>
                             )}
@@ -709,7 +709,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                             className="h-24 w-24 rounded-2xl object-cover"
                           />
                           <div className="min-w-0 flex-1">
-                            <p className="text-lg font-bold text-[#28B8C7]">{business.name}</p>
+                            <p className="text-body-lg font-bold text-foreground">{business.name}</p>
                             <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
                               {business.category}
                             </p>
@@ -742,7 +742,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                             className="h-24 w-24 rounded-2xl object-cover"
                           />
                           <div className="min-w-0 flex-1">
-                            <p className="text-lg font-bold text-[#28B8C7]">{event.title}</p>
+                            <p className="text-body-lg font-bold text-foreground">{event.title}</p>
                             <p className="mt-1 text-sm text-slate-500">{formatEventDate(event.startsAt)}</p>
                             <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
                               {event.venueName}
@@ -775,7 +775,7 @@ const ProfileMetric: React.FC<{ icon: React.ReactNode; value: number; label: str
   label,
 }) => (
   <div className="rounded-[24px] border border-slate-100 bg-slate-50 p-4 text-center">
-    <div className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 text-[#28B8C7]">
+    <div className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-md bg-brand-100 text-brand-500">
       {icon}
     </div>
     <p className="mt-3 text-2xl font-bold text-slate-900">{value}</p>

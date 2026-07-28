@@ -3,8 +3,17 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 const CANONICAL_HOST = 'gringoou.com';
 const REDIRECT_HOSTS = new Set(['emigrei.com', 'www.emigrei.com']);
-const PUBLIC_ASSET_PREFIXES = ['/_next/', '/assets/', '/favicon', '/robots.txt', '/sitemap.xml'];
-const PUBLIC_AUTH_PATHS = ['/api/auth', '/login', '/access-blocked', '/maintenance'];
+const PUBLIC_ASSET_PREFIXES = [
+  '/_next/',
+  '/assets/',
+  '/favicon',
+  '/robots.txt',
+  '/sitemap.xml',
+  '/icon',
+  '/apple-icon',
+  '/manifest.webmanifest',
+];
+const PUBLIC_AUTH_PATHS = ['/api/auth', '/login', '/access-blocked', '/maintenance', '/styleguide'];
 
 const isTruthyEnv = (value?: string | null) =>
   Boolean(value && ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase()));

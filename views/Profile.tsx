@@ -14,8 +14,8 @@ import PersonaModeDropdown from '../components/profile/PersonaModeDropdown';
 import ProfessionalModePanel from '../components/profile/ProfessionalModePanel';
 import { PersonaMode, ProfessionalProfileSummary, ReferralSummary, User } from '../types';
 
-const PROFILE_GRADIENT_CLASS = 'bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.35),_transparent_32%),linear-gradient(135deg,#28B8C7_0%,#1DA7D5_45%,#0D6EFD_100%)]';
-const PROFESSIONAL_PROFILE_GRADIENT_CLASS = 'bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.2),_transparent_28%),linear-gradient(135deg,#0F4C81_0%,#145DA0_48%,#0D6EFD_100%)]';
+const PROFILE_GRADIENT_CLASS = 'bg-brand-500';
+const PROFESSIONAL_PROFILE_GRADIENT_CLASS = 'bg-foreground';
 
 const getInitials = (name: string) =>
   name
@@ -399,12 +399,12 @@ const Profile: React.FC<{
     ? PROFESSIONAL_PROFILE_GRADIENT_CLASS
     : PROFILE_GRADIENT_CLASS;
   const primaryButtonClass = isProfessionalView
-    ? 'bg-[#0F4C81] shadow-[#0F4C81]/20'
-    : 'bg-[#28B8C7] shadow-[#28B8C7]/20';
+    ? 'bg-foreground'
+    : 'bg-brand-500';
   const secondaryButtonClass = isProfessionalView
-    ? 'border-blue-100 bg-blue-50/60 text-[#0F4C81]'
-    : 'border-cyan-100 bg-cyan-50/70 text-[#28B8C7]';
-  const sectionAccentClass = isProfessionalView ? 'text-[#0F4C81]' : 'text-[#28B8C7]';
+    ? 'border-border bg-bg text-foreground'
+    : 'border-brand-100 bg-brand-100 text-brand-500';
+  const sectionAccentClass = isProfessionalView ? 'text-foreground' : 'text-brand-500';
 
   if (loading) {
     return (
@@ -445,7 +445,7 @@ const Profile: React.FC<{
                 </div>
               )}
               {!isProfessionalView ? (
-                <button type="button" onClick={() => { setEditing((c) => ({ ...c, avatar: !c.avatar })); setAvatarDraft(profile.image); }} className="absolute bottom-0 right-0 rounded-full border-2 border-white bg-white p-2 text-[#28B8C7]">
+                <button type="button" onClick={() => { setEditing((c) => ({ ...c, avatar: !c.avatar })); setAvatarDraft(profile.image); }} className="absolute bottom-0 right-0 rounded-full border-2 border-white bg-white p-2 text-brand-500">
                   <PencilLine size={14} />
                 </button>
               ) : null}
@@ -461,10 +461,10 @@ const Profile: React.FC<{
                 />
               ) : null}
             </div>
-            <h1 className={`mt-4 text-3xl font-bold ${isProfessionalView ? 'text-[#0F4C81]' : 'text-slate-900'}`}>
+            <h1 className="mt-4 text-h2 font-bold text-foreground">
               {activeHeaderName}
             </h1>
-            <p className={`mt-2 text-sm font-semibold ${isProfessionalView ? 'text-[#0F4C81]/70' : 'text-slate-500'}`}>
+            <p className="mt-2 text-body-sm font-semibold text-muted-foreground">
               {activeHeaderHandle}
             </p>
             <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600">
@@ -511,7 +511,7 @@ const Profile: React.FC<{
               <Input value={accountDraft.email} onChange={(value) => setAccountDraft((c) => ({ ...c, email: value }))} placeholder="Email" icon={<Mail size={16} />} type="email" disabled />
               <Input value={accountDraft.phone} onChange={(value) => setAccountDraft((c) => ({ ...c, phone: formatLoosePhoneInput(value) }))} placeholder="Telefone" icon={<Phone size={16} />} type="tel" />
             </div>
-            <textarea rows={4} value={accountDraft.bio} onChange={(event) => setAccountDraft((c) => ({ ...c, bio: event.target.value }))} placeholder="Escreva uma frase curta sobre voce" className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200" />
+            <textarea rows={4} value={accountDraft.bio} onChange={(event) => setAccountDraft((c) => ({ ...c, bio: event.target.value }))} placeholder="Escreva uma frase curta sobre voce" className="w-full rounded-md border border-input bg-surface px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-200" />
             <ActionRow>
               <PrimaryButton className={primaryButtonClass} label={savingKey === 'account' ? 'Salvando...' : 'Salvar dados'} onClick={() => void saveProfile({ name: accountDraft.name, username: accountDraft.username, phone: accountDraft.phone, bio: accountDraft.bio }, 'Seus dados foram atualizados.', 'account')} disabled={savingKey === 'account'} />
               <SecondaryButton className={secondaryButtonClass} label="Cancelar" onClick={() => setEditing((c) => ({ ...c, account: false }))} disabled={savingKey === 'account'} />
@@ -533,7 +533,7 @@ const Profile: React.FC<{
         {editing.interests ? (
           <EditorCard>
             <div className="flex gap-2">
-              <input type="text" value={interestInput} onChange={(event) => setInterestInput(event.target.value)} placeholder="Adicionar interesse" className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200" />
+              <input type="text" value={interestInput} onChange={(event) => setInterestInput(event.target.value)} placeholder="Adicionar interesse" className="flex-1 rounded-full border border-input bg-surface px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-200" />
               <button type="button" onClick={addInterest} className={`inline-flex min-h-11 items-center gap-2 rounded-2xl px-4 text-sm font-bold text-white shadow-md ${primaryButtonClass}`}>
                 <Plus size={16} />
                 Adicionar
@@ -621,7 +621,7 @@ const Profile: React.FC<{
   );
 };
 
-const Section: React.FC<{ title: string; description: string; editing: boolean; onToggle: () => void; children: React.ReactNode; hideAction?: boolean; accentClass?: string; secondaryButtonClass?: string; }> = ({ title, description, editing, onToggle, children, hideAction = false, accentClass = 'text-[#28B8C7]', secondaryButtonClass = 'border-cyan-100 bg-cyan-50/70 text-[#28B8C7]' }) => (
+const Section: React.FC<{ title: string; description: string; editing: boolean; onToggle: () => void; children: React.ReactNode; hideAction?: boolean; accentClass?: string; secondaryButtonClass?: string; }> = ({ title, description, editing, onToggle, children, hideAction = false, accentClass = 'text-brand-500', secondaryButtonClass = 'border-brand-100 bg-brand-100 text-brand-500' }) => (
   <section className="rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
     <div className="flex items-start justify-between gap-3">
       <div>
@@ -650,7 +650,7 @@ const ActionRow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 const Input: React.FC<{ value: string; onChange: (value: string) => void; placeholder: string; icon: React.ReactNode; type?: string; disabled?: boolean; }> = ({ value, onChange, placeholder, icon, type = 'text', disabled = false }) => (
   <label className="relative block">
     <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">{icon}</span>
-    <input type={type} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} disabled={disabled} className="w-full rounded-2xl border border-slate-200 bg-white px-11 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500" />
+    <input type={type} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} disabled={disabled} className="w-full rounded-full border border-input bg-surface px-11 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-200 disabled:cursor-not-allowed disabled:bg-bg disabled:text-muted-foreground" />
   </label>
 );
 
@@ -664,13 +664,13 @@ const Meta: React.FC<{ label: string; value: string; icon: React.ReactNode }> = 
   </div>
 );
 
-const PrimaryButton: React.FC<{ label: string; onClick: () => void; disabled?: boolean; fullWidth?: boolean; className?: string }> = ({ label, onClick, disabled = false, fullWidth = false, className = 'bg-[#28B8C7] shadow-[#28B8C7]/20' }) => (
+const PrimaryButton: React.FC<{ label: string; onClick: () => void; disabled?: boolean; fullWidth?: boolean; className?: string }> = ({ label, onClick, disabled = false, fullWidth = false, className = 'bg-brand-500' }) => (
   <button type="button" onClick={onClick} disabled={disabled} className={`inline-flex min-h-11 items-center justify-center rounded-2xl px-4 text-sm font-bold text-white shadow-md disabled:opacity-60 ${className} ${fullWidth ? 'w-full' : 'flex-1'}`}>
     {label}
   </button>
 );
 
-const SecondaryButton: React.FC<{ label: string; onClick: () => void; disabled?: boolean; className?: string }> = ({ label, onClick, disabled = false, className = 'border-cyan-100 bg-cyan-50/70 text-[#28B8C7]' }) => (
+const SecondaryButton: React.FC<{ label: string; onClick: () => void; disabled?: boolean; className?: string }> = ({ label, onClick, disabled = false, className = 'border-brand-100 bg-brand-100 text-brand-500' }) => (
   <button type="button" onClick={onClick} disabled={disabled} className={`inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl border px-4 text-sm font-bold disabled:opacity-60 ${className}`}>
     {label}
   </button>

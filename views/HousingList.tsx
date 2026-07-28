@@ -1,61 +1,57 @@
+'use client';
 
 import React, { useState } from 'react';
-import { Search, Star, MapPin } from 'lucide-react';
+import { MapPin, Star } from 'lucide-react';
+import UnifiedSearchInput from '../components/search/UnifiedSearchInput';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Tabs } from '../components/ui/Tabs';
+import { STATIC_HOUSING } from '../lib/static-catalog';
+
+const housingFilters = [
+  { label: 'Apartamento', value: 'apartamento' },
+  { label: 'Casa', value: 'casa' },
+  { label: 'Quarto', value: 'quarto' },
+];
 
 const HousingList: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('Apartamento');
-
-  const listings = [
-    { id: '1', title: 'Apartamento 2 Quartos', rating: 4, location: 'Everett, MA', price: '$2.400/mês', img: 'https://picsum.photos/seed/apt1/300' },
-    { id: '2', title: 'Casa 3 Quartos, 2 Banheiros', rating: 5, location: 'Malden, MA', price: '$3.500/mês', img: 'https://picsum.photos/seed/house1/300' },
-    { id: '3', title: 'Quarto para Alugar', rating: 3, location: 'Brighton, MA', price: '$900/mês', img: 'https://picsum.photos/seed/room1/300' },
-    { id: '4', title: 'Estúdio Completo', rating: 4, location: 'Revere, MA', price: '$1.750/mês', img: 'https://picsum.photos/seed/studio1/300' },
-  ];
+  const [activeFilter, setActiveFilter] = useState('apartamento');
+  const [search, setSearch] = useState('');
 
   return (
-    <div className="px-5 space-y-6 animate-in fade-in duration-500 pb-20">
-      <div className="mt-4">
-        <h1 className="text-2xl font-bold text-cyan-900 mb-4">Moradia</h1>
-        <div className="relative">
-          <input type="text" placeholder="Buscar imóveis brasileiros..." className="w-full bg-slate-100/80 rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-0" />
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-        </div>
+    <div className="animate-in space-y-5 px-5 pb-24 fade-in duration-500">
+      <header className="mt-4 space-y-1">
+        <h1 className="text-h2 font-bold text-foreground">Moradia</h1>
+        <p className="text-body-sm text-muted-foreground">Encontre seu próximo lar na comunidade.</p>
+      </header>
+
+      <UnifiedSearchInput value={search} onChange={setSearch} staticPlaceholder="Buscar imóveis..." />
+      <div className="scrollbar-hide overflow-x-auto">
+        <Tabs items={housingFilters} value={activeFilter} onChange={setActiveFilter} />
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {['Apartamento', 'Casa', 'Quarto', 'Estúdio'].map(tab => (
-          <button 
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-6 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap shadow-sm border ${activeTab === tab ? 'bg-cyan-600 text-white border-cyan-700' : 'bg-white text-cyan-900 border-slate-100'}`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      <div className="space-y-4">
-        <h2 className="font-bold text-cyan-900">Imóveis Disponíveis</h2>
-        {listings.map(item => (
-          <div key={item.id} className="bg-white rounded-3xl p-4 shadow-sm border border-slate-50 flex gap-4">
-            <img src={item.img} className="w-24 h-24 rounded-2xl object-cover" alt={item.title} />
-            <div className="flex-1 flex flex-col justify-between">
+      <section className="space-y-3" aria-labelledby="housing-title">
+        <h2 id="housing-title" className="text-body-sm font-bold text-foreground">Imóveis disponíveis</h2>
+        {STATIC_HOUSING.map((item) => (
+          <Card key={item.id} padded={false} className="flex min-h-36 border border-border shadow-xs">
+            <img src={item.img} className="w-32 shrink-0 object-cover sm:w-40" alt={item.title} />
+            <div className="flex min-w-0 flex-1 flex-col justify-between p-4">
               <div>
-                <h4 className="font-bold text-cyan-900 text-sm">{item.title}</h4>
-                <div className="flex items-center gap-1 text-yellow-400 text-[10px] mt-0.5">
-                  {[...Array(5)].map((_, i) => <Star key={i} size={10} fill={i < item.rating ? 'currentColor' : 'none'} />)}
-                  <span className="text-slate-400 font-medium ml-1">4 horas</span>
+                <h3 className="text-body-sm font-bold leading-snug text-foreground">{item.title}</h3>
+                <div className="mt-1 flex items-center gap-1 text-amber-500" aria-label={`Avaliação ${item.rating} de 5`}>
+                  <Star size={13} fill="currentColor" aria-hidden="true" />
+                  <span className="text-caption font-semibold">{item.rating},0</span>
                 </div>
-                <p className="text-slate-500 text-[10px] mt-1">{item.location}</p>
-                <p className="text-cyan-900 font-bold text-xs mt-1">{item.price}</p>
+                <p className="mt-1 flex items-center gap-1 text-caption text-muted-foreground">
+                  <MapPin size={13} aria-hidden="true" /> {item.location}
+                </p>
+                <p className="mt-1 text-body-sm font-bold text-foreground">{item.price}</p>
               </div>
-              <button className="self-end bg-cyan-600 text-white px-4 py-1.5 rounded-xl text-[10px] font-bold shadow-sm">
-                Ver perfil
-              </button>
+              <Button size="xs" className="mt-3 self-end">Ver detalhes</Button>
             </div>
-          </div>
+          </Card>
         ))}
-      </div>
+      </section>
     </div>
   );
 };

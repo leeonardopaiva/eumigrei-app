@@ -1,3 +1,77 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Gringoou design system — cores (fonte oficial: gringoou-design-tokens.md) */
+  --color-text: #0f2b3d;
+  --color-bg: #f9f9f9;
+  --color-secondary: #fcf690;
+  --color-success-tag: #cfffa1;
+  --color-success-action: #8fe24f;
+  --color-surface: #ffffff;
+  --color-foreground: #0f2b3d;
+  --color-muted-foreground: #4a7a96;
+  --color-border: #f3f4f6;
+  --color-input: #dbe6ec;
+  --color-ring: #0086ff;
+  --color-overlay: rgb(15 43 61 / 42%);
+
+  --color-brand-100: #e6f3ff;
+  --color-brand-200: #b3dbff;
+  --color-brand-300: #80c2ff;
+  --color-brand-400: #4daaff;
+  --color-brand-500: #0086ff;
+  --color-brand-600: #006ed4;
+  --color-brand-700: #0057a8;
+  --color-brand-800: #003f7a;
+  --color-brand-900: #00284d;
+  --color-brand: var(--color-brand-500);
+
+  /* Gringoou design system — tipografia (fonte Sora, ver app/layout.tsx) */
+  --text-display-xl: 48px;
+  --text-display-xl--line-height: 1.1;
+  --text-h1: 36px;
+  --text-h1--line-height: 1.2;
+  --text-h2: 28px;
+  --text-h2--line-height: 1.25;
+  --text-h3: 22px;
+  --text-h3--line-height: 1.3;
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 1.4;
+  --text-body: 16px;
+  --text-body--line-height: 1.5;
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 1.5;
+  --text-caption: 12px;
+  --text-caption--line-height: 1.4;
+
+  /* Spacing: escala base-4px do design system já é coberta pela escala
+     padrão do Tailwind (p-1=4px, p-2=8px, p-3=12px, p-4=16px, p-6=24px,
+     p-8=32px, p-12=48px, p-16=64px) — não sobrescrever --spacing-N aqui,
+     isso quebraria p-5, p-6, p-7, p-8, gap-N e m-N usados em todo o app existente. */
+
+  /* Gringoou design system — radius (conceito circular). --radius-sm/md
+     (12/16px) não têm nenhum uso hoje (`grep` confirmou zero ocorrências
+     de rounded-sm/rounded-md no app), então sobrescrever é seguro. Já
+     --radius-xl NÃO é sobrescrito de propósito: `rounded-xl` já é usado
+     em 14+ arquivos fora deste trabalho esperando o valor padrão do
+     Tailwind (12px) — mudar para 32px quebraria visualmente tudo isso
+     sem revisão. Para o "32px de bottom sheet/tela cheia" do doc oficial,
+     use `--radius-sheet` (nome novo, sem colisão) ou `rounded-[32px]`.
+     --radius-card cobre o "24px de cards/modais" do doc oficial. */
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-card: 24px;
+  --radius-sheet: 32px;
+  --radius-full: 9999px;
+
+  /* Gringoou design system — shadows */
+  --shadow-xs: 0 1px 2px rgba(15, 43, 61, 0.05);
+  --shadow-sm: 0 4px 12px rgba(15, 43, 61, 0.06);
+  --shadow-md: 0 8px 24px rgba(15, 43, 61, 0.08);
+  --shadow-lg: 0 16px 40px rgba(15, 43, 61, 0.12);
+  --shadow-xl: 0 24px 48px rgba(15, 43, 61, 0.16);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -10,34 +84,36 @@ body {
 
 body {
   -webkit-tap-highlight-color: transparent;
+  background: var(--color-bg);
+  color: var(--color-foreground);
 }
 
 .app-shell {
-  --accent: #00509d;
-  --accent-strong: #0869d6;
-  --accent-soft: #eaf4ff;
-  --accent-soft-border: #cfe4ff;
-  --accent-ring: rgba(8, 105, 214, 0.18);
-  --accent-shadow: rgba(8, 105, 214, 0.22);
-  --accent-text-soft: rgba(8, 105, 214, 0.72);
-  --accent-gradient-start: rgba(8, 105, 214, 0.12);
-  --accent-gradient-end: rgba(0, 80, 157, 0.08);
+  --accent: var(--color-brand-400);
+  --accent-strong: var(--color-brand-500);
+  --accent-soft: #e6f3ff;
+  --accent-soft-border: #b3dbff;
+  --accent-ring: rgba(0, 134, 255, 0.18);
+  --accent-shadow: rgba(0, 134, 255, 0.22);
+  --accent-text-soft: rgba(0, 134, 255, 0.72);
+  --accent-gradient-start: rgba(0, 134, 255, 0.12);
+  --accent-gradient-end: rgba(77, 170, 255, 0.08);
 }
 
 .app-shell[data-persona='professional'] {
-  --accent: #0f2b3d;
-  --accent-strong: #00509d;
+  --accent: var(--color-text);
+  --accent-strong: var(--color-brand-900);
   --accent-soft: #eff6ff;
   --accent-soft-border: #bfdbfe;
-  --accent-ring: rgba(0, 80, 157, 0.18);
-  --accent-shadow: rgba(0, 80, 157, 0.22);
-  --accent-text-soft: rgba(0, 80, 157, 0.72);
-  --accent-gradient-start: rgba(0, 80, 157, 0.12);
+  --accent-ring: rgba(0, 40, 77, 0.18);
+  --accent-shadow: rgba(0, 40, 77, 0.22);
+  --accent-text-soft: rgba(0, 40, 77, 0.72);
+  --accent-gradient-start: rgba(0, 40, 77, 0.12);
   --accent-gradient-end: rgba(15, 43, 61, 0.08);
 }
 
 .bg-texture {
-  background-color: #f9f9f9;
+  background-color: var(--color-bg);
   background-image: none;
 }
 

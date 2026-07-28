@@ -7,21 +7,29 @@ import {
   Briefcase,
   Calendar,
   Home as HomeIcon,
+  House,
   Menu,
+  MessageCircle,
   MessageSquarePlus,
   Newspaper,
+  Plus,
+  Search as SearchIcon,
   ShieldCheck,
   ShoppingBag,
   Store,
   User as UserIcon,
   Users,
+  X,
 } from 'lucide-react';
 import SuggestionButton from './feedback/SuggestionButton';
 import FriendRequestBell from './feedback/FriendRequestBell';
 import PersonaModeDropdown from './profile/PersonaModeDropdown';
 import { useToast } from './feedback/ToastProvider';
+import { Button } from './ui/Button';
+import { Avatar } from './ui/Avatar';
 import { trackAnalyticsEvent } from '../lib/analytics';
-import { handleAvatarError } from '../lib/avatar';
+import { GringoouLogo } from './icons/GringoouLogo';
+import { SidebarMenu, SidebarMenuItem } from './navigation/SidebarMenu';
 import { PersonaMode, ProfessionalProfileIdentity, User, UserRole } from '../types';
 
 interface LogoProps {
@@ -31,22 +39,16 @@ interface LogoProps {
 }
 
 export const Logo: React.FC<LogoProps> = ({ size = 'md', className = '', professional = false }) => {
-  const sizeClass = {
-    sm: 'h-7',
-    md: 'h-9',
-    lg: 'h-11',
+  const sizePx = {
+    sm: 28,
+    md: 38,
+    lg: 48,
   }[size];
 
   return (
     <Link href="/" aria-label="Home">
-      <span className={`inline-flex items-center ${className}`}>
-        <img
-          src="/assets/logo26.png"
-          alt="Gringoou"
-          className={`${sizeClass} w-auto select-none object-contain transition-all duration-300 ${
-            professional ? 'opacity-95' : ''
-          }`}
-        />
+      <span className={`inline-flex items-center transition-opacity duration-300 ${professional ? 'opacity-95' : ''} ${className}`}>
+        <GringoouLogo size={sizePx} />
         <span className="sr-only">Gringoou</span>
       </span>
     </Link>
@@ -76,7 +78,8 @@ const navigationItems: NavigationItem[] = [
   { href: '/negocios', label: 'Negócios', icon: <Store size={18} /> },
   { href: '/community', label: 'Comunidade', icon: <Users size={18} /> },
   { href: '/eventos', label: 'Eventos', icon: <Calendar size={18} /> },
-  { href: '/vagas', label: 'Vagas', icon: <Briefcase size={18} />, disabled: true, badge: '' },
+  { href: '/vagas', label: 'Vagas', icon: <Briefcase size={18} /> },
+  { href: '/moradia', label: 'Moradia', icon: <House size={18} /> },
   {
     href: '/marketplace',
     label: 'Marketplace',
@@ -148,25 +151,14 @@ const SidebarContent: React.FC<{
   };
 
   return (
-    <div className="space-y-4 p-5 pb-20 pt-8 lg:flex lg:h-full lg:flex-col lg:justify-between lg:p-7">
+    <div className="space-y-4 p-5 pb-20 pt-7 md:flex md:h-full md:flex-col md:justify-between md:px-6 md:py-7">
       <div className="space-y-4">
-        <div className="mb-6 flex flex-col gap-5">
-          <Logo size="md" professional={isProfessionalTheme} />
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-sm">
-            <Link href={publicProfileHref} onClick={onItemClick} className="relative transition hover:opacity-90">
-              <img
-                src={activeAvatar}
-                className="h-11 w-11 rounded-full border border-slate-200 object-cover shadow-sm"
-                alt={activeName}
-                onError={handleAvatarError}
-              />
-            </Link>
+        <div className="mb-5 flex flex-col gap-6">
+          <Logo size="lg" professional={isProfessionalTheme} />
+          <div className="px-1">
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                Bem-vindo
-              </p>
               <div className="flex items-center gap-1">
-                <h2 className={`truncate text-base font-bold ${accentColorClass}`}>{activeName}</h2>
+                <h2 className={`truncate text-body-sm font-semibold ${accentColorClass}`}>{activeName}</h2>
                 {canUseProfessionalMode && onPersonaModeChange ? (
                   <PersonaModeDropdown
                     value={personaMode}
@@ -174,7 +166,7 @@ const SidebarContent: React.FC<{
                     personalSubtitle={user.username ? `@${user.username}` : 'Membro da comunidade'}
                     professionalSubtitle={professionalIdentity?.name || 'Cadastre um negocio'}
                     professionalDisabled={!professionalIdentity}
-                    align="right"
+                    align="left"
                     trigger="chevron"
                     menuClassName="z-30"
                   />
@@ -187,81 +179,73 @@ const SidebarContent: React.FC<{
           </div>
         </div>
 
-        <div className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
+        <SidebarMenu>
           {navigationItems.map((item) => (
-            <MenuListItem
+            <SidebarMenuItem
               key={item.href}
-              href={item.href}
               label={item.label}
               icon={item.icon}
               active={isActive(item.href)}
               disabled={item.disabled}
               badge={item.badge}
-              onClick={() => onNavigate(item.href)}
-              onDisabledClick={() => handleDisabledNavigation(item)}
+              onClick={item.disabled ? () => handleDisabledNavigation(item) : () => onNavigate(item.href)}
             />
           ))}
           {user.role === UserRole.ADMIN ? (
-            <MenuListItem
-              href="/admin"
+            <SidebarMenuItem
               label="Admin"
               icon={<ShieldCheck size={18} />}
               active={isActive('/admin')}
               onClick={() => onNavigate('/admin')}
             />
           ) : null}
-          <MenuListItem
-            href="/profile"
+          <SidebarMenuItem
             label={isProfessionalTheme ? 'Meu negocio' : 'Meu perfil'}
             icon={<UserIcon size={18} />}
             active={isActive('/profile')}
             onClick={() => onNavigate('/profile')}
           />
-        </div>
+        </SidebarMenu>
       </div>
 
       <div className="space-y-2">
-        <button
-          type="button"
-          onClick={() => onNavigate('/negocios?create=1')}
-          className="inline-flex w-full items-center justify-center rounded-xl border border-[#00509D]/15 bg-white px-4 py-3 text-sm font-bold text-[#00509D] shadow-sm transition hover:bg-[#F2F7FF]"
-        >
+        <Button variant="secondary" fullWidth onClick={() => onNavigate('/negocios?create=1')}>
           Cadastrar meu negocio
-        </button>
+        </Button>
         <button
           type="button"
           onClick={() => onNavigate('/eventos?create=1')}
-          className="inline-flex w-full items-center justify-center rounded-xl border border-[#F97316]/15 bg-white px-4 py-3 text-sm font-bold text-[#C45A00] shadow-sm transition hover:bg-[#FFF6ED]"
+          className="inline-flex h-11 w-full items-center justify-center rounded-full bg-secondary px-5 text-sm font-semibold text-foreground transition hover:brightness-95"
         >
           Cadastrar meu evento
         </button>
       </div>
 
       {onSignOut ? (
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          fullWidth
           onClick={() => {
             onItemClick?.();
             onSignOut();
           }}
-          className="theme-bg theme-shadow w-full rounded-xl px-4 py-3 text-sm font-bold"
         >
           Sair
-        </button>
+        </Button>
       ) : null}
 
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        fullWidth
+        className="mt-3 border-2 border-slate-200 text-slate-700"
+        iconLeft={<MessageSquarePlus size={16} />}
         onClick={() => {
           onItemClick?.();
           window.dispatchEvent(new CustomEvent('gringoou:open-suggestion-modal'));
-          window.dispatchEvent(new CustomEvent('emigrei:open-suggestion-modal'));
         }}
-        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
       >
-        <MessageSquarePlus size={16} />
         Enviar sugestao
-      </button>
+      </Button>
     </div>
   );
 };
@@ -278,9 +262,9 @@ const Layout: React.FC<LayoutWithUserProps> = ({
   const pathname = usePathname() || '/';
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
   const isProfessionalTheme = canUseProfessionalMode && personaMode === 'professional';
   const accentColorClass = 'theme-text';
-  const accentSolidClass = 'theme-bg';
   const panelClass = 'border-slate-200';
   const publicProfileHref =
     isProfessionalTheme && professionalIdentity
@@ -290,6 +274,9 @@ const Layout: React.FC<LayoutWithUserProps> = ({
         : user.username
           ? `/perfil/${encodeURIComponent(user.username)}`
           : '/profile';
+  const activeName = isProfessionalTheme && professionalIdentity ? professionalIdentity.name : user.name;
+  const activeAvatar =
+    isProfessionalTheme && professionalIdentity?.imageUrl ? professionalIdentity.imageUrl : user.avatar;
 
   const isActive = (path: string) =>
     path === '/' ? pathname === path : pathname === path || pathname.startsWith(`${path}/`);
@@ -300,17 +287,17 @@ const Layout: React.FC<LayoutWithUserProps> = ({
   };
 
   return (
-    <div className="app-shell min-h-screen bg-[#f9f9f9]" data-persona={isProfessionalTheme ? 'professional' : 'personal'}>
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-[#f9f9f9] font-sans shadow-xl lg:max-w-[1440px] lg:bg-transparent lg:shadow-none">
+    <div className="app-shell min-h-screen bg-bg" data-persona={isProfessionalTheme ? 'professional' : 'personal'}>
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-bg font-sans md:max-w-none md:bg-transparent">
         {isMenuOpen ? (
           <div
-            className="fixed inset-0 z-50 animate-in bg-black/40 backdrop-blur-sm fade-in duration-300"
+            className="fixed inset-0 z-50 animate-in bg-overlay fade-in duration-300 md:hidden"
             onClick={() => setIsMenuOpen(false)}
           />
         ) : null}
 
         <div
-          className={`fixed inset-y-0 left-0 z-[60] w-[85%] max-w-[380px] overflow-y-auto border-r border-slate-200 bg-[#f9f9f9] shadow-xl transition-transform duration-300 ease-out ${
+          className={`fixed inset-y-0 left-0 z-[60] w-[85%] max-w-[380px] overflow-y-auto border-r border-border bg-bg transition-transform duration-300 ease-out md:w-72 md:translate-x-0 md:overflow-visible md:shadow-none ${
             isMenuOpen ? 'translate-x-0' : '-translate-x-full'
           } ${panelClass}`}
         >
@@ -329,9 +316,9 @@ const Layout: React.FC<LayoutWithUserProps> = ({
           />
         </div>
 
-        <div className="relative flex min-h-screen flex-1 flex-col">
-          <header className="sticky top-0 z-40 flex items-center justify-between bg-[#f9f9f9] px-5 pb-2 pt-6 lg:border-b lg:border-slate-200 lg:px-8 lg:py-5">
-            <div className="flex items-center gap-4">
+        <div className="relative flex min-h-screen flex-1 flex-col md:pl-72">
+          <header className="sticky top-0 z-40 flex items-center justify-between bg-bg px-5 pb-2 pt-6 md:justify-end md:border-b md:border-border md:px-8 md:py-4 xl:px-10">
+            <div className="flex items-center gap-4 md:hidden">
               <button
                 type="button"
                 onClick={() => setIsMenuOpen(true)}
@@ -339,26 +326,88 @@ const Layout: React.FC<LayoutWithUserProps> = ({
               >
                 <Menu size={28} />
               </button>
-              <Logo size="sm" professional={isProfessionalTheme} />
+              <Logo size="md" professional={isProfessionalTheme} />
             </div>
 
-            <FriendRequestBell />
+            <div className="flex h-10 items-center gap-2">
+              <FriendRequestBell />
+              <Link href={publicProfileHref} aria-label="Meu perfil" className="shrink-0">
+                <Avatar src={activeAvatar} name={activeName} size="md" />
+              </Link>
+            </div>
           </header>
 
           <main className="scrollbar-hide flex-1 overflow-y-auto">
-            <div className="mx-auto w-full max-w-7xl px-0 lg:px-8">{children}</div>
+            <div className="w-full px-0 md:px-6 lg:px-8 xl:px-10 2xl:px-12">{children}</div>
           </main>
 
           <SuggestionButton />
 
-          <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-6 lg:hidden">
-            <nav className={`flex w-full max-w-[360px] items-center justify-between rounded-full border border-white/10 px-2 py-2 shadow-xl ${accentSolidClass}`}>
-              <NavItem href="/" icon={<HomeIcon size={20} />} active={isActive('/')} accentColorClass={accentColorClass} onNavigate={handleNavigate} />
-              <NavItem href="/negocios" icon={<Store size={20} />} active={isActive('/negocios')} accentColorClass={accentColorClass} onNavigate={handleNavigate} />
-              <NavItem href="/community" icon={<Users size={20} />} active={isActive('/community')} accentColorClass={accentColorClass} onNavigate={handleNavigate} />
-              <NavItem href="/eventos" icon={<Calendar size={20} />} active={isActive('/eventos')} accentColorClass={accentColorClass} onNavigate={handleNavigate} />
-              <NavItem href={publicProfileHref} icon={<UserIcon size={20} />} active={isActive('/profile') || isActive('/perfil')} accentColorClass={accentColorClass} onNavigate={handleNavigate} />
-            </nav>
+          {isQuickMenuOpen ? (
+            <div className="fixed inset-0 z-[55] md:hidden" onClick={() => setIsQuickMenuOpen(false)} />
+          ) : null}
+
+          <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-6 md:hidden">
+            <div className="relative flex w-full max-w-[360px] justify-center">
+              {isQuickMenuOpen ? (
+                <div className="absolute bottom-[72px] flex w-full flex-col items-stretch gap-2 rounded-3xl bg-white p-3 shadow-xl">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setIsQuickMenuOpen(false);
+                      handleNavigate('/negocios?create=1');
+                    }}
+                  >
+                    Cadastrar meu negocio
+                  </Button>
+                  <Button
+                    variant="yellow"
+                    size="sm"
+                    onClick={() => {
+                      setIsQuickMenuOpen(false);
+                      handleNavigate('/eventos?create=1');
+                    }}
+                  >
+                    Cadastrar meu evento
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="border-2 border-slate-200"
+                    iconLeft={<MessageSquarePlus size={16} />}
+                    onClick={() => {
+                      setIsQuickMenuOpen(false);
+                      window.dispatchEvent(new CustomEvent('gringoou:open-suggestion-modal'));
+                    }}
+                  >
+                    Enviar sugestao
+                  </Button>
+                </div>
+              ) : null}
+
+              <nav className="flex w-full items-center justify-between rounded-full bg-white px-2 py-2 shadow-xl">
+                <NavItem label="Home" icon={<HomeIcon size={20} />} active={isActive('/')} onNavigate={() => handleNavigate('/')} />
+                <NavItem label="Buscar" icon={<SearchIcon size={20} />} active={isActive('/buscar')} onNavigate={() => handleNavigate('/buscar')} />
+
+                <button
+                  type="button"
+                  onClick={() => setIsQuickMenuOpen((value) => !value)}
+                  aria-label={isQuickMenuOpen ? 'Fechar menu de criacao' : 'Abrir menu de criacao'}
+                  className="-mt-9 flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white shadow-lg ring-4 ring-white transition-transform hover:brightness-105 active:scale-95"
+                >
+                  {isQuickMenuOpen ? <X size={22} /> : <Plus size={24} />}
+                </button>
+
+                <NavItem label="Comunidade" icon={<MessageCircle size={20} />} active={isActive('/community')} onNavigate={() => handleNavigate('/community')} />
+                <NavItem
+                  label="Perfil"
+                  icon={<Avatar src={activeAvatar} name={activeName} size="xs" />}
+                  active={isActive('/profile') || isActive('/perfil')}
+                  onNavigate={() => handleNavigate(publicProfileHref)}
+                />
+              </nav>
+            </div>
           </div>
         </div>
       </div>
@@ -366,74 +415,23 @@ const Layout: React.FC<LayoutWithUserProps> = ({
   );
 };
 
-const MenuListItem: React.FC<{
-  href: string;
+const NavItem: React.FC<{
   label: string;
   icon: React.ReactNode;
-  active?: boolean;
-  disabled?: boolean;
-  badge?: string;
-  onClick?: () => void;
-  onDisabledClick?: () => void;
-}> = ({ href, label, icon, active = false, disabled = false, badge, onClick, onDisabledClick }) => {
-  const classes = `flex items-center gap-3 px-4 py-3 transition-colors first:rounded-t-xl last:rounded-b-xl ${
-    disabled
-      ? 'cursor-pointer opacity-60 hover:bg-white/30'
-      : `hover:bg-white/50 ${active ? 'bg-white/40' : ''}`
-  }`;
-
-  const content = (
-    <>
-      <div className={disabled ? 'text-slate-400' : 'theme-text'}>{icon}</div>
-      <span className={`text-sm font-bold ${disabled ? 'text-slate-400' : 'text-slate-700'}`}>
-        {label}
-      </span>
-      {badge ? (
-        <span className="ml-auto rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
-          {badge}
-        </span>
-      ) : null}
-    </>
-  );
-
-  if (disabled) {
-    return (
-      <button type="button" aria-disabled="true" onClick={onDisabledClick} className={classes}>
-        {content}
-      </button>
-    );
-  }
-
-  return (
-    <button type="button" onClick={onClick} className={classes}>
-      {content}
-    </button>
-  );
-};
-
-const NavItem: React.FC<{
-  href: string;
-  icon: React.ReactNode;
   active: boolean;
-  accentColorClass: string;
-  onNavigate: (href: string) => void;
-}> = ({
-  href,
-  icon,
-  active,
-  accentColorClass,
-  onNavigate,
-}) => (
-  <button
-    type="button"
-    onClick={() => onNavigate(href)}
-    className={`flex items-center justify-center transition-all duration-300 ${
-      active
-        ? `h-11 w-11 scale-105 rounded-full bg-white ${accentColorClass} shadow-sm`
-        : 'h-10 w-10 text-white/70 hover:text-white'
-    }`}
-  >
-    {icon}
+  onNavigate: () => void;
+}> = ({ label, icon, active, onNavigate }) => (
+  <button type="button" onClick={onNavigate} className="flex w-12 flex-col items-center gap-1">
+    <span
+      className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
+        active ? 'bg-brand-100 text-brand-500' : 'text-slate-400'
+      }`}
+    >
+      {icon}
+    </span>
+    <span className={`text-[10px] leading-none ${active ? 'font-bold text-brand-500' : 'font-medium text-slate-400'}`}>
+      {label}
+    </span>
   </button>
 );
 

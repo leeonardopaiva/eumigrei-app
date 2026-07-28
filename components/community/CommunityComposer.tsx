@@ -5,6 +5,7 @@ import CloudinaryImageField from '@/components/forms/CloudinaryImageField';
 import type { ComposerMode } from '@/components/community/utils';
 import { handleAvatarError } from '@/lib/avatar';
 import type { PersonaMode } from '@/types';
+import { Button } from '@/components/ui/Button';
 
 type RootProps = {
   children: React.ReactNode;
@@ -49,7 +50,7 @@ type ModeButtonProps = {
 };
 
 const Root: React.FC<RootProps> = ({ children }) => (
-  <div className="space-y-4 rounded-3xl border border-slate-50 bg-white p-4 shadow-sm">
+  <div className="space-y-4 rounded-card bg-surface p-4">
     {children}
   </div>
 );
@@ -68,7 +69,7 @@ const Editor: React.FC<EditorProps> = ({ avatar, avatarHref, value, onChange, pl
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
-      className="min-h-[96px] flex-1 rounded-2xl border-none bg-slate-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-100"
+      className="min-h-[96px] flex-1 rounded-md border-none bg-bg px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-brand-200"
     />
   </div>
 );
@@ -80,12 +81,14 @@ const AuthorSwitch: React.FC<AuthorSwitchProps> = ({
   professionalName,
   professionalDisabled = false,
 }) => (
-  <div className="flex rounded-2xl bg-slate-50 p-1">
+  <div className="flex rounded-full bg-bg p-1" role="tablist" aria-label="Perfil da publicação">
     <button
       type="button"
       onClick={() => onChange('personal')}
-      className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition ${
-        value === 'personal' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+      role="tab"
+      aria-selected={value === 'personal'}
+      className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-3 py-2 text-xs font-bold transition ${
+        value === 'personal' ? 'bg-brand-500 text-white' : 'text-muted-foreground hover:text-foreground'
       }`}
     >
       <UserRound size={15} />
@@ -99,9 +102,11 @@ const AuthorSwitch: React.FC<AuthorSwitchProps> = ({
         }
       }}
       disabled={professionalDisabled}
-      className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition ${
+      role="tab"
+      aria-selected={value === 'professional'}
+      className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-3 py-2 text-xs font-bold transition ${
         value === 'professional'
-          ? 'bg-blue-600 text-white shadow-sm'
+          ? 'bg-brand-500 text-white'
           : professionalDisabled
             ? 'cursor-not-allowed text-slate-300'
             : 'text-slate-500 hover:text-slate-700'
@@ -139,7 +144,7 @@ const MediaField: React.FC<MediaFieldProps> = ({
         value={externalUrl}
         onChange={(event) => onExternalChange(event.target.value)}
         placeholder={mode === 'video' ? 'Cole o link do YouTube' : 'Cole o link externo'}
-        className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+        className="w-full rounded-full border border-input px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-200"
       />
     );
   }
@@ -152,7 +157,7 @@ const ModeButton: React.FC<ModeButtonProps> = ({ active, icon, label, onClick })
     type="button"
     onClick={onClick}
     className={`flex items-center gap-1 text-xs font-bold ${
-      active ? 'text-cyan-700' : 'text-slate-500'
+      active ? 'text-brand-500' : 'text-muted-foreground'
     }`}
   >
     {icon} {label}
@@ -181,13 +186,9 @@ const Actions: React.FC<ActionsProps> = ({ mode, onModeChange, onPublish, publis
         onClick={() => onModeChange(mode === 'link' ? 'text' : 'link')}
       />
     </div>
-    <button
-      onClick={onPublish}
-      disabled={publishing}
-      className="rounded-2xl bg-cyan-600 px-6 py-2 text-xs font-bold text-white shadow-md transition-colors hover:bg-cyan-700 disabled:opacity-60"
-    >
+    <Button onClick={onPublish} disabled={publishing} loading={publishing} size="sm">
       {publishing ? 'Publicando...' : 'Publicar'}
-    </button>
+    </Button>
   </div>
 );
 

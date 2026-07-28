@@ -403,7 +403,7 @@ const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => 
             type="button"
             onClick={() => void handleFavoriteToggle()}
             className={`flex h-10 w-10 items-center justify-center rounded-full shadow-sm backdrop-blur transition ${
-              business.isFavorite ? 'bg-rose-500 text-white' : 'bg-white/85 text-cyan-900 hover:bg-white'
+              business.isFavorite ? 'bg-red-600 text-white' : 'bg-surface text-foreground hover:bg-brand-100'
             }`}
             aria-label="Favoritar negocio"
           >
@@ -413,7 +413,7 @@ const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => 
           <button
             type="button"
             onClick={() => void handleShare()}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-cyan-900 shadow-sm backdrop-blur transition hover:bg-white"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-surface text-foreground transition hover:bg-brand-100"
             aria-label="Compartilhar negocio"
           >
             <Share2 size={19} />
@@ -716,7 +716,7 @@ const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => 
                     <input
                       value={nameDraft}
                       onChange={(event) => setNameDraft(event.target.value)}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-cyan-400"
+                      className="w-full rounded-full border border-input bg-surface px-4 py-3 text-sm font-medium text-foreground outline-none transition focus:border-brand-500"
                       placeholder="Nome do negocio"
                     />
                   </div>
@@ -728,7 +728,7 @@ const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => 
                     <input
                       value={categoryDraft}
                       onChange={(event) => setCategoryDraft(event.target.value)}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-cyan-400"
+                      className="w-full rounded-full border border-input bg-surface px-4 py-3 text-sm font-medium text-foreground outline-none transition focus:border-brand-500"
                       placeholder="Categoria"
                     />
                   </div>
@@ -740,7 +740,7 @@ const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => 
                     <input
                       value={addressDraft}
                       onChange={(event) => setAddressDraft(event.target.value)}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-cyan-400"
+                      className="w-full rounded-full border border-input bg-surface px-4 py-3 text-sm font-medium text-foreground outline-none transition focus:border-brand-500"
                       placeholder="Endereco"
                     />
                   </div>
@@ -753,7 +753,7 @@ const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => 
                       value={descriptionDraft}
                       onChange={(event) => setDescriptionDraft(event.target.value)}
                       rows={5}
-                      className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-cyan-400"
+                      className="w-full resize-none rounded-md border border-input bg-surface px-4 py-3 text-sm font-medium text-foreground outline-none transition focus:border-brand-500"
                       placeholder="Descricao do negocio"
                     />
                   </div>
@@ -769,7 +769,7 @@ const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => 
                     <input
                       value={phoneDraft}
                       onChange={(event) => setPhoneDraft(event.target.value)}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-cyan-400"
+                      className="w-full rounded-full border border-input bg-surface px-4 py-3 text-sm font-medium text-foreground outline-none transition focus:border-brand-500"
                       placeholder="Telefone"
                     />
                   </div>
@@ -781,7 +781,7 @@ const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => 
                     <input
                       value={whatsappDraft}
                       onChange={(event) => setWhatsappDraft(event.target.value)}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-cyan-400"
+                      className="w-full rounded-full border border-input bg-surface px-4 py-3 text-sm font-medium text-foreground outline-none transition focus:border-brand-500"
                       placeholder="WhatsApp"
                     />
                   </div>
@@ -793,7 +793,7 @@ const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => 
                     <input
                       value={websiteDraft}
                       onChange={(event) => setWebsiteDraft(event.target.value)}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-cyan-400"
+                      className="w-full rounded-full border border-input bg-surface px-4 py-3 text-sm font-medium text-foreground outline-none transition focus:border-brand-500"
                       placeholder="https://site.com"
                     />
                   </div>
@@ -805,7 +805,7 @@ const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => 
                     <input
                       value={instagramDraft}
                       onChange={(event) => setInstagramDraft(event.target.value)}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-cyan-400"
+                      className="w-full rounded-full border border-input bg-surface px-4 py-3 text-sm font-medium text-foreground outline-none transition focus:border-brand-500"
                       placeholder="@instagram"
                     />
                   </div>

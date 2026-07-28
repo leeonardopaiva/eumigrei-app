@@ -333,7 +333,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
             type="button"
             onClick={() => void handleFavoriteToggle()}
             className={`flex h-10 w-10 items-center justify-center rounded-full shadow-sm backdrop-blur transition ${
-              event.isFavorite ? 'bg-rose-500 text-white' : 'bg-white/85 text-cyan-900 hover:bg-white'
+              event.isFavorite ? 'bg-red-600 text-white' : 'bg-surface text-foreground hover:bg-brand-100'
             }`}
             aria-label="Favoritar evento"
           >
@@ -342,7 +342,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ eventId, user }) => {
           <button
             type="button"
             onClick={() => void handleShare()}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-cyan-900 shadow-sm backdrop-blur transition hover:bg-white"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-surface text-foreground transition hover:bg-brand-100"
             aria-label="Compartilhar evento"
           >
             <Share2 size={19} />

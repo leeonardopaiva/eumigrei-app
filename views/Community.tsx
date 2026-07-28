@@ -9,6 +9,7 @@ import { isYoutubeUrl } from '@/components/community/utils';
 import { useToast } from '@/components/feedback/ToastProvider';
 import { useIntersectionTrigger } from '@/hooks/useIntersectionTrigger';
 import { useRegionBanners } from '@/hooks/useRegionContent';
+import { Button } from '@/components/ui/Button';
 import { normalizeUrlFieldValue } from '@/lib/forms/validation';
 import { loadRegionCommunityPosts } from '@/lib/content-api';
 import { trackAnalyticsEvent } from '@/lib/analytics';
@@ -572,15 +573,10 @@ const Community: React.FC<{
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="mt-4 px-5">
-        <h1 className="mb-4 text-2xl font-bold text-cyan-900">Comunidade</h1>
-        <div className="mb-4 flex items-center border-b border-slate-100">
-          <span className="border-b-2 border-cyan-700 pb-2 text-sm font-bold text-cyan-900">
-           {/*  Recentes */}
-          </span>
-        </div>
-      </div>
+    <div className="animate-in space-y-4 fade-in duration-500">
+      <header className="mt-4 px-5">
+        <h1 className="text-h2 font-bold text-foreground">Comunidade</h1>
+      </header>
 
       <div className="px-5">
         <CommunityComposer.Root>
@@ -632,56 +628,22 @@ const Community: React.FC<{
       </div>
 
       <div className="px-5">
-        <div className="theme-gradient theme-shadow group relative overflow-hidden rounded-3xl p-4 text-white shadow-lg">
-          <div className="relative z-10 flex items-center justify-between">
-            <div className="max-w-[72%]">
-              <div className="mb-1 flex items-center gap-2">
-                <UserPlus size={16} className="text-white/90" />
-                <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">
-                  Indique a Gringoou
-                </span>
-              </div>
-              <h4 className="mb-2 text-sm font-bold">
-                Compartilhe seu link unico e acompanhe quantos cadastros vieram dele.
-              </h4>
-              <p className="text-[11px] font-medium text-white/80">
-                {referralSummary.registrationCount}
-                {' '}
-                {referralSummary.registrationCount === 1
-                  ? 'cadastro confirmado pelo seu link'
-                  : 'cadastros confirmados pelo seu link'}
-              </p>
-            </div>
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md">
-              <Share2 size={30} />
-            </div>
+        <div className="flex items-center gap-3 rounded-card bg-secondary p-4 text-foreground shadow-xs">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-brand-500">
+            <UserPlus size={19} aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-caption font-bold uppercase tracking-wide text-brand-600">Faça parte do Gringoou!</p>
+            <p className="mt-0.5 text-body-sm font-semibold leading-snug">Convide amigos para fortalecer a comunidade.</p>
+            <p className="mt-1 text-caption text-muted-foreground">{referralSummary.registrationCount} indicações confirmadas</p>
           </div>
-          <div className="mt-4 rounded-2xl bg-white/12 p-3">
-            <p className="truncate text-xs font-semibold text-white/90">
-              {referralSummary.referralUrl ?? `https://gringoou.com/convite/${user.username}`}
-            </p>
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={() => void handleCopyReferralLink()}
-                className="rounded-full bg-white px-4 py-2 text-[11px] font-bold text-cyan-700 transition-colors hover:bg-slate-100"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <Copy size={14} />
-                  Copiar link
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleShareReferralLink()}
-                className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-[11px] font-bold text-white transition-colors hover:bg-white/20"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <Share2 size={14} />
-                  Compartilhar
-                </span>
-              </button>
-            </div>
+          <div className="flex shrink-0 gap-1">
+            <Button iconOnly size="xs" variant="ghost" aria-label="Copiar link de indicação" onClick={() => void handleCopyReferralLink()}>
+              <Copy size={15} aria-hidden="true" />
+            </Button>
+            <Button iconOnly size="xs" variant="primary" aria-label="Compartilhar indicação" onClick={() => void handleShareReferralLink()}>
+              <Share2 size={15} aria-hidden="true" />
+            </Button>
           </div>
         </div>
       </div>
@@ -697,7 +659,7 @@ const Community: React.FC<{
 
           return (
             <React.Fragment key={post.id}>
-              <div id={`post-${post.id}`} className={targetPostId === post.id ? 'scroll-mt-24 rounded-3xl ring-2 ring-cyan-200' : 'scroll-mt-24'}>
+              <div id={`post-${post.id}`} className={targetPostId === post.id ? 'scroll-mt-24 rounded-card ring-2 ring-brand-200' : 'scroll-mt-24'}>
                 <FeedPostCard
                   post={post}
                   onToggleLike={() => handleToggleLike(post.id)}
@@ -746,7 +708,7 @@ const FeedBannerCard: React.FC<{
   onOpen: () => void;
   onRegister: () => void;
 }> = ({ banner, submitting, onOpen, onRegister }) => (
-  <div className="relative overflow-hidden rounded-[32px] bg-slate-950 shadow-lg">
+  <div className="relative overflow-hidden rounded-sheet bg-foreground shadow-sm">
     <img src={banner.imageUrl} alt={banner.name} className="h-[220px] w-full object-cover opacity-90" />
     <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
     <div className="absolute left-5 right-5 top-5 flex items-center justify-between gap-3">
@@ -766,7 +728,7 @@ const FeedBannerCard: React.FC<{
           type="button"
           onClick={onRegister}
           disabled={submitting}
-          className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-full bg-[#FF8C00] px-5 text-sm font-bold text-white shadow-xl transition hover:bg-[#E07B00] disabled:opacity-70"
+          className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-500 px-5 text-sm font-bold text-white shadow-sm transition hover:brightness-105 disabled:opacity-70"
         >
           <UserPlus size={18} strokeWidth={2.8} />
           {submitting ? 'Registrando...' : 'Tenho interesse'}
@@ -775,7 +737,7 @@ const FeedBannerCard: React.FC<{
         <button
           type="button"
           onClick={onOpen}
-          className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-full bg-[#FF8C00] px-5 text-sm font-bold text-white shadow-xl transition hover:bg-[#E07B00]"
+          className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-500 px-5 text-sm font-bold text-white shadow-sm transition hover:brightness-105"
         >
           <ExternalLink size={18} strokeWidth={2.8} />
           Abrir link

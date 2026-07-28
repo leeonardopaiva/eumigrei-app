@@ -14,6 +14,8 @@ import {
   formatRelativeTime,
   getExternalHostname,
 } from '@/components/community/utils';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 
 type RootProps = {
   children: React.ReactNode;
@@ -85,9 +87,9 @@ type CommentComposerProps = {
 };
 
 const Root: React.FC<RootProps> = ({ children, className = '' }) => (
-  <div className={`space-y-4 rounded-3xl border border-slate-50 bg-white p-5 shadow-sm ${className}`.trim()}>
+  <article className={`space-y-4 rounded-card bg-surface p-5 ${className}`.trim()}>
     {children}
-  </div>
+  </article>
 );
 
 const Header: React.FC<HeaderProps> = ({
@@ -103,7 +105,7 @@ const Header: React.FC<HeaderProps> = ({
       <Link href={authorHref} className="flex items-center gap-3 transition hover:opacity-90">
         <img src={authorImage} className="h-10 w-10 rounded-full object-cover" alt={authorName} onError={handleAvatarError} />
         <div>
-          <h5 className="text-sm font-bold text-cyan-900">{authorName}</h5>
+          <h5 className="text-sm font-bold text-foreground">{authorName}</h5>
           <p className="text-[10px] text-slate-400">
             {formatRelativeTime(createdAt)} | {locationLabel}
           </p>
@@ -113,7 +115,7 @@ const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center gap-3">
         <img src={authorImage} className="h-10 w-10 rounded-full object-cover" alt={authorName} onError={handleAvatarError} />
         <div>
-          <h5 className="text-sm font-bold text-cyan-900">{authorName}</h5>
+          <h5 className="text-sm font-bold text-foreground">{authorName}</h5>
           <p className="text-[10px] text-slate-400">
             {formatRelativeTime(createdAt)} | {locationLabel}
           </p>
@@ -134,7 +136,7 @@ const Menu: React.FC<MenuProps> = ({ open, onToggle, children }) => (
       <MoreHorizontal size={20} />
     </button>
     {open ? (
-      <div className="absolute right-0 top-10 z-10 min-w-[160px] rounded-2xl border border-slate-100 bg-white p-2 shadow-xl">
+      <div className="absolute right-0 top-10 z-10 min-w-[160px] rounded-md border border-border bg-surface p-2 shadow-md">
         {children}
       </div>
     ) : null}
@@ -160,6 +162,7 @@ const MenuItem: React.FC<{
 );
 
 const Body: React.FC<BodyProps> = ({ postId, content, imageUrl, externalUrl }) => {
+  const [imageOpen, setImageOpen] = React.useState(false);
   const youtubeEmbedUrl = buildYoutubeEmbedUrl(externalUrl);
   const externalHostname = getExternalHostname(externalUrl);
 
@@ -190,7 +193,7 @@ const Body: React.FC<BodyProps> = ({ postId, content, imageUrl, externalUrl }) =
             <LinkIcon size={14} />
             Link externo
           </div>
-          <p className="mt-2 break-all text-sm font-bold text-[#28B8C7]">{externalUrl}</p>
+          <p className="mt-2 break-all text-sm font-bold text-brand-500">{externalUrl}</p>
           {externalHostname ? (
             <p className="mt-1 text-xs font-medium text-slate-500">{externalHostname}</p>
           ) : null}
@@ -198,13 +201,16 @@ const Body: React.FC<BodyProps> = ({ postId, content, imageUrl, externalUrl }) =
       ) : null}
 
       {imageUrl ? (
-        <div className="overflow-hidden rounded-3xl border border-slate-100 bg-slate-50">
-          <img
-            src={imageUrl}
-            className="max-h-[420px] w-full object-cover"
-            alt="Imagem da publicacao"
-          />
-        </div>
+        <>
+          <button type="button" onClick={() => setImageOpen(true)} className="block w-full overflow-hidden rounded-card bg-bg" aria-label="Ampliar imagem da publicação">
+            <img src={imageUrl} className="h-48 w-full object-cover sm:h-56" alt="Imagem da publicação" />
+          </button>
+          <Modal open={imageOpen} onClose={() => setImageOpen(false)} title="Imagem da publicação" fullscreen>
+            <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center">
+              <img src={imageUrl} className="max-h-[calc(100vh-9rem)] max-w-full rounded-card object-contain" alt="Imagem ampliada da publicação" />
+            </div>
+          </Modal>
+        </>
       ) : null}
     </>
   );
@@ -221,12 +227,12 @@ const Editor: React.FC<EditorProps> = ({
   onCancel,
   saving,
 }) => (
-  <div className="space-y-3 rounded-3xl border border-cyan-100 bg-cyan-50/50 p-4">
+  <div className="space-y-3 rounded-card bg-bg p-4">
     <textarea
       rows={4}
       value={content}
       onChange={(event) => onContentChange(event.target.value)}
-      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+      className="w-full rounded-md border border-input px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-200"
     />
     <CloudinaryImageField
       value={imageUrl}
@@ -240,25 +246,15 @@ const Editor: React.FC<EditorProps> = ({
       value={externalUrl}
       onChange={(event) => onExternalChange(event.target.value)}
       placeholder="Link externo ou YouTube"
-      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200"
+      className="w-full rounded-full border border-input px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-200"
     />
     <div className="flex gap-2">
-      <button
-        type="button"
-        onClick={onSave}
-        disabled={saving}
-        className="flex-1 rounded-2xl bg-cyan-600 px-4 py-3 text-xs font-bold text-white disabled:opacity-60"
-      >
+      <Button type="button" onClick={onSave} disabled={saving} loading={saving} fullWidth size="sm">
         {saving ? 'Salvando...' : 'Salvar publicacao'}
-      </button>
-      <button
-        type="button"
-        onClick={onCancel}
-        disabled={saving}
-        className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs font-bold text-slate-600 disabled:opacity-60"
-      >
+      </Button>
+      <Button type="button" onClick={onCancel} disabled={saving} variant="ghost" size="sm">
         Cancelar
-      </button>
+      </Button>
     </div>
   </div>
 );
@@ -287,7 +283,7 @@ const Actions: React.FC<ActionsProps> = ({
           type="button"
           onClick={onToggleLike}
           className={`flex items-center gap-1.5 text-xs font-bold ${
-            liked ? 'text-cyan-600' : 'text-slate-500'
+            liked ? 'text-brand-500' : 'text-muted-foreground'
           }`}
         >
           <ThumbsUp size={16} />
@@ -297,7 +293,7 @@ const Actions: React.FC<ActionsProps> = ({
           onClick={onOpenLikes}
           disabled={likeCount === 0}
           className={`text-xs font-bold ${
-            likeCount > 0 ? 'text-slate-500 hover:text-cyan-600' : 'text-slate-300'
+            likeCount > 0 ? 'text-muted-foreground hover:text-brand-500' : 'text-slate-300'
           } disabled:cursor-default`}
         >
           {likeCount}
@@ -311,15 +307,15 @@ const Actions: React.FC<ActionsProps> = ({
         className={`flex items-center gap-1.5 text-xs font-bold ${
           commentCount > 0 && onToggleComments
             ? commentsExpanded
-              ? 'text-cyan-600'
-              : 'text-slate-500 hover:text-cyan-600'
+              ? 'text-brand-500'
+              : 'text-muted-foreground hover:text-brand-500'
             : 'text-slate-300'
         } disabled:cursor-default`}
       >
         <MessageSquare size={16} /> {commentCount}
       </button>
     </div>
-    <button type="button" onClick={onShare} className="text-slate-400 transition hover:text-cyan-600">
+    <button type="button" onClick={onShare} aria-label="Compartilhar publicação" className="text-slate-400 transition hover:text-brand-500">
       <Share2 size={16} />
     </button>
   </div>
@@ -346,11 +342,11 @@ const CommentItem: React.FC<CommentItemProps> = ({
         <div className="flex items-start justify-between gap-3">
           <div>
             {authorHref ? (
-              <Link href={authorHref} className="mb-1 block text-xs font-bold text-cyan-900 transition hover:opacity-90">
+              <Link href={authorHref} className="mb-1 block text-xs font-bold text-foreground transition hover:opacity-90">
                 {authorName}
               </Link>
             ) : (
-              <h6 className="mb-1 text-xs font-bold text-cyan-900">{authorName}</h6>
+              <h6 className="mb-1 text-xs font-bold text-foreground">{authorName}</h6>
             )}
             {content}
           </div>
@@ -374,16 +370,11 @@ const CommentComposer: React.FC<CommentComposerProps> = ({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder="Escreva um comentario..."
-      className="flex-1 rounded-2xl bg-slate-50 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-cyan-100"
+      className="flex-1 rounded-full bg-bg px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-200"
     />
-    <button
-      type="button"
-      onClick={onSubmit}
-      disabled={submitting}
-      className="rounded-2xl bg-cyan-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
-    >
+    <Button type="button" onClick={onSubmit} disabled={submitting} size="xs">
       {submitting ? '...' : 'Responder'}
-    </button>
+    </Button>
   </div>
 );
 

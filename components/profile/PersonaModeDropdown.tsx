@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BriefcaseBusiness, ChevronDown, UserRound } from 'lucide-react';
 import type { PersonaMode } from '../../types';
 
@@ -26,11 +26,28 @@ const PersonaModeDropdown: React.FC<PersonaModeDropdownProps> = ({
   menuClassName = '',
 }) => {
   const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const isProfessional = value === 'professional';
 
   useEffect(() => {
     setOpen(false);
   }, [value]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) setOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open]);
 
   const menuPositionClass =
     align === 'left'
@@ -45,13 +62,15 @@ const PersonaModeDropdown: React.FC<PersonaModeDropdownProps> = ({
   };
 
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative">
       {trigger === 'chevron' ? (
         <button
           type="button"
           onClick={() => setOpen((current) => !current)}
-          className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-cyan-700 ${buttonClassName}`.trim()}
+          className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition hover:bg-brand-100 hover:text-brand-500 ${buttonClassName}`.trim()}
           aria-label="Trocar perfil"
+          aria-haspopup="menu"
+          aria-expanded={open}
         >
           <ChevronDown size={17} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>
@@ -59,10 +78,10 @@ const PersonaModeDropdown: React.FC<PersonaModeDropdownProps> = ({
         <button
           type="button"
           onClick={() => setOpen((current) => !current)}
-          className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.16em] shadow-sm transition ${
+          className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-[0.16em] transition ${
             isProfessional
-              ? 'border-blue-100 bg-blue-50/90 text-[#0F4C81]'
-              : 'border-slate-200 bg-white/95 text-slate-600'
+              ? 'bg-brand-100 text-brand-600'
+              : 'bg-bg text-muted-foreground'
           } ${buttonClassName}`.trim()}
         >
           {isProfessional ? <BriefcaseBusiness size={14} /> : <UserRound size={14} />}
@@ -73,7 +92,8 @@ const PersonaModeDropdown: React.FC<PersonaModeDropdownProps> = ({
 
       {open ? (
         <div
-          className={`absolute top-[calc(100%+0.35rem)] z-20 w-[205px] overflow-hidden rounded-xl border border-slate-200 bg-white text-left shadow-lg ${menuPositionClass} ${menuClassName}`.trim()}
+          role="menu"
+          className={`absolute top-[calc(100%+0.35rem)] z-20 w-[220px] overflow-hidden rounded-2xl border border-border bg-surface p-1.5 text-left shadow-lg ${menuPositionClass} ${menuClassName}`.trim()}
         >
           <PersonaMenuOption
             title="Pessoal"
@@ -112,15 +132,15 @@ const PersonaMenuOption: React.FC<{
     type="button"
     onClick={onClick}
     disabled={disabled}
-    className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition ${
+    className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition ${
       active
-        ? 'text-[#0F4C81]'
+        ? 'bg-brand-100 text-brand-600'
         : disabled
           ? 'cursor-not-allowed text-slate-300'
-          : 'text-slate-700 hover:bg-slate-50/80'
+          : 'text-foreground hover:bg-brand-100'
     }`}
   >
-    <span className={active ? 'text-[#0F4C81]' : disabled ? 'text-slate-300' : 'text-slate-400'}>
+    <span className={active ? 'text-brand-500' : disabled ? 'text-slate-300' : 'text-muted-foreground'}>
       {icon}
     </span>
     <span className="min-w-0 flex-1">
@@ -129,7 +149,7 @@ const PersonaMenuOption: React.FC<{
         {subtitle}
       </span>
     </span>
-    {active ? <span className="h-1.5 w-1.5 rounded-full bg-[#0F4C81]" /> : null}
+    {active ? <span className="h-1.5 w-1.5 rounded-full bg-brand-500" /> : null}
   </button>
 );
 

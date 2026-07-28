@@ -31,7 +31,7 @@ const defaultProfile: PublicProfessionalProfile = {
   events: [],
 };
 
-const PROFILE_GRADIENT_CLASS = 'bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.28),_transparent_30%),linear-gradient(135deg,#28B8C7_0%,#1DA7D5_45%,#0D6EFD_100%)]';
+const PROFILE_GRADIENT_CLASS = 'bg-foreground';
 
 const getInitials = (name: string) =>
   name
@@ -178,7 +178,7 @@ const PublicProfessionalProfileView: React.FC<PublicProfessionalProfileProps> = 
               <div className="mt-5 flex flex-col items-center text-center">
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{profile.name}</h1>
-                  <BadgeCheck size={28} className="text-[#0D6EFD]" />
+                  <BadgeCheck size={28} className="text-brand-500" />
                 </div>
                 <p className="mt-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
                   @{profile.username}
@@ -207,7 +207,7 @@ const PublicProfessionalProfileView: React.FC<PublicProfessionalProfileProps> = 
                   {isOwnProfile ? (
                     <Link
                       href="/profile"
-                      className="inline-flex min-h-12 items-center justify-center rounded-[22px] bg-[#28B8C7] px-6 text-sm font-bold text-white shadow-lg shadow-[#28B8C7]/20"
+                      className="inline-flex min-h-12 items-center justify-center rounded-full bg-brand-500 px-6 text-sm font-bold text-white shadow-sm"
                     >
                       Gerenciar minha vitrine
                     </Link>
@@ -239,7 +239,7 @@ const PublicProfessionalProfileView: React.FC<PublicProfessionalProfileProps> = 
                       className="h-24 w-24 rounded-2xl object-cover"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-lg font-bold text-[#28B8C7]">{business.name}</p>
+                      <p className="text-body-lg font-bold text-foreground">{business.name}</p>
                       <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{business.category}</p>
                       {business.locationLabel ? <p className="mt-2 text-sm text-slate-500">{business.locationLabel}</p> : null}
                       <div className="mt-3">
@@ -269,7 +269,7 @@ const PublicProfessionalProfileView: React.FC<PublicProfessionalProfileProps> = 
                       className="h-24 w-24 rounded-2xl object-cover"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-lg font-bold text-[#28B8C7]">{event.title}</p>
+                      <p className="text-body-lg font-bold text-foreground">{event.title}</p>
                       <p className="mt-1 text-sm text-slate-500">{formatDate(event.startsAt)}</p>
                       <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{event.venueName}</p>
                       <div className="mt-3">
@@ -291,7 +291,7 @@ const PublicProfessionalProfileView: React.FC<PublicProfessionalProfileProps> = 
 
 const MetricCard: React.FC<{ icon: React.ReactNode; value: number; label: string }> = ({ icon, value, label }) => (
   <div className="rounded-[24px] border border-slate-100 bg-slate-50 p-4 text-center">
-    <div className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 text-[#28B8C7]">
+    <div className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-md bg-brand-100 text-brand-500">
       {icon}
     </div>
     <p className="mt-3 text-2xl font-bold text-slate-900">{value}</p>

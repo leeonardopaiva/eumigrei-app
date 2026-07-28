@@ -291,20 +291,20 @@ const BusinessList: React.FC<BusinessListProps> = ({
         <button
           type="button"
           onClick={() => setShowCreateForm((current) => !current)}
-          className="w-full rounded-3xl border border-transparent bg-gradient-to-r from-[#345CFF] to-[#5B4BFF] p-4 text-left text-white shadow-lg shadow-[#345CFF]/30 transition hover:brightness-105"
+          className="w-full rounded-card bg-secondary p-4 text-left text-foreground transition hover:brightness-95"
         >
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 text-white">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface text-brand-500">
               <Plus size={20} />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/75">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-600">
                 Cadastre seu negocio
               </p>
-              <p className="mt-1 text-sm font-bold text-white">
+              <p className="mt-1 text-sm font-bold text-foreground">
                 Tem uma empresa ou negocio? Crie sua pagina sem custo.
               </p>
-              <p className="mt-1 text-xs font-medium leading-relaxed text-white/85">
+              <p className="mt-1 text-xs font-medium leading-relaxed text-muted-foreground">
                 {showCreateForm ? 'Toque para fechar o modal.' : 'Toque para abrir o cadastro em modal.'}
               </p>
             </div>
@@ -323,7 +323,7 @@ const BusinessList: React.FC<BusinessListProps> = ({
               <input required value={createForm.name} onChange={(event) => setCreateForm((current) => ({ ...current, name: event.target.value }))} onInput={() => clearFieldError('name')} aria-invalid={Boolean(fieldErrors.name)} placeholder="Nome do negocio" className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none" />
               <FieldErrorMessage message={fieldErrors.name} />
               <div className="grid grid-cols-2 gap-3">
-                <select value={createForm.category} onChange={(event) => setCreateForm((current) => ({ ...current, category: event.target.value }))} className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none">
+                <select value={createForm.category} onChange={(event) => setCreateForm((current) => ({ ...current, category: event.target.value }))} className="theme-outline-ring h-11 w-full appearance-none rounded-full border-2 border-border bg-surface px-4 text-body-sm text-foreground outline-none">
                   {['Restaurante', 'Mercado', 'Beleza', 'Saude'].map((category) => <option key={category} value={category}>{category}</option>)}
                 </select>
                 <input required value={createForm.phone} onChange={(event) => setCreateForm((current) => ({ ...current, phone: formatLoosePhoneInput(event.target.value) }))} onInput={() => clearFieldError('phone')} aria-invalid={Boolean(fieldErrors.phone)} placeholder="Telefone" className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none" />

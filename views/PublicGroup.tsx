@@ -53,7 +53,7 @@ const defaultGroup: PublicGroupState = {
   members: [],
 };
 
-const PROFILE_GRADIENT_CLASS = 'bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.28),_transparent_30%),linear-gradient(135deg,#28B8C7_0%,#1DA7D5_45%,#0D6EFD_100%)]';
+const PROFILE_GRADIENT_CLASS = 'bg-brand-500';
 
 const getInitials = (name: string) =>
   name
@@ -184,7 +184,7 @@ const PublicGroup: React.FC<PublicGroupProps> = ({ slug, viewer, embedded = fals
               ) : null}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-slate-950/10 to-transparent" />
               <div className="absolute bottom-5 left-5 right-5 text-white">
-                <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-white/90 text-xl font-bold text-[#28B8C7] shadow-sm">
+                <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-card bg-surface text-xl font-bold text-brand-500">
                   {getInitials(group.name)}
                 </div>
                 <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{group.name}</h1>
@@ -224,7 +224,7 @@ const PublicGroup: React.FC<PublicGroupProps> = ({ slug, viewer, embedded = fals
                   className={`inline-flex min-h-12 items-center gap-3 rounded-[22px] px-8 text-base font-bold shadow-sm disabled:opacity-60 ${
                     group.viewerMembership
                       ? 'border border-emerald-100 bg-emerald-50 text-emerald-700'
-                      : 'bg-[#0D6EFD] text-white shadow-[#0D6EFD]/20'
+                      : 'bg-brand-500 text-white'
                   }`}
                 >
                   <UserCheck size={20} />
@@ -233,7 +233,7 @@ const PublicGroup: React.FC<PublicGroupProps> = ({ slug, viewer, embedded = fals
               ) : (
                 <Link
                   href="/"
-                  className="inline-flex min-h-12 items-center gap-3 rounded-[22px] bg-[#0D6EFD] px-8 text-base font-bold text-white shadow-lg shadow-[#0D6EFD]/20"
+                  className="inline-flex min-h-12 items-center gap-3 rounded-full bg-brand-500 px-8 text-base font-bold text-white shadow-sm"
                 >
                   <LogIn size={20} />
                   Entrar para participar
@@ -265,7 +265,7 @@ const PublicGroup: React.FC<PublicGroupProps> = ({ slug, viewer, embedded = fals
                     {member.user.image ? (
                       <img src={member.user.image} alt={member.user.name || 'Membro'} className="h-14 w-14 rounded-full object-cover" />
                     ) : (
-                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-cyan-50 text-base font-bold text-[#28B8C7]">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-100 text-base font-bold text-brand-500">
                         {getInitials(member.user.name || 'Membro')}
                       </div>
                     )}
