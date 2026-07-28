@@ -6,6 +6,7 @@ import BusinessWorkspace from '@/components/app/workspaces/BusinessWorkspace';
 import UserWorkspace from '@/components/app/workspaces/UserWorkspace';
 import type { PersonaMode, ProfessionalProfileIdentity, User } from '@/types';
 import { parseAppRoute } from '@/lib/app-route';
+import type { BusinessesInitialData, CommunityInitialData, EventsInitialData, HomeInitialData, ProfileInitialData } from '@/lib/content-contracts';
 
 type AppContentProps = {
   currentUser: User;
@@ -15,6 +16,11 @@ type AppContentProps = {
   professionalIdentity: ProfessionalProfileIdentity | null;
   canUseProfessionalMode: boolean;
   onPersonaModeChange: (mode: PersonaMode) => void;
+  initialHomeData?: HomeInitialData;
+  initialCommunityData?: CommunityInitialData;
+  initialBusinessesData?: BusinessesInitialData;
+  initialEventsData?: EventsInitialData;
+  initialProfileData?: ProfileInitialData;
 };
 
 const AppContent: React.FC<AppContentProps> = ({
@@ -25,6 +31,11 @@ const AppContent: React.FC<AppContentProps> = ({
   professionalIdentity,
   canUseProfessionalMode,
   onPersonaModeChange,
+  initialHomeData,
+  initialCommunityData,
+  initialBusinessesData,
+  initialEventsData,
+  initialProfileData,
 }) => {
   const { rootSegment } = parseAppRoute(pathname);
 
@@ -39,6 +50,8 @@ const AppContent: React.FC<AppContentProps> = ({
         pathname={pathname}
         effectivePersonaMode={effectivePersonaMode}
         professionalIdentity={professionalIdentity}
+        initialBusinessesData={initialBusinessesData}
+        initialEventsData={initialEventsData}
       />
     );
   }
@@ -52,6 +65,9 @@ const AppContent: React.FC<AppContentProps> = ({
       professionalIdentity={professionalIdentity}
       canUseProfessionalMode={canUseProfessionalMode}
       onPersonaModeChange={onPersonaModeChange}
+      initialHomeData={initialHomeData}
+      initialCommunityData={initialCommunityData}
+      initialProfileData={initialProfileData}
     />
   );
 };

@@ -19,6 +19,7 @@ import {
 } from '../lib/forms/validation';
 import { parseDateTimeInputPtBr } from '../lib/forms/datetime';
 import { EventItem, PersonaMode, ProfessionalProfileIdentity } from '../types';
+import type { EventsInitialData } from '../lib/content-contracts';
 
 const SAMPLE_EVENTS: EventItem[] = [
   {
@@ -92,19 +93,22 @@ type EventField =
 type MarketplaceProps = {
   personaMode?: PersonaMode;
   professionalIdentity?: ProfessionalProfileIdentity | null;
+  initialData?: EventsInitialData;
 };
 
 const Marketplace: React.FC<MarketplaceProps> = ({
   personaMode = 'personal',
   professionalIdentity = null,
+  initialData,
 }) => {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('Proximos');
   const [search, setSearch] = useState('');
-  const [events, setEvents] = useState<EventItem[]>([]);
-  const [resultScope, setResultScope] = useState<'local' | 'global'>('local');
+  const [events, setEvents] = useState<EventItem[]>(initialData?.events ?? []);
+  const [resultScope, setResultScope] = useState<'local' | 'global'>(initialData?.scope ?? 'local');
+  const initialPageConsumedRef = React.useRef(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -145,6 +149,11 @@ const Marketplace: React.FC<MarketplaceProps> = ({
   }, [session?.user?.regionKey]);
 
   useEffect(() => {
+    if (!initialPageConsumedRef.current && initialData?.regionKey === activeRegionKey && refreshKey === 0) {
+      initialPageConsumedRef.current = true;
+      return;
+    }
+
     let ignore = false;
 
     const fetchEvents = async () => {
@@ -179,7 +188,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({
     return () => {
       ignore = true;
     };
-  }, [activeRegionKey, refreshKey]);
+  }, [activeRegionKey, initialData?.regionKey, refreshKey]);
 
   const handleCreateEvent = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

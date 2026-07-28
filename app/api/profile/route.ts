@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { buildRateLimitHeaders, consumeRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { validateUsernameValue } from '@/lib/username';
 import { updateProfileSchema } from '@/lib/validators';
+import { getProfileData } from '@/lib/server/profile';
 
 export async function GET() {
   const session = await getServerAuthSession();
@@ -13,96 +14,11 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: {
-      id: true,
-      name: true,
-      username: true,
-      email: true,
-      phone: true,
-      image: true,
-      coverImageUrl: true,
-      bio: true,
-      interests: true,
-      galleryUrls: true,
-      locationLabel: true,
-      regionKey: true,
-      updatedAt: true,
-    },
-  });
-
-  if (!user) {
+  const data = await getProfileData(session.user.id);
+  if (!data) {
     return NextResponse.json({ error: 'Usuario nao encontrado.' }, { status: 404 });
   }
-
-  const [businesses, events] = await Promise.all([
-    prisma.business.findMany({
-      where: {
-        OR: [
-          { createdById: session.user.id },
-          { members: { some: { userId: session.user.id } } },
-        ],
-      },
-      orderBy: [{ updatedAt: 'desc' }],
-      take: 12,
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        category: true,
-        status: true,
-        imageUrl: true,
-        locationLabel: true,
-        regionKey: true,
-        updatedAt: true,
-      },
-    }),
-    prisma.event.findMany({
-      where: {
-        createdById: session.user.id,
-      },
-      orderBy: [{ updatedAt: 'desc' }],
-      take: 12,
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        startsAt: true,
-        status: true,
-        imageUrl: true,
-        locationLabel: true,
-        updatedAt: true,
-      },
-    }),
-  ]);
-
-  return NextResponse.json({
-    user,
-    professionalProfile: {
-      businessCount: businesses.length,
-      eventCount: events.length,
-      identity: businesses[0]
-        ? {
-            id: businesses[0].id,
-            name: businesses[0].name,
-            slug: businesses[0].slug || businesses[0].id,
-            imageUrl: businesses[0].imageUrl,
-            locationLabel: businesses[0].locationLabel,
-            regionKey: businesses[0].regionKey,
-            publicPath: `/negocios/${businesses[0].slug || businesses[0].id}`,
-          }
-        : null,
-      businesses: businesses.map((business) => ({
-        ...business,
-        publicPath: `/negocios/${business.slug || business.id}`,
-      })),
-      events: events.map((event) => ({
-        ...event,
-        publicPath: `/eventos/${event.slug || event.id}`,
-      })),
-    },
-  });
+  return NextResponse.json(data);
 }
 
 export async function PUT(request: Request) {

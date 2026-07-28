@@ -19,6 +19,7 @@ import {
   validatePhoneField,
 } from '../lib/forms/validation';
 import { Business, PersonaMode, ProfessionalProfileIdentity } from '../types';
+import type { BusinessesInitialData } from '../lib/content-contracts';
 
 const SAMPLE_BUSINESSES: Business[] = [
   {
@@ -64,18 +65,21 @@ type BusinessField =
 type BusinessListProps = {
   personaMode?: PersonaMode;
   professionalIdentity?: ProfessionalProfileIdentity | null;
+  initialData?: BusinessesInitialData;
 };
 
 const BusinessList: React.FC<BusinessListProps> = ({
   personaMode = 'personal',
   professionalIdentity = null,
+  initialData,
 }) => {
   const { data: session, update } = useSession();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
-  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [businesses, setBusinesses] = useState<Business[]>(initialData?.businesses ?? []);
   const [activeFilter, setActiveFilter] = useState('Todos');
-  const [resultScope, setResultScope] = useState<'local' | 'global'>('local');
+  const [resultScope, setResultScope] = useState<'local' | 'global'>(initialData?.scope ?? 'local');
+  const initialPageConsumedRef = React.useRef(false);
   const [search, setSearch] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -116,6 +120,17 @@ const BusinessList: React.FC<BusinessListProps> = ({
   }, [session?.user?.regionKey]);
 
   useEffect(() => {
+    if (
+      !initialPageConsumedRef.current &&
+      initialData?.regionKey === activeRegionKey &&
+      activeFilter === 'Todos' &&
+      !deferredSearch.trim() &&
+      refreshKey === 0
+    ) {
+      initialPageConsumedRef.current = true;
+      return;
+    }
+
     let ignore = false;
 
     const fetchBusinesses = async () => {
@@ -158,7 +173,7 @@ const BusinessList: React.FC<BusinessListProps> = ({
     return () => {
       ignore = true;
     };
-  }, [activeFilter, activeRegionKey, deferredSearch, refreshKey]);
+  }, [activeFilter, activeRegionKey, deferredSearch, initialData?.regionKey, refreshKey]);
 
   const handleCreateBusiness = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

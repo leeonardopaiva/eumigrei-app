@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Sora } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
+import { getCachedServerAuthSession } from '@/lib/server/auth-session';
 
 const sora = Sora({
   subsets: ['latin'],
@@ -16,15 +17,17 @@ export const metadata: Metadata = {
     'Uma plataforma completa para a comunidade brasileira no exterior, oferecendo servicos de moradia, empregos, negocios locais, noticias e rede social.',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getCachedServerAuthSession();
+
   return (
     <html lang="pt-BR">
       <body className={`${sora.className} ${sora.variable} bg-bg text-foreground`}>
-        <Providers>{children}</Providers>
+        <Providers session={session}>{children}</Providers>
       </body>
     </html>
   );

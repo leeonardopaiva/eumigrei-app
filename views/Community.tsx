@@ -14,6 +14,7 @@ import { normalizeUrlFieldValue } from '@/lib/forms/validation';
 import { loadRegionCommunityPosts } from '@/lib/content-api';
 import { trackAnalyticsEvent } from '@/lib/analytics';
 import type { BannerAd, PersonaMode, Post, ProfessionalProfileIdentity, ReferralSummary, User } from '@/types';
+import type { CommunityInitialData } from '@/lib/content-contracts';
 
 const getPostTimestamp = (post: Post) => new Date(post.createdAt).getTime() || 0;
 
@@ -21,7 +22,8 @@ const Community: React.FC<{
   user: User;
   personaMode?: PersonaMode;
   professionalIdentity?: ProfessionalProfileIdentity | null;
-}> = ({ user, personaMode = 'personal', professionalIdentity = null }) => {
+  initialData?: CommunityInitialData;
+}> = ({ user, personaMode = 'personal', professionalIdentity = null, initialData }) => {
   const { showToast } = useToast();
   const searchParams = useSearchParams();
   const targetPostId = searchParams?.get('post');
@@ -34,11 +36,12 @@ const Community: React.FC<{
   );
   const [publishing, setPublishing] = useState(false);
   const [submittingBannerId, setSubmittingBannerId] = useState<string | null>(null);
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [postsLoading, setPostsLoading] = useState(true);
+  const [posts, setPosts] = useState<Post[]>(initialData?.posts ?? []);
+  const [postsLoading, setPostsLoading] = useState(!initialData);
   const [loadingMorePosts, setLoadingMorePosts] = useState(false);
-  const [postsHasMore, setPostsHasMore] = useState(true);
-  const [postsNextOffset, setPostsNextOffset] = useState(0);
+  const [postsHasMore, setPostsHasMore] = useState(initialData?.hasMore ?? true);
+  const [postsNextOffset, setPostsNextOffset] = useState(initialData?.nextOffset ?? 0);
+  const initialPageConsumedRef = useRef(false);
   const targetPostAutoLoadAttemptsRef = useRef(0);
   const targetPostScrollIdRef = useRef<string | null>(null);
   const [referralSummary, setReferralSummary] = useState<ReferralSummary>({
@@ -171,8 +174,13 @@ const Community: React.FC<{
 
 
   useEffect(() => {
+    if (!initialPageConsumedRef.current && initialData?.regionKey === feedRegionKey) {
+      initialPageConsumedRef.current = true;
+      return;
+    }
+
     void reloadPosts();
-  }, [feedRegionKey, reloadPosts]);
+  }, [feedRegionKey, initialData?.regionKey, reloadPosts]);
 
   useEffect(() => {
     let ignore = false;

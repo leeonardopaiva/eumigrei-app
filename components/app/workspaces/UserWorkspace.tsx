@@ -10,6 +10,7 @@ import Profile from '@/views/Profile';
 import SearchResults from '@/views/SearchResults';
 import type { PersonaMode, ProfessionalProfileIdentity, User } from '@/types';
 import { parseAppRoute } from '@/lib/app-route';
+import type { CommunityInitialData, HomeInitialData, ProfileInitialData } from '@/lib/content-contracts';
 
 type UserWorkspaceProps = {
   currentUser: User;
@@ -19,6 +20,9 @@ type UserWorkspaceProps = {
   professionalIdentity: ProfessionalProfileIdentity | null;
   canUseProfessionalMode: boolean;
   onPersonaModeChange: (mode: PersonaMode) => void;
+  initialHomeData?: HomeInitialData;
+  initialCommunityData?: CommunityInitialData;
+  initialProfileData?: ProfileInitialData;
 };
 
 const UserWorkspace: React.FC<UserWorkspaceProps> = ({
@@ -29,11 +33,14 @@ const UserWorkspace: React.FC<UserWorkspaceProps> = ({
   professionalIdentity,
   canUseProfessionalMode,
   onPersonaModeChange,
+  initialHomeData,
+  initialCommunityData,
+  initialProfileData,
 }) => {
   const { segments, rootSegment } = parseAppRoute(pathname);
 
   if (segments.length === 0) {
-    return <Home user={currentUser} />;
+    return <Home user={currentUser} initialData={initialHomeData} />;
   }
 
   switch (rootSegment) {
@@ -43,6 +50,7 @@ const UserWorkspace: React.FC<UserWorkspaceProps> = ({
           user={currentUser}
           personaMode={effectivePersonaMode}
           professionalIdentity={professionalIdentity}
+          initialData={initialCommunityData}
         />
       );
     case 'buscar':
@@ -58,12 +66,13 @@ const UserWorkspace: React.FC<UserWorkspaceProps> = ({
           personaMode={personaMode}
           canUseProfessionalMode={canUseProfessionalMode}
           onPersonaModeChange={onPersonaModeChange}
+          initialData={initialProfileData}
         />
       );
     case 'grupos':
       return <GroupsDirectory user={currentUser} />;
     default:
-      return <Home user={currentUser} />;
+      return <Home user={currentUser} initialData={initialHomeData} />;
   }
 };
 

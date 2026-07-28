@@ -1,3 +1,49 @@
+import type { Business, EventItem, Post, ProfessionalProfileSummary } from '../types';
+
+export interface HomeInitialData {
+  latestPost: Post | null;
+  latestBusiness: Business | null;
+  latestEvent: EventItem | null;
+}
+
+export interface CommunityInitialData {
+  posts: Post[];
+  hasMore: boolean;
+  nextOffset: number;
+  regionKey: string;
+}
+
+export interface BusinessesInitialData {
+  businesses: Business[];
+  scope: 'local' | 'global';
+  regionKey: string;
+}
+
+export interface EventsInitialData {
+  events: EventItem[];
+  scope: 'local' | 'global';
+  regionKey: string;
+}
+
+export interface ProfileInitialData {
+  user: {
+    id: string;
+    name: string | null;
+    username: string | null;
+    email: string | null;
+    phone: string | null;
+    image: string | null;
+    coverImageUrl: string | null;
+    bio: string | null;
+    interests: string[];
+    galleryUrls: string[];
+    locationLabel: string | null;
+    regionKey: string | null;
+    updatedAt: string;
+  };
+  professionalProfile: ProfessionalProfileSummary;
+}
+
 export interface RegionalGroupMemberPreview {
   id: string;
   name: string | null;
