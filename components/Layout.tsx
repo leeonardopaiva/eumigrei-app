@@ -74,7 +74,7 @@ type NavigationItem = {
 };
 
 const navigationItems: NavigationItem[] = [
-  { href: '/', label: 'Home', icon: <HomeIcon size={22} /> },
+  { href: '/inicio', label: 'Home', icon: <HomeIcon size={22} /> },
   { href: '/negocios', label: 'Negócios', icon: <Store size={18} /> },
   { href: '/community', label: 'Comunidade', icon: <Users size={18} /> },
   { href: '/eventos', label: 'Eventos', icon: <Calendar size={18} /> },
@@ -279,7 +279,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
     isProfessionalTheme && professionalIdentity?.imageUrl ? professionalIdentity.imageUrl : user.avatar;
 
   const isActive = (path: string) =>
-    path === '/' ? pathname === path : pathname === path || pathname.startsWith(`${path}/`);
+    pathname === path || pathname.startsWith(`${path}/`);
 
   const handleNavigate = (href: string) => {
     setIsMenuOpen(false);
@@ -387,7 +387,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
               ) : null}
 
               <nav className="flex w-full items-center justify-between rounded-full bg-white px-2 py-2 shadow-xl">
-                <NavItem label="Home" icon={<HomeIcon size={20} />} active={isActive('/')} onNavigate={() => handleNavigate('/')} />
+                <NavItem label="Home" icon={<HomeIcon size={20} />} active={isActive('/inicio')} onNavigate={() => handleNavigate('/inicio')} />
                 <NavItem label="Buscar" icon={<SearchIcon size={20} />} active={isActive('/buscar')} onNavigate={() => handleNavigate('/buscar')} />
 
                 <button

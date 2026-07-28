@@ -87,7 +87,7 @@ const App: React.FC<{
   const autoGoogleSelectTriggeredRef = useRef(false);
   const sessionRole = mapUserRole(session?.user?.role);
   const canUseProfessionalMode = sessionRole === UserRole.BUSINESS_OWNER || sessionRole === UserRole.ADMIN;
-  const authCallbackUrl = pathname === '/login' ? '/' : pathname || '/';
+  const authCallbackUrl = pathname === '/login' ? '/inicio' : pathname || '/inicio';
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -326,7 +326,7 @@ const App: React.FC<{
     if (result.url) {
       window.location.assign(result.url);
     } else {
-      window.location.assign(pathname || '/');
+      window.location.assign(pathname === '/login' ? '/inicio' : pathname || '/inicio');
     }
 
     return { ok: true };

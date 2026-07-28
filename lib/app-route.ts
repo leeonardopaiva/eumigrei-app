@@ -1,5 +1,6 @@
 export const RESERVED_PUBLIC_ROUTES = new Set([
   'admin',
+  'inicio',
   'community',
   'marketplace',
   'moradia',

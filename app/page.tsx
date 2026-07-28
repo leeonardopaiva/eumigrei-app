@@ -1,12 +1,18 @@
-import App from '../App';
-import { getCachedServerAuthSession } from '@/lib/server/auth-session';
-import { getHomeInitialData } from '@/lib/server/home-data';
+import type { Metadata } from 'next';
+import { LandingHeader } from '@/components/landing/LandingHeader';
+import { LandingHero } from '@/components/landing/LandingHero';
 
-export default async function HomePage() {
-  const session = await getCachedServerAuthSession();
-  const initialHomeData = session?.user?.id
-    ? await getHomeInitialData(session.user.regionKey)
-    : undefined;
+export const metadata: Metadata = {
+  title: 'Gringoou — A comunidade brasileira no exterior',
+  description:
+    'Conecte-se com brasileiros ao redor do mundo em uma rede feita por imigrantes para imigrantes.',
+};
 
-  return <App initialHomeData={initialHomeData} />;
+export default function LandingPage() {
+  return (
+    <div className="min-h-screen overflow-hidden bg-[#f7f8fb]">
+      <LandingHeader />
+      <LandingHero />
+    </div>
+  );
 }
