@@ -1,4 +1,4 @@
-import { BusinessStatus, BusinessMemberRole, Prisma, UserRole, VisibilityScope } from '@prisma/client';
+import { BusinessStatus, BusinessMemberRole, UserRole, VisibilityScope } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -6,7 +6,7 @@ import { buildRateLimitHeaders, consumeRateLimit, getRateLimitKey } from '@/lib/
 import { findRegionByKey } from '@/lib/region-store';
 import { slugify, uniqueSlug } from '@/lib/slug';
 import { businessSchema } from '@/lib/validators';
-import { getVisibilityFilter } from '@/lib/visibility';
+import { getBusinessesPage } from '@/lib/server/businesses';
 
 export async function GET(request: Request) {
   const session = await getServerAuthSession();
@@ -14,92 +14,7 @@ export async function GET(request: Request) {
   const category = searchParams.get('category');
   const search = searchParams.get('search');
   const viewerRegionKey = searchParams.get('region') ?? session?.user?.regionKey;
-  const viewerId = session?.user?.id;
-  const isAdmin = session?.user?.role === UserRole.ADMIN;
-
-  const baseWhere: Prisma.BusinessWhereInput = {
-    AND: [
-      category ? { category } : {},
-      search
-        ? {
-            OR: [
-              { name: { contains: search, mode: Prisma.QueryMode.insensitive } },
-              { category: { contains: search, mode: Prisma.QueryMode.insensitive } },
-              { address: { contains: search, mode: Prisma.QueryMode.insensitive } },
-            ],
-          }
-        : {},
-      {
-        OR: [
-          {
-            status: BusinessStatus.PUBLISHED,
-            ...getVisibilityFilter(viewerRegionKey),
-          },
-          ...(viewerId
-            ? [
-                {
-                  status: BusinessStatus.PENDING_REVIEW,
-                  createdById: viewerId,
-                },
-              ]
-            : []),
-          ...(isAdmin
-            ? [
-                {
-                  status: BusinessStatus.PENDING_REVIEW,
-                },
-              ]
-            : []),
-        ],
-      },
-    ],
-  };
-
-  const businesses = await prisma.business.findMany({
-    where: baseWhere,
-    orderBy: [{ createdAt: 'desc' }],
-    take: 24,
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      category: true,
-      address: true,
-      imageUrl: true,
-      locationLabel: true,
-      ratingAverage: true,
-      ratingCount: true,
-      visibilityScope: true,
-      status: true,
-      createdById: true,
-      members: {
-        where: { userId: viewerId || '__no-user__' },
-        select: { id: true },
-        take: 1,
-      },
-      favorites: {
-        where: { userId: viewerId || '__no-user__' },
-        select: { id: true },
-        take: 1,
-      },
-    },
-  });
-
-  const scope: 'local' | 'global' =
-    viewerRegionKey &&
-    businesses.some((business) => business.visibilityScope !== VisibilityScope.GLOBAL)
-      ? 'local'
-      : 'global';
-
-  return NextResponse.json({
-    businesses: businesses.map(({ createdById, favorites, members, visibilityScope, ...business }) => ({
-      ...business,
-      isFavorite: favorites.length > 0,
-      canEdit: isAdmin || createdById === viewerId || members.length > 0,
-      isPendingReview: business.status === BusinessStatus.PENDING_REVIEW,
-    })),
-    scope,
-  });
+  return NextResponse.json(await getBusinessesPage({ session, regionKey: viewerRegionKey, category, search }));
 }
 
 export async function POST(request: Request) {

@@ -13,6 +13,7 @@ import { DEFAULT_AVATAR_URL, handleAvatarError } from '../lib/avatar';
 import PersonaModeDropdown from '../components/profile/PersonaModeDropdown';
 import ProfessionalModePanel from '../components/profile/ProfessionalModePanel';
 import { PersonaMode, ProfessionalProfileSummary, ReferralSummary, User } from '../types';
+import type { ProfileInitialData } from '../lib/content-contracts';
 
 const PROFILE_GRADIENT_CLASS = 'bg-brand-500';
 const PROFESSIONAL_PROFILE_GRADIENT_CLASS = 'bg-foreground';
@@ -69,14 +70,26 @@ const Profile: React.FC<{
   personaMode: PersonaMode;
   canUseProfessionalMode: boolean;
   onPersonaModeChange: (mode: PersonaMode) => void;
-}> = ({ user, personaMode, canUseProfessionalMode, onPersonaModeChange }) => {
+  initialData?: ProfileInitialData;
+}> = ({ user, personaMode, canUseProfessionalMode, onPersonaModeChange, initialData }) => {
   const { update } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<ProfileState>(() => buildProfileState(user));
-  const [professionalProfile, setProfessionalProfile] = useState<ProfessionalProfileSummary>(emptyProfessionalProfile);
+  const initialProfile = initialData?.user
+    ? {
+        id: initialData.user.id,
+        name: initialData.user.name || user.name,
+        username: initialData.user.username || '', email: initialData.user.email || '', phone: initialData.user.phone || '',
+        image: initialData.user.image || '', coverImageUrl: initialData.user.coverImageUrl || '', bio: initialData.user.bio || '',
+        interests: initialData.user.interests, galleryUrls: initialData.user.galleryUrls,
+        locationLabel: initialData.user.locationLabel || user.location, regionKey: initialData.user.regionKey || '',
+      }
+    : buildProfileState(user);
+  const [loading, setLoading] = useState(!initialData);
+  const [profile, setProfile] = useState<ProfileState>(initialProfile);
+  const [professionalProfile, setProfessionalProfile] = useState<ProfessionalProfileSummary>(initialData?.professionalProfile ?? emptyProfessionalProfile);
+  const initialDataConsumedRef = React.useRef(false);
   const [requestedEmail, setRequestedEmail] = useState(user.email || '');
   const [requestingEmailChange, setRequestingEmailChange] = useState(false);
   const [referralSummary, setReferralSummary] = useState<ReferralSummary>({ referralUrl: null, registrationCount: 0 });
@@ -104,6 +117,17 @@ const Profile: React.FC<{
   const [savingKey, setSavingKey] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!initialDataConsumedRef.current && initialData) {
+      initialDataConsumedRef.current = true;
+      setAvatarDraft(initialProfile.image);
+      setCoverDraft(initialProfile.coverImageUrl);
+      setAccountDraft({ name: initialProfile.name, username: initialProfile.username, email: initialProfile.email, phone: initialProfile.phone, bio: initialProfile.bio });
+      setInterestDrafts(initialProfile.interests);
+      setGalleryDraft(initialProfile.galleryUrls);
+      setSelectedRegionKey(initialProfile.regionKey);
+      return;
+    }
+
     let ignore = false;
 
     const loadProfile = async () => {
@@ -174,7 +198,7 @@ const Profile: React.FC<{
     return () => {
       ignore = true;
     };
-  }, [showToast, user]);
+  }, [initialData, showToast, user]);
 
   useEffect(() => {
     const emailChangeStatus = searchParams?.get('emailChange');

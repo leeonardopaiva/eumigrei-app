@@ -10,6 +10,7 @@ import PublicEntry from './components/app/PublicEntry';
 import { DEFAULT_AVATAR_URL } from './lib/avatar';
 import { parseAppRoute } from './lib/app-route';
 import { UserRole, type PersonaMode, type ProfessionalProfileIdentity, type User } from './types';
+import type { BusinessesInitialData, CommunityInitialData, EventsInitialData, HomeInitialData, ProfileInitialData } from './lib/content-contracts';
 
 const GOOGLE_AUTH_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED !== 'false';
 const EMAIL_AUTH_ENABLED = false;
@@ -50,7 +51,13 @@ const buildCurrentUser = (sessionUser: {
   phone: sessionUser.phone,
 });
 
-const App: React.FC = () => {
+const App: React.FC<{
+  initialHomeData?: HomeInitialData;
+  initialCommunityData?: CommunityInitialData;
+  initialBusinessesData?: BusinessesInitialData;
+  initialEventsData?: EventsInitialData;
+  initialProfileData?: ProfileInitialData;
+}> = ({ initialHomeData, initialCommunityData, initialBusinessesData, initialEventsData, initialProfileData }) => {
   const pathname = usePathname() || '/';
   const { data: session, status, update } = useSession();
   const [registrationError, setRegistrationError] = useState<string | null>(null);
@@ -67,8 +74,10 @@ const App: React.FC = () => {
       : 'personal';
   });
   const [personaModeReady, setPersonaModeReady] = useState(false);
-  const [professionalIdentity, setProfessionalIdentity] = useState<ProfessionalProfileIdentity | null>(null);
-  const [professionalProfileLoaded, setProfessionalProfileLoaded] = useState(false);
+  const [professionalIdentity, setProfessionalIdentity] = useState<ProfessionalProfileIdentity | null>(
+    initialProfileData?.professionalProfile.identity ?? null,
+  );
+  const [professionalProfileLoaded, setProfessionalProfileLoaded] = useState(Boolean(initialProfileData));
   const {
     referralUsername,
     publicProfileUsername,
@@ -120,6 +129,12 @@ const App: React.FC = () => {
     let ignore = false;
 
     const loadProfessionalIdentity = async () => {
+      if (initialProfileData && session?.user?.id) {
+        setProfessionalIdentity(initialProfileData.professionalProfile.identity);
+        setProfessionalProfileLoaded(true);
+        return;
+      }
+
       setProfessionalProfileLoaded(false);
 
       if (!session?.user?.id || !canUseProfessionalMode) {
@@ -153,7 +168,7 @@ const App: React.FC = () => {
     return () => {
       ignore = true;
     };
-  }, [canUseProfessionalMode, session?.user?.id, session?.user?.role]);
+  }, [canUseProfessionalMode, initialProfileData, session?.user?.id, session?.user?.role]);
 
   useEffect(() => {
     if (
@@ -512,6 +527,11 @@ const App: React.FC = () => {
         professionalIdentity={professionalIdentity}
         canUseProfessionalMode={canUseProfessionalMode}
         onPersonaModeChange={handlePersonaModeChange}
+        initialHomeData={initialHomeData}
+        initialCommunityData={initialCommunityData}
+        initialBusinessesData={initialBusinessesData}
+        initialEventsData={initialEventsData}
+        initialProfileData={initialProfileData}
       />
     </Layout>
   );

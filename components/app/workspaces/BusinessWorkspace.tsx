@@ -7,12 +7,15 @@ import EventDetail from '@/views/EventDetail';
 import Marketplace from '@/views/Marketplace';
 import type { PersonaMode, ProfessionalProfileIdentity, User } from '@/types';
 import { parseAppRoute } from '@/lib/app-route';
+import type { BusinessesInitialData, EventsInitialData } from '@/lib/content-contracts';
 
 type BusinessWorkspaceProps = {
   currentUser: User;
   pathname: string;
   effectivePersonaMode: PersonaMode;
   professionalIdentity: ProfessionalProfileIdentity | null;
+  initialBusinessesData?: BusinessesInitialData;
+  initialEventsData?: EventsInitialData;
 };
 
 const BusinessWorkspace: React.FC<BusinessWorkspaceProps> = ({
@@ -20,11 +23,13 @@ const BusinessWorkspace: React.FC<BusinessWorkspaceProps> = ({
   pathname,
   effectivePersonaMode,
   professionalIdentity,
+  initialBusinessesData,
+  initialEventsData,
 }) => {
   const { segments, rootSegment } = parseAppRoute(pathname);
 
   if (rootSegment === 'negocios' && segments.length === 1) {
-    return <BusinessList personaMode={effectivePersonaMode} professionalIdentity={professionalIdentity} />;
+    return <BusinessList personaMode={effectivePersonaMode} professionalIdentity={professionalIdentity} initialData={initialBusinessesData} />;
   }
 
   if (rootSegment === 'negocios' && segments.length === 2) {
@@ -35,7 +40,7 @@ const BusinessWorkspace: React.FC<BusinessWorkspaceProps> = ({
     return <EventDetail eventId={decodeURIComponent(segments[1])} user={currentUser} />;
   }
 
-  return <Marketplace personaMode={effectivePersonaMode} professionalIdentity={professionalIdentity} />;
+  return <Marketplace personaMode={effectivePersonaMode} professionalIdentity={professionalIdentity} initialData={initialEventsData} />;
 };
 
 export default BusinessWorkspace;

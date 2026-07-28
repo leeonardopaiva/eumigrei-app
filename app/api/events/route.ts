@@ -1,4 +1,4 @@
-import { EventStatus, Prisma, UserRole, VisibilityScope } from '@prisma/client';
+import { EventStatus, UserRole, VisibilityScope } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -6,133 +6,13 @@ import { buildRateLimitHeaders, consumeRateLimit, getRateLimitKey } from '@/lib/
 import { findRegionByKey } from '@/lib/region-store';
 import { slugify, uniqueSlug } from '@/lib/slug';
 import { eventSchema } from '@/lib/validators';
-import { getVisibilityFilter } from '@/lib/visibility';
+import { getEventsPage } from '@/lib/server/events';
 
 export async function GET(request: Request) {
   const session = await getServerAuthSession();
   const { searchParams } = new URL(request.url);
   const viewerRegionKey = searchParams.get('region') ?? session?.user?.regionKey;
-  const viewerId = session?.user?.id;
-  const isAdmin = session?.user?.role === UserRole.ADMIN;
-  const recentCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
-  const baseWhere: Prisma.EventWhereInput = {
-    startsAt: {
-      gte: recentCutoff,
-    },
-    OR: [
-      {
-        status: EventStatus.PUBLISHED,
-        ...getVisibilityFilter(viewerRegionKey),
-      },
-      ...(viewerId
-        ? [
-            {
-              status: EventStatus.PENDING_REVIEW,
-              createdById: viewerId,
-            },
-          ]
-        : []),
-      ...(isAdmin
-        ? [
-            {
-              status: EventStatus.PENDING_REVIEW,
-            },
-          ]
-        : []),
-    ],
-  };
-
-  const events = await prisma.event.findMany({
-    where: baseWhere,
-    orderBy: [{ startsAt: 'asc' }],
-    take: 24,
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      description: true,
-      venueName: true,
-      startsAt: true,
-      endsAt: true,
-      locationLabel: true,
-      regionKey: true,
-      externalUrl: true,
-      imageUrl: true,
-      galleryUrls: true,
-      ratingAverage: true,
-      ratingCount: true,
-      visibilityScope: true,
-      status: true,
-      createdById: true,
-      businessId: true,
-      favorites: {
-        select: {
-          userId: true,
-          user: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 6,
-      },
-      _count: {
-        select: {
-          favorites: true,
-        },
-      },
-    },
-  });
-
-  const scope: 'local' | 'global' =
-    viewerRegionKey &&
-    events.some((event) => event.visibilityScope !== VisibilityScope.GLOBAL)
-      ? 'local'
-      : 'global';
-  const businessEditableEventIds =
-    viewerId && events.length > 0
-      ? new Set(
-          (
-            await prisma.$queryRaw<Array<{ eventId: string }>>(
-              Prisma.sql`
-                SELECT e."id" AS "eventId"
-                FROM "public"."Event" e
-                INNER JOIN "public"."BusinessMember" bm ON bm."businessId" = e."businessId"
-                WHERE e."id" IN (${Prisma.join(events.map((event) => event.id))})
-                  AND bm."userId" = ${viewerId}
-              `,
-            )
-          ).map((row) => row.eventId),
-        )
-      : new Set<string>();
-
-  return NextResponse.json({
-    events: events.map(({ createdById, businessId, favorites, visibilityScope, _count, ...event }) => {
-      const canEdit = isAdmin || createdById === viewerId || businessEditableEventIds.has(event.id);
-      const canViewInterestedUsers = isAdmin;
-      const canUnlockInterestedUsers = !isAdmin && canEdit && Boolean(businessId);
-
-      return {
-        ...event,
-        isFavorite: Boolean(viewerId && favorites.some((favorite) => favorite.userId === viewerId)),
-        interestCount: _count.favorites,
-        interestPreview: canViewInterestedUsers
-          ? favorites
-              .map((favorite) => favorite.user)
-              .filter((user): user is { id: string; name: string | null; image: string | null } => Boolean(user))
-          : favorites.map((favorite) => ({ id: favorite.userId, name: null, image: null })),
-        canViewInterestedUsers,
-        canUnlockInterestedUsers,
-        canEdit,
-        isPendingReview: event.status === EventStatus.PENDING_REVIEW,
-      };
-    }),
-    scope,
-  });
+  return NextResponse.json(await getEventsPage({ session, regionKey: viewerRegionKey }));
 }
 
 export async function POST(request: Request) {

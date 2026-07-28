@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Globe, RefreshCcw, Shield } from 'lucide-react';
-import { Button, Card, Input, Separator } from '@heroui/react';
+import { Button, Card, Input } from '@heroui/react';
 import FieldErrorMessage from '../components/forms/FieldErrorMessage';
 import RegionSelector from '../components/RegionSelector';
 import { Logo } from '../components/Layout';
@@ -70,7 +70,7 @@ type PasswordAuthView = 'none' | 'signin' | 'signup';
 
 const fieldLabel = 'text-xs font-semibold uppercase tracking-[0.22em] text-slate-500';
 const inputClass =
-  'h-14 rounded-full border border-input bg-surface px-5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-200';
+  'h-14 min-h-14 w-full min-w-0 rounded-full border border-input bg-surface px-5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-200';
 const secondaryCardClass = 'border border-slate-200 bg-slate-50 shadow-none';
 
 const Registration: React.FC<RegistrationProps> = ({
@@ -357,9 +357,9 @@ const Registration: React.FC<RegistrationProps> = ({
                 ) : null}
 
                 <div className="flex w-full max-w-[360px] items-center gap-3">
-                  <Separator className="flex-1 bg-slate-100" />
+                  <div aria-hidden="true" className="h-px flex-1 bg-slate-200/25" />
                   <span className="text-xs font-medium text-slate-400">ou</span>
-                  <Separator className="flex-1 bg-slate-100" />
+                  <div aria-hidden="true" className="h-px flex-1 bg-slate-200/25" />
                 </div>
 
                 <Button
@@ -388,7 +388,7 @@ const Registration: React.FC<RegistrationProps> = ({
 
                 {passwordAuthView === 'signin' ? (
                   <form
-                    className="space-y-3 pt-2"
+                    className="w-full max-w-[360px] space-y-3 pt-2"
                     onSubmit={async (event) => {
                       event.preventDefault();
 
@@ -490,7 +490,7 @@ const Registration: React.FC<RegistrationProps> = ({
 
                 {passwordAuthView === 'signup' ? (
                   <form
-                    className="space-y-3 pt-2"
+                    className="w-full max-w-[360px] space-y-3 pt-2"
                     onSubmit={async (event) => {
                       event.preventDefault();
 
@@ -760,11 +760,11 @@ const Registration: React.FC<RegistrationProps> = ({
                 ) : null}
 
                 <div className="flex items-center gap-3">
-                  <Separator className="flex-1 bg-slate-100" />
+                  <div aria-hidden="true" className="h-px flex-1 bg-slate-200/25" />
                   <span className="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400">
                     ou
                   </span>
-                  <Separator className="flex-1 bg-slate-100" />
+                  <div aria-hidden="true" className="h-px flex-1 bg-slate-200/25" />
                 </div>
 
                 {emailEnabled ? (
@@ -851,7 +851,7 @@ const Registration: React.FC<RegistrationProps> = ({
 
                     {passwordAuthView === 'signin' ? (
                       <form
-                        className="space-y-4"
+                        className="w-full space-y-4"
                         onSubmit={async (event) => {
                           event.preventDefault();
 

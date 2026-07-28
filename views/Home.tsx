@@ -26,10 +26,11 @@ import { Modal } from '../components/ui/Modal';
 import { TrendsCarousel, type TrendItem } from '../components/app/TrendsCarousel';
 import { STATIC_HOUSING, STATIC_JOBS } from '../lib/static-catalog';
 import { BannerAd, Business, EventItem, User } from '../types';
+import type { HomeInitialData } from '../lib/content-contracts';
 
 const animatedSearchTerms = ['restaurantes', 'bares', 'eventos', 'pessoas'];
 
-const Home: React.FC<{ user: User }> = ({ user }) => {
+const Home: React.FC<{ user: User; initialData?: HomeInitialData }> = ({ user, initialData }) => {
   const router = useRouter();
   const { update } = useSession();
   const { showToast } = useToast();
@@ -38,14 +39,14 @@ const Home: React.FC<{ user: User }> = ({ user }) => {
   const [savingRegion, setSavingRegion] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAiSearchOpen, setIsAiSearchOpen] = useState(false);
-  const [latestBusiness, setLatestBusiness] = useState<Business | null>(null);
-  const [latestEvent, setLatestEvent] = useState<EventItem | null>(null);
+  const [latestBusiness, setLatestBusiness] = useState<Business | null>(initialData?.latestBusiness ?? null);
+  const [latestEvent, setLatestEvent] = useState<EventItem | null>(initialData?.latestEvent ?? null);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
   const [submittingBannerId, setSubmittingBannerId] = useState<string | null>(null);
   const [searchPlaceholderIndex, setSearchPlaceholderIndex] = useState(0);
   const { data: banners } = useRegionBanners('home', user.regionKey);
   const { data: communityPosts } = useRegionCommunityPosts(user.regionKey, 4);
-  const latestPost = communityPosts[0];
+  const latestPost = communityPosts[0] ?? initialData?.latestPost;
   const latestJob = STATIC_JOBS[0];
   const latestHousing = STATIC_HOUSING[0];
   const trendItems: TrendItem[] = [
