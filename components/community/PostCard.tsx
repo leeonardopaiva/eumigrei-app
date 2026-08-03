@@ -83,7 +83,6 @@ type CommentComposerProps = {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
-  submitting: boolean;
 };
 
 const Root: React.FC<RootProps> = ({ children, className = '' }) => (
@@ -362,7 +361,6 @@ const CommentComposer: React.FC<CommentComposerProps> = ({
   value,
   onChange,
   onSubmit,
-  submitting,
 }) => (
   <div className="flex items-center gap-2">
     <input
@@ -372,8 +370,8 @@ const CommentComposer: React.FC<CommentComposerProps> = ({
       placeholder="Escreva um comentario..."
       className="flex-1 rounded-full bg-bg px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-200"
     />
-    <Button type="button" onClick={onSubmit} disabled={submitting} size="xs">
-      {submitting ? '...' : 'Responder'}
+    <Button type="button" onClick={onSubmit} size="xs">
+      Responder
     </Button>
   </div>
 );

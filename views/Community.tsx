@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { useSearchParams } from 'next/navigation';
 import { Copy, ExternalLink, Share2, UserPlus } from 'lucide-react';
 import CommunityComposer from '@/components/community/CommunityComposer';
@@ -34,7 +35,6 @@ const Community: React.FC<{
   const [postPersonaMode, setPostPersonaMode] = useState<PersonaMode>(
     personaMode === 'professional' ? 'professional' : 'personal',
   );
-  const [publishing, setPublishing] = useState(false);
   const [submittingBannerId, setSubmittingBannerId] = useState<string | null>(null);
   const [posts, setPosts] = useState<Post[]>(initialData?.posts ?? []);
   const [postsLoading, setPostsLoading] = useState(!initialData);
@@ -313,17 +313,63 @@ const Community: React.FC<{
       return;
     }
 
-    setPublishing(true);
+    const content =
+      postContent.trim() ||
+      (composerMode === 'photo'
+        ? 'Compartilhando uma imagem com a comunidade.'
+        : composerMode === 'video'
+          ? 'Compartilhando um video com a comunidade.'
+          : 'Compartilhando algo com a comunidade.');
+    const temporaryPostId = `optimistic-post-${crypto.randomUUID()}`;
+    const optimisticPost: Post = {
+      id: temporaryPostId,
+      content,
+      imageUrl: normalizedImageUrl || null,
+      externalUrl: normalizedExternalUrl || null,
+      status: normalizedExternalUrl ? 'PENDING_REVIEW' : 'PUBLISHED',
+      createdAt: new Date().toISOString(),
+      locationLabel: isProfessionalMode
+        ? professionalIdentity?.locationLabel || user.location
+        : user.location,
+      author: isProfessionalMode && professionalIdentity
+        ? {
+            id: professionalIdentity.id,
+            name: professionalIdentity.name,
+            image: professionalIdentity.imageUrl,
+          }
+        : {
+            id: user.id,
+            name: user.name,
+            username: user.username,
+            image: user.avatar,
+          },
+      authorHref: isProfessionalMode && professionalIdentity
+        ? professionalIdentity.publicPath
+        : user.username
+          ? `/${user.username}`
+          : undefined,
+      authorType: isProfessionalMode ? 'BUSINESS' : 'USER',
+      comments: [],
+      likeCount: 0,
+      commentCount: 0,
+      viewerHasLiked: false,
+      likedBy: [],
+      canEdit: true,
+      canDelete: true,
+    };
+    const composerSnapshot = {
+      mode: composerMode,
+      content: postContent,
+      imageUrl: postImageUrl,
+      externalUrl: postExternalUrl,
+    };
+
+    flushSync(() => {
+      setPosts((current) => [optimisticPost, ...current]);
+      resetComposer();
+    });
 
     try {
-      const content =
-        postContent.trim() ||
-        (composerMode === 'photo'
-          ? 'Compartilhando uma imagem com a comunidade.'
-          : composerMode === 'video'
-            ? 'Compartilhando um video com a comunidade.'
-            : 'Compartilhando algo com a comunidade.');
-
       const response = await fetch('/api/community/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -338,20 +384,27 @@ const Community: React.FC<{
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
-        showToast(payload?.error ?? 'Nao foi possivel publicar agora.', 'error');
-        return;
+        throw new Error(payload?.error ?? 'Nao foi possivel publicar agora.');
       }
 
-      showToast(payload?.message ?? 'Post publicado.', 'success');
-
-      await reloadPosts();
-
-      resetComposer();
+      setPosts((current) =>
+        current.map((post) => (post.id === temporaryPostId ? payload.post : post)),
+      );
     } catch (error) {
       console.error('Failed to publish post:', error);
-      showToast('Nao foi possivel publicar agora.', 'error');
-    } finally {
-      setPublishing(false);
+      setPosts((current) => current.filter((post) => post.id !== temporaryPostId));
+      setPostContent((current) => current || composerSnapshot.content);
+      setPostImageUrl((current) => current || composerSnapshot.imageUrl);
+      setPostExternalUrl((current) => current || composerSnapshot.externalUrl);
+      setComposerMode((current) =>
+        current === 'text' && !postContent && !postImageUrl && !postExternalUrl
+          ? composerSnapshot.mode
+          : current,
+      );
+      showToast(
+        error instanceof Error ? error.message : 'Nao foi possivel publicar agora.',
+        'error',
+      );
     }
   };
 
@@ -369,8 +422,9 @@ const Community: React.FC<{
     pendingLikeIdsRef.current.add(postId);
     const nextLiked = !previousPost.viewerHasLiked;
 
-    setPosts((current) =>
-      current.map((post) =>
+    flushSync(() => {
+      setPosts((current) =>
+        current.map((post) =>
         post.id === postId
           ? {
               ...post,
@@ -389,8 +443,9 @@ const Community: React.FC<{
                 : post.likedBy.filter((likedUser) => likedUser.id !== user.id),
             }
           : post,
-      ),
-    );
+        ),
+      );
+    });
 
     try {
       const response = await fetch(`/api/community/posts/${postId}/reactions`, { method: 'POST' });
@@ -436,8 +491,9 @@ const Community: React.FC<{
     const normalizedContent = content.trim();
     const temporaryCommentId = `optimistic-${crypto.randomUUID()}`;
 
-    setPosts((current) =>
-      current.map((post) =>
+    flushSync(() => {
+      setPosts((current) =>
+        current.map((post) =>
         post.id === postId
           ? {
               ...post,
@@ -458,8 +514,9 @@ const Community: React.FC<{
               ],
             }
           : post,
-      ),
-    );
+        ),
+      );
+    });
 
     try {
       const response = await fetch(`/api/community/posts/${postId}/comments`, {
@@ -752,7 +809,6 @@ const Community: React.FC<{
             mode={composerMode}
             onModeChange={handleComposerModeChange}
             onPublish={handlePublish}
-            publishing={publishing}
           />
         </CommunityComposer.Root>
       </div>
