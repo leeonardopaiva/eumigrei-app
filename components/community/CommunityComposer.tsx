@@ -39,7 +39,6 @@ type ActionsProps = {
   mode: ComposerMode;
   onModeChange: (mode: ComposerMode) => void;
   onPublish: () => void;
-  publishing: boolean;
 };
 
 type ModeButtonProps = {
@@ -164,7 +163,7 @@ const ModeButton: React.FC<ModeButtonProps> = ({ active, icon, label, onClick })
   </button>
 );
 
-const Actions: React.FC<ActionsProps> = ({ mode, onModeChange, onPublish, publishing }) => (
+const Actions: React.FC<ActionsProps> = ({ mode, onModeChange, onPublish }) => (
   <div className="flex items-center justify-between pt-2">
     <div className="flex items-center gap-4">
       <ModeButton
@@ -186,8 +185,8 @@ const Actions: React.FC<ActionsProps> = ({ mode, onModeChange, onPublish, publis
         onClick={() => onModeChange(mode === 'link' ? 'text' : 'link')}
       />
     </div>
-    <Button onClick={onPublish} disabled={publishing} loading={publishing} size="sm">
-      {publishing ? 'Publicando...' : 'Publicar'}
+    <Button onClick={onPublish} size="sm">
+      Publicar
     </Button>
   </div>
 );

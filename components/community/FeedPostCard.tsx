@@ -27,7 +27,6 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
 }) => {
   const authorHref = post.authorHref || (post.author.username ? `/${post.author.username}` : undefined);
   const [commentText, setCommentText] = useState('');
-  const [submittingComment, setSubmittingComment] = useState(false);
   const [editingPost, setEditingPost] = useState(false);
   const [editingPostContent, setEditingPostContent] = useState(post.content);
   const [editingPostImageUrl, setEditingPostImageUrl] = useState(post.imageUrl || '');
@@ -77,7 +76,7 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
     }
   }, [post.likeCount]);
 
-  const handleCommentSubmit = async () => {
+  const handleCommentSubmit = () => {
     const submittedComment = commentText.trim();
 
     if (!submittedComment) {
@@ -85,15 +84,9 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
     }
 
     setCommentText('');
-    setSubmittingComment(true);
-
-    try {
-      await onAddComment(submittedComment);
-    } catch {
+    void onAddComment(submittedComment).catch(() => {
       setCommentText((current) => current || submittedComment);
-    } finally {
-      setSubmittingComment(false);
-    }
+    });
   };
 
   const handleSavePost = async () => {
@@ -401,8 +394,7 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
       <PostCard.CommentComposer
         value={commentText}
         onChange={setCommentText}
-        onSubmit={() => void handleCommentSubmit()}
-        submitting={submittingComment}
+        onSubmit={handleCommentSubmit}
       />
 
       {!supportsHover && likesOpen && likesPreviewContent ? (
