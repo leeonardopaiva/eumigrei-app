@@ -1,42 +1,16 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import Script from 'next/script';
+import React, { useRef, useState } from 'react';
 import { ImagePlus, Link2, LoaderCircle } from 'lucide-react';
 import { cloudinaryConfig, getCloudinaryFolderPath, isCloudinaryEnabled, type CloudinaryFolder } from '@/lib/cloudinary';
 import { normalizeUrlFieldValue } from '@/lib/forms/validation';
 import { isValidHttpUrl } from '@/lib/url';
 import FieldErrorMessage from './FieldErrorMessage';
 
-type CloudinaryWidgetResult = {
-  event?: string;
-  info?: {
-    secure_url?: string;
-  };
-};
-
-type CloudinaryWidget = {
-  open: () => void;
-  close: () => void;
-};
-
-type CloudinaryWindow = Window & {
-  cloudinary?: {
-    createUploadWidget: (
-      options: {
-        cloudName: string;
-        uploadPreset: string;
-        folder: string;
-        sources: string[];
-        multiple: boolean;
-        maxFiles: number;
-        resourceType: string;
-        clientAllowedFormats: string[];
-        singleUploadAutoClose: boolean;
-        showAdvancedOptions: boolean;
-      },
-      callback: (error: unknown, result: CloudinaryWidgetResult) => void,
-    ) => CloudinaryWidget;
+type CloudinaryUploadResponse = {
+  secure_url?: string;
+  error?: {
+    message?: string;
   };
 };
 
@@ -61,21 +35,9 @@ const CloudinaryImageField: React.FC<CloudinaryImageFieldProps> = ({
   error,
   onClearError,
 }) => {
-  const widgetRef = useRef<CloudinaryWidget | null>(null);
-  const [scriptReady, setScriptReady] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const cloudinaryWindow = window as CloudinaryWindow;
-
-    if (cloudinaryWindow.cloudinary) {
-      setScriptReady(true);
-    }
-  }, []);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleInputChange = (nextValue: string) => {
     onClearError?.();
@@ -90,75 +52,58 @@ const CloudinaryImageField: React.FC<CloudinaryImageFieldProps> = ({
     }
   };
 
-  const handleUploadSuccess = (uploadedUrl?: string) => {
-    if (!uploadedUrl) {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file || !isCloudinaryEnabled || disabled) {
       return;
     }
 
-    onClearError?.();
-    onChange(uploadedUrl);
-  };
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', cloudinaryConfig.uploadPreset);
+    formData.append('folder', getCloudinaryFolderPath(folder));
 
-  const openWidget = () => {
-    if (!isCloudinaryEnabled || disabled || !scriptReady || typeof window === 'undefined') {
-      return;
-    }
+    setUploading(true);
+    setUploadError(null);
 
-    const cloudinaryWindow = window as CloudinaryWindow;
-
-    if (!cloudinaryWindow.cloudinary) {
-      return;
-    }
-
-    if (!widgetRef.current) {
-      widgetRef.current = cloudinaryWindow.cloudinary.createUploadWidget(
+    try {
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudinaryConfig.cloudName)}/image/upload`,
         {
-          cloudName: cloudinaryConfig.cloudName,
-          uploadPreset: cloudinaryConfig.uploadPreset,
-          folder: getCloudinaryFolderPath(folder),
-          sources: ['local', 'url', 'camera'],
-          multiple: false,
-          maxFiles: 1,
-          resourceType: 'image',
-          clientAllowedFormats: ['png', 'jpg', 'jpeg', 'webp'],
-          singleUploadAutoClose: true,
-          showAdvancedOptions: false,
-        },
-        (widgetError, result) => {
-          if (widgetError) {
-            setUploading(false);
-            return;
-          }
-
-          if (result.event === 'queues-start') {
-            setUploading(true);
-            return;
-          }
-
-          if (result.event === 'success') {
-            setUploading(false);
-            handleUploadSuccess(result.info?.secure_url);
-            widgetRef.current?.close();
-            return;
-          }
-
-          if (result.event === 'close' || result.event === 'queues-end' || result.event === 'abort') {
-            setUploading(false);
-          }
+          method: 'POST',
+          body: formData,
         },
       );
-    }
+      const result = (await response.json()) as CloudinaryUploadResponse;
 
-    widgetRef.current.open();
+      if (!response.ok || !result.secure_url) {
+        throw new Error(result.error?.message || 'Nao foi possivel enviar a imagem.');
+      }
+
+      onClearError?.();
+      onChange(result.secure_url);
+    } catch (uploadFailure) {
+      setUploadError(
+        uploadFailure instanceof Error
+          ? uploadFailure.message
+          : 'Nao foi possivel enviar a imagem.',
+      );
+    } finally {
+      setUploading(false);
+      event.target.value = '';
+    }
   };
 
   return (
     <div className="space-y-2">
-      <Script
-        src="https://upload-widget.cloudinary.com/global/all.js"
-        strategy="afterInteractive"
-        onLoad={() => setScriptReady(true)}
-        onReady={() => setScriptReady(true)}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+        disabled={!isCloudinaryEnabled || disabled || uploading}
       />
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
         <div className="space-y-2">
@@ -178,14 +123,15 @@ const CloudinaryImageField: React.FC<CloudinaryImageFieldProps> = ({
         </div>
         <button
           type="button"
-          onClick={openWidget}
-          disabled={!isCloudinaryEnabled || !scriptReady || disabled || uploading}
+          onClick={() => fileInputRef.current?.click()}
+          disabled={!isCloudinaryEnabled || disabled || uploading}
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {uploading ? <LoaderCircle size={16} className="animate-spin" /> : <ImagePlus size={16} />}
           {uploading ? 'Enviando...' : 'Upload'}
         </button>
       </div>
+      <FieldErrorMessage message={uploadError} />
       <p className="px-1 text-xs text-slate-500">
         {hint ||
           (isCloudinaryEnabled
