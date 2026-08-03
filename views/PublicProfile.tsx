@@ -20,6 +20,7 @@ import { Logo } from '../components/Layout';
 import RegionSelector from '../components/RegionSelector';
 import { DEFAULT_AVATAR_URL, handleAvatarError } from '../lib/avatar';
 import { PublicUserProfile, User } from '../types';
+import { Modal } from '../components/ui/Modal';
 
 type PublicProfileProps = {
   username: string;
@@ -114,6 +115,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
   const [refreshKey, setRefreshKey] = useState(0);
   const [friendActionLoading, setFriendActionLoading] = useState(false);
   const [creatingGroup, setCreatingGroup] = useState(false);
+  const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [groupDraft, setGroupDraft] = useState({
     name: '',
     category: '',
@@ -257,6 +259,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
 
       showToast('Grupo criado.', 'success');
       setGroupDraft({ name: '', category: '', description: '', regionKey: '' });
+      setGroupModalOpen(false);
       refreshProfile();
     } catch (createError) {
       showToast(createError instanceof Error ? createError.message : 'Nao foi possivel criar o grupo.', 'error');
@@ -539,7 +542,20 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                         <p className="text-sm text-slate-500">Organize pessoas por cidade, bairro ou interesse.</p>
                       </div>
                     </div>
-                    <div className="mt-5 space-y-3">
+                    <button
+                      type="button"
+                      onClick={() => setGroupModalOpen(true)}
+                      className="theme-bg theme-shadow mt-5 w-full rounded-2xl px-4 py-3 text-sm font-bold"
+                    >
+                      Criar novo grupo
+                    </button>
+                    <Modal
+                      open={groupModalOpen}
+                      onClose={() => setGroupModalOpen(false)}
+                      title="Criar grupo"
+                      description="Organize pessoas por cidade, bairro ou interesse."
+                    >
+                    <div className="space-y-3">
                       <input
                         value={groupDraft.name}
                         onChange={(event) => setGroupDraft((current) => ({ ...current, name: event.target.value }))}
@@ -577,6 +593,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username, viewer, embedde
                         {creatingGroup ? 'Criando...' : 'Criar grupo'}
                       </button>
                     </div>
+                    </Modal>
                   </div>
                 ) : null}
 

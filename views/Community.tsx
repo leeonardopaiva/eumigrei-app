@@ -42,6 +42,7 @@ const Community: React.FC<{
   const [postsHasMore, setPostsHasMore] = useState(initialData?.hasMore ?? true);
   const [postsNextOffset, setPostsNextOffset] = useState(initialData?.nextOffset ?? 0);
   const initialPageConsumedRef = useRef(false);
+  const pendingLikeIdsRef = useRef(new Set<string>());
   const targetPostAutoLoadAttemptsRef = useRef(0);
   const targetPostScrollIdRef = useRef<string | null>(null);
   const [referralSummary, setReferralSummary] = useState<ReferralSummary>({
@@ -355,6 +356,42 @@ const Community: React.FC<{
   };
 
   const handleToggleLike = async (postId: string) => {
+    if (pendingLikeIdsRef.current.has(postId)) {
+      return;
+    }
+
+    const previousPost = posts.find((post) => post.id === postId);
+
+    if (!previousPost) {
+      return;
+    }
+
+    pendingLikeIdsRef.current.add(postId);
+    const nextLiked = !previousPost.viewerHasLiked;
+
+    setPosts((current) =>
+      current.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              viewerHasLiked: nextLiked,
+              likeCount: Math.max(0, post.likeCount + (nextLiked ? 1 : -1)),
+              likedBy: nextLiked
+                ? [
+                    {
+                      id: user.id,
+                      name: user.name,
+                      username: user.username,
+                      image: user.avatar,
+                    },
+                    ...post.likedBy.filter((likedUser) => likedUser.id !== user.id),
+                  ].slice(0, 8)
+                : post.likedBy.filter((likedUser) => likedUser.id !== user.id),
+            }
+          : post,
+      ),
+    );
+
     try {
       const response = await fetch(`/api/community/posts/${postId}/reactions`, { method: 'POST' });
       const payload = await response.json().catch(() => null);
@@ -363,19 +400,72 @@ const Community: React.FC<{
         throw new Error(payload?.error ?? 'Nao foi possivel curtir o post.');
       }
 
-      await reloadPosts();
+      setPosts((current) =>
+        current.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                viewerHasLiked: Boolean(payload.liked),
+                likeCount: Number(payload.likeCount),
+                likedBy: payload.likedBy,
+              }
+            : post,
+        ),
+      );
     } catch (error) {
       console.error('Failed to toggle like:', error);
+      setPosts((current) =>
+        current.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                viewerHasLiked: previousPost.viewerHasLiked,
+                likeCount: previousPost.likeCount,
+                likedBy: previousPost.likedBy,
+              }
+            : post,
+        ),
+      );
       showToast('Nao foi possivel curtir esse post agora.', 'error');
+    } finally {
+      pendingLikeIdsRef.current.delete(postId);
     }
   };
 
   const handleAddComment = async (postId: string, content: string) => {
+    const normalizedContent = content.trim();
+    const temporaryCommentId = `optimistic-${crypto.randomUUID()}`;
+
+    setPosts((current) =>
+      current.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              commentCount: post.commentCount + 1,
+              comments: [
+                ...post.comments,
+                {
+                  id: temporaryCommentId,
+                  content: normalizedContent,
+                  createdAt: new Date().toISOString(),
+                  author: {
+                    id: user.id,
+                    name: user.name,
+                    username: user.username,
+                    image: user.avatar,
+                  },
+                },
+              ],
+            }
+          : post,
+      ),
+    );
+
     try {
       const response = await fetch(`/api/community/posts/${postId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content: normalizedContent }),
       });
       const payload = await response.json().catch(() => null);
 
@@ -383,8 +473,40 @@ const Community: React.FC<{
         throw new Error(payload?.error ?? 'Nao foi possivel comentar.');
       }
 
-      await reloadPosts();
+      setPosts((current) =>
+        current.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                comments: post.comments.map((comment) =>
+                  comment.id === temporaryCommentId
+                    ? {
+                        ...payload.comment,
+                        author: {
+                          ...payload.comment.author,
+                          name: payload.comment.author.name || 'Usuario da comunidade',
+                        },
+                      }
+                    : comment,
+                ),
+              }
+            : post,
+        ),
+      );
     } catch (error) {
+      setPosts((current) =>
+        current.map((post) => {
+          if (post.id !== postId || !post.comments.some((comment) => comment.id === temporaryCommentId)) {
+            return post;
+          }
+
+          return {
+            ...post,
+            commentCount: Math.max(0, post.commentCount - 1),
+            comments: post.comments.filter((comment) => comment.id !== temporaryCommentId),
+          };
+        }),
+      );
       showToast('Nao foi possivel comentar agora.', 'error');
       throw error;
     }

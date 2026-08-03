@@ -10,6 +10,7 @@ export async function getProfileData(userId: string): Promise<ProfileInitialData
       id: true, name: true, username: true, email: true, phone: true, image: true,
       coverImageUrl: true, bio: true, interests: true, galleryUrls: true,
       locationLabel: true, regionKey: true, updatedAt: true,
+      gender: true, age: true, timeAbroad: true, birthCity: true,
     },
   });
   if (!user) return null;

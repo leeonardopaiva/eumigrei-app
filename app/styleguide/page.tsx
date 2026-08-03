@@ -29,6 +29,8 @@ import { Spinner } from '../../components/ui/Spinner';
 import { Tabs } from '../../components/ui/Tabs';
 import { Breadcrumb } from '../../components/ui/Breadcrumb';
 import { Pagination } from '../../components/ui/Pagination';
+import { ProgressBar } from '../../components/ui/ProgressBar';
+import { Autocomplete } from '../../components/ui/Autocomplete';
 import { GringoouLogo } from '../../components/icons/GringoouLogo';
 import { TrendsCarousel } from '../../components/app/TrendsCarousel';
 import { SidebarMenu, SidebarMenuItem } from '../../components/navigation/SidebarMenu';
@@ -75,6 +77,7 @@ export default function StyleguidePage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
+  const [city, setCity] = useState('');
 
   return (
     <div className="min-h-screen bg-bg pb-24">
@@ -168,6 +171,19 @@ import { Input, Textarea, Select, Checkbox, Toggle } from '@/components/ui/Input
       >
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-4">
+            <div>
+              <p className="mb-1.5 text-caption font-bold text-slate-500">Progresso</p>
+              <ProgressBar value={65} label="Conclusao do perfil" />
+            </div>
+            <div>
+              <p className="mb-1.5 text-caption font-bold text-slate-500">Autocomplete</p>
+              <Autocomplete
+                value={city}
+                onChange={setCity}
+                options={['Sao Paulo, SP', 'Rio de Janeiro, RJ', 'Salvador, BA', 'Recife, PE']}
+                placeholder="Busque uma cidade"
+              />
+            </div>
             <div>
               <p className="mb-1.5 text-caption font-bold text-slate-500">Input padrão</p>
               <Input placeholder="Digite aqui..." />

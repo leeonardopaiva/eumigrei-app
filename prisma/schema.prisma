@@ -14,6 +14,20 @@ enum UserRole {
   ADMIN
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum TimeAbroad {
+  LESS_THAN_ONE_YEAR
+  ONE_TO_THREE_YEARS
+  THREE_TO_FIVE_YEARS
+  MORE_THAN_FIVE_YEARS
+}
+
 enum BusinessStatus {
   DRAFT
   PENDING_REVIEW
@@ -112,69 +126,113 @@ enum AdPaymentStatus {
 }
 
 model User {
-  id                  String          @id @default(cuid())
-  name                String?
-  username            String?         @unique
-  email               String?         @unique
-  passwordHash        String?
-  emailVerified       DateTime?
-  image               String?
-  coverImageUrl       String?
-  bio                 String?
-  interests           String[]        @default([])
-  galleryUrls         String[]        @default([])
-  role                UserRole        @default(USER)
-  phone               String?
-  locationLabel       String?
-  regionKey           String?
-  referredById        String?
-  onboardingCompleted Boolean         @default(false)
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
-  accounts            Account[]
-  adCharges           AdCharge[]
-  adImpressions       AdImpression[]
-  sessions            Session[]
-  businessMemberships BusinessMember[]
-  createdBusinesses   Business[]      @relation("BusinessCreator")
-  createdEvents       Event[]         @relation("EventCreator")
-  communityPosts      CommunityPost[] @relation("CommunityPostAuthor")
-  postComments        PostComment[]   @relation("PostCommentAuthor")
-  postReactions       PostReaction[]  @relation("PostReactionAuthor")
-  postReports         PostReport[]    @relation("PostReportAuthor")
-  emailChangeTokens   EmailChangeToken[]
-  suggestions         Suggestion[]
-  businessFavorites   BusinessFavorite[]
-  eventFavorites      EventFavorite[]
-  businessRatings     BusinessRating[]
-  eventRatings        EventRating[]
-  analyticsEvents     AnalyticsEvent[]
-  bannerRegistrations BannerRegistration[]
-  sentFriendRequests  FriendRequest[] @relation("FriendRequestSender")
-  receivedFriendRequests FriendRequest[] @relation("FriendRequestRecipient")
-  createdGroups       CommunityGroup[] @relation("CommunityGroupCreator")
-  groupMemberships    CommunityGroupMember[]
-  referredBy          User?           @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
-  referrals           User[]          @relation("UserReferrals")
+  id                     String                 @id @default(cuid())
+  name                   String?
+  username               String?                @unique
+  email                  String?                @unique
+  passwordHash           String?
+  emailVerified          DateTime?
+  image                  String?
+  coverImageUrl          String?
+  bio                    String?
+  interests              String[]               @default([])
+  galleryUrls            String[]               @default([])
+  role                   UserRole               @default(USER)
+  phone                  String?
+  locationLabel          String?
+  regionKey              String?
+  referredById           String?
+  onboardingCompleted    Boolean                @default(false)
+  gender                 Gender?
+  age                    Int?
+  timeAbroad             TimeAbroad?
+  birthCity              String?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  accounts               Account[]
+  adCharges              AdCharge[]
+  adImpressions          AdImpression[]
+  sessions               Session[]
+  businessMemberships    BusinessMember[]
+  createdBusinesses      Business[]             @relation("BusinessCreator")
+  createdEvents          Event[]                @relation("EventCreator")
+  createdJobs            Job[]                  @relation("JobCreator")
+  createdHousing         Housing[]              @relation("HousingCreator")
+  communityPosts         CommunityPost[]        @relation("CommunityPostAuthor")
+  postComments           PostComment[]          @relation("PostCommentAuthor")
+  postReactions          PostReaction[]         @relation("PostReactionAuthor")
+  postReports            PostReport[]           @relation("PostReportAuthor")
+  emailChangeTokens      EmailChangeToken[]
+  suggestions            Suggestion[]
+  businessFavorites      BusinessFavorite[]
+  eventFavorites         EventFavorite[]
+  businessRatings        BusinessRating[]
+  eventRatings           EventRating[]
+  analyticsEvents        AnalyticsEvent[]
+  bannerRegistrations    BannerRegistration[]
+  sentFriendRequests     FriendRequest[]        @relation("FriendRequestSender")
+  receivedFriendRequests FriendRequest[]        @relation("FriendRequestRecipient")
+  createdGroups          CommunityGroup[]       @relation("CommunityGroupCreator")
+  groupMemberships       CommunityGroupMember[]
+  referredBy             User?                  @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals              User[]                 @relation("UserReferrals")
 
   @@index([referredById, createdAt])
 }
 
+model Job {
+  id             String   @id @default(cuid())
+  title          String
+  company        String
+  description    String   @db.Text
+  employmentType String
+  locationLabel  String
+  salary         String?
+  contactUrl     String?
+  isActive       Boolean  @default(true)
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdBy      User     @relation("JobCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([isActive, createdAt])
+  @@index([createdById, createdAt])
+}
+
+model Housing {
+  id            String   @id @default(cuid())
+  title         String
+  description   String   @db.Text
+  propertyType  String
+  locationLabel String
+  price         String
+  imageUrl      String?
+  contactUrl    String?
+  isActive      Boolean  @default(true)
+  createdById   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  createdBy     User     @relation("HousingCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([isActive, createdAt])
+  @@index([createdById, createdAt])
+}
+
 model Region {
-  key       String   @id
-  label     String   @unique
-  city      String
-  state     String
-  lat       Float
-  lng       Float
-  aliases   String[] @default([])
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  banners   Banner[]
-  communityGroups CommunityGroup[]
-  businessVisibilityTargets Business[] @relation("BusinessVisibilityRegion")
-  eventVisibilityTargets Event[] @relation("EventVisibilityRegion")
+  key                       String           @id
+  label                     String           @unique
+  city                      String
+  state                     String
+  lat                       Float
+  lng                       Float
+  aliases                   String[]         @default([])
+  isActive                  Boolean          @default(true)
+  createdAt                 DateTime         @default(now())
+  updatedAt                 DateTime         @updatedAt
+  banners                   Banner[]
+  communityGroups           CommunityGroup[]
+  businessVisibilityTargets Business[]       @relation("BusinessVisibilityRegion")
+  eventVisibilityTargets    Event[]          @relation("EventVisibilityRegion")
 
   @@index([isActive, label])
 }
@@ -215,47 +273,47 @@ model VerificationToken {
 
 model EmailChangeToken {
   id        String   @id @default(cuid())
-  userId     String
-  newEmail   String
-  tokenHash  String   @unique
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  newEmail  String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, newEmail])
   @@index([newEmail, expiresAt])
 }
 
 model Business {
-  id            String          @id @default(cuid())
-  name          String
-  slug          String          @unique
-  category      String
-  description   String?
-  phone         String?
-  whatsapp      String?
-  website       String?
-  instagram     String?
-  address       String
-  locationLabel String
-  regionKey     String
-  visibilityScope VisibilityScope @default(USER_REGION)
+  id                  String             @id @default(cuid())
+  name                String
+  slug                String             @unique
+  category            String
+  description         String?
+  phone               String?
+  whatsapp            String?
+  website             String?
+  instagram           String?
+  address             String
+  locationLabel       String
+  regionKey           String
+  visibilityScope     VisibilityScope    @default(USER_REGION)
   visibilityRegionKey String?
-  imageUrl      String?
-  galleryUrls   String[]        @default([])
-  ratingAverage Float           @default(0)
-  ratingCount   Int             @default(0)
-  status        BusinessStatus  @default(PENDING_REVIEW)
-  createdById   String
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  createdBy     User            @relation("BusinessCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  members       BusinessMember[]
-  visibilityRegion Region?      @relation("BusinessVisibilityRegion", fields: [visibilityRegionKey], references: [key], onDelete: SetNull)
-  favorites     BusinessFavorite[]
-  ratings       BusinessRating[]
-  communityPosts CommunityPost[] @relation("CommunityPostBusinessAuthor")
-  events        Event[]          @relation("EventBusiness")
+  imageUrl            String?
+  galleryUrls         String[]           @default([])
+  ratingAverage       Float              @default(0)
+  ratingCount         Int                @default(0)
+  status              BusinessStatus     @default(PENDING_REVIEW)
+  createdById         String
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  createdBy           User               @relation("BusinessCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members             BusinessMember[]
+  visibilityRegion    Region?            @relation("BusinessVisibilityRegion", fields: [visibilityRegionKey], references: [key], onDelete: SetNull)
+  favorites           BusinessFavorite[]
+  ratings             BusinessRating[]
+  communityPosts      CommunityPost[]    @relation("CommunityPostBusinessAuthor")
+  events              Event[]            @relation("EventBusiness")
 
   @@index([status, regionKey])
   @@index([category, regionKey])
@@ -275,32 +333,32 @@ model BusinessMember {
 }
 
 model Event {
-  id            String      @id @default(cuid())
-  title         String
-  slug          String      @unique
-  description   String
-  venueName     String
-  startsAt      DateTime
-  endsAt        DateTime?
-  locationLabel String
-  regionKey     String
-  visibilityScope VisibilityScope @default(USER_REGION)
+  id                  String          @id @default(cuid())
+  title               String
+  slug                String          @unique
+  description         String
+  venueName           String
+  startsAt            DateTime
+  endsAt              DateTime?
+  locationLabel       String
+  regionKey           String
+  visibilityScope     VisibilityScope @default(USER_REGION)
   visibilityRegionKey String?
-  externalUrl   String?
-  imageUrl      String?
-  galleryUrls   String[]    @default([])
-  ratingAverage Float       @default(0)
-  ratingCount   Int         @default(0)
-  status        EventStatus @default(PENDING_REVIEW)
-  businessId    String?
-  createdById   String
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  createdBy     User        @relation("EventCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  business      Business?   @relation("EventBusiness", fields: [businessId], references: [id], onDelete: SetNull)
-  visibilityRegion Region?  @relation("EventVisibilityRegion", fields: [visibilityRegionKey], references: [key], onDelete: SetNull)
-  favorites     EventFavorite[]
-  ratings       EventRating[]
+  externalUrl         String?
+  imageUrl            String?
+  galleryUrls         String[]        @default([])
+  ratingAverage       Float           @default(0)
+  ratingCount         Int             @default(0)
+  status              EventStatus     @default(PENDING_REVIEW)
+  businessId          String?
+  createdById         String
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  createdBy           User            @relation("EventCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  business            Business?       @relation("EventBusiness", fields: [businessId], references: [id], onDelete: SetNull)
+  visibilityRegion    Region?         @relation("EventVisibilityRegion", fields: [visibilityRegionKey], references: [key], onDelete: SetNull)
+  favorites           EventFavorite[]
+  ratings             EventRating[]
 
   @@index([status, regionKey, startsAt])
   @@index([visibilityScope, visibilityRegionKey, startsAt])
@@ -308,22 +366,22 @@ model Event {
 }
 
 model CommunityPost {
-  id            String              @id @default(cuid())
-  content       String              @db.Text
-  imageUrl      String?
-  externalUrl   String?
-  status        CommunityPostStatus @default(PUBLISHED)
-  authorId      String
+  id               String              @id @default(cuid())
+  content          String              @db.Text
+  imageUrl         String?
+  externalUrl      String?
+  status           CommunityPostStatus @default(PUBLISHED)
+  authorId         String
   businessAuthorId String?
-  regionKey     String
-  locationLabel String
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  author        User                @relation("CommunityPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  businessAuthor Business?          @relation("CommunityPostBusinessAuthor", fields: [businessAuthorId], references: [id], onDelete: SetNull)
-  comments      PostComment[]
-  reactions     PostReaction[]
-  reports       PostReport[]
+  regionKey        String
+  locationLabel    String
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  author           User                @relation("CommunityPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  businessAuthor   Business?           @relation("CommunityPostBusinessAuthor", fields: [businessAuthorId], references: [id], onDelete: SetNull)
+  comments         PostComment[]
+  reactions        PostReaction[]
+  reports          PostReport[]
 
   @@index([status, regionKey, createdAt])
   @@index([businessAuthorId, createdAt])
@@ -367,35 +425,35 @@ model PostReport {
 }
 
 model Banner {
-  id                String           @id @default(cuid())
-  name              String
-  imageUrl          String
-  type              BannerType       @default(LINK)
-  placement         BannerPlacement  @default(HOME)
-  targetUrl         String?
-  regionKey         String?
-  isActive          Boolean          @default(true)
-  campaignStatus    AdCampaignStatus @default(ACTIVE)
-  objective         AdObjective      @default(TRAFFIC)
-  billingMode       AdBillingMode    @default(FLAT)
-  paymentStatus     AdPaymentStatus  @default(NOT_REQUIRED)
-  targetInterests   String[]         @default([])
-  targetKeywords    String[]         @default([])
-  targetCategories  String[]         @default([])
-  startsAt          DateTime?
-  endsAt            DateTime?
-  dailyBudgetCents  Int?
-  totalBudgetCents  Int?
-  bidCents          Int              @default(0)
-  spentCents        Int              @default(0)
-  checkoutUrl       String?
-  paymentProvider   String?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  region            Region?          @relation(fields: [regionKey], references: [key], onDelete: SetNull)
-  registrations BannerRegistration[]
-  impressions   AdImpression[]
-  charges       AdCharge[]
+  id               String               @id @default(cuid())
+  name             String
+  imageUrl         String
+  type             BannerType           @default(LINK)
+  placement        BannerPlacement      @default(HOME)
+  targetUrl        String?
+  regionKey        String?
+  isActive         Boolean              @default(true)
+  campaignStatus   AdCampaignStatus     @default(ACTIVE)
+  objective        AdObjective          @default(TRAFFIC)
+  billingMode      AdBillingMode        @default(FLAT)
+  paymentStatus    AdPaymentStatus      @default(NOT_REQUIRED)
+  targetInterests  String[]             @default([])
+  targetKeywords   String[]             @default([])
+  targetCategories String[]             @default([])
+  startsAt         DateTime?
+  endsAt           DateTime?
+  dailyBudgetCents Int?
+  totalBudgetCents Int?
+  bidCents         Int                  @default(0)
+  spentCents       Int                  @default(0)
+  checkoutUrl      String?
+  paymentProvider  String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  region           Region?              @relation(fields: [regionKey], references: [key], onDelete: SetNull)
+  registrations    BannerRegistration[]
+  impressions      AdImpression[]
+  charges          AdCharge[]
 
   @@index([isActive, regionKey, updatedAt])
   @@index([campaignStatus, startsAt, endsAt])

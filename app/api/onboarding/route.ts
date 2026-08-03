@@ -71,6 +71,10 @@ export async function POST(request: Request) {
       phone: parsed.data.phone,
       locationLabel: region.label,
       regionKey: region.key,
+      gender: parsed.data.gender,
+      age: parsed.data.age,
+      timeAbroad: parsed.data.timeAbroad,
+      birthCity: parsed.data.birthCity,
       onboardingCompleted: true,
       referredById: currentUser?.referredById || referrer?.id || undefined,
     },
@@ -84,6 +88,10 @@ export async function POST(request: Request) {
       locationLabel: true,
       regionKey: true,
       onboardingCompleted: true,
+      gender: true,
+      age: true,
+      timeAbroad: true,
+      birthCity: true,
     },
   });
 

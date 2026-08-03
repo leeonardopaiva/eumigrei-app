@@ -78,15 +78,19 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({
   }, [post.likeCount]);
 
   const handleCommentSubmit = async () => {
-    if (!commentText.trim()) {
+    const submittedComment = commentText.trim();
+
+    if (!submittedComment) {
       return;
     }
 
+    setCommentText('');
     setSubmittingComment(true);
 
     try {
-      await onAddComment(commentText);
-      setCommentText('');
+      await onAddComment(submittedComment);
+    } catch {
+      setCommentText((current) => current || submittedComment);
     } finally {
       setSubmittingComment(false);
     }

@@ -39,6 +39,10 @@ export interface ProfileInitialData {
     galleryUrls: string[];
     locationLabel: string | null;
     regionKey: string | null;
+    gender: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY' | null;
+    age: number | null;
+    timeAbroad: 'LESS_THAN_ONE_YEAR' | 'ONE_TO_THREE_YEARS' | 'THREE_TO_FIVE_YEARS' | 'MORE_THAN_FIVE_YEARS' | null;
+    birthCity: string | null;
     updatedAt: string;
   };
   professionalProfile: ProfessionalProfileSummary;

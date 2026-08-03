@@ -9,6 +9,10 @@ type RegistrationValues = {
   email: string;
   phone: string;
   regionKey: string;
+  gender: string;
+  age: string;
+  timeAbroad: string;
+  birthCity: string;
   referralUsername?: string | null;
 };
 

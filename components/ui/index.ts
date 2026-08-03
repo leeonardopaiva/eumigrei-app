@@ -12,3 +12,5 @@ export * from './Tabs';
 export * from './Breadcrumb';
 export * from './Pagination';
 export * from './EmptyState';
+export * from './ProgressBar';
+export * from './Autocomplete';
