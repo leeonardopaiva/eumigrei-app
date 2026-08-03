@@ -11,6 +11,7 @@ datasource db {
 enum UserRole {
   USER
   BUSINESS_OWNER
+  COMPANY
   ADMIN
 }
 
@@ -147,6 +148,7 @@ model User {
   age                    Int?
   timeAbroad             TimeAbroad?
   birthCity              String?
+  recruiterVerified      Boolean                @default(false)
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
   accounts               Account[]

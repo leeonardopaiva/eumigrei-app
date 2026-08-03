@@ -6,6 +6,8 @@ import GroupsDirectory from '@/views/GroupsDirectory';
 import Home from '@/views/Home';
 import HousingList from '@/views/HousingList';
 import JobList from '@/views/JobList';
+import JobDetail from '@/views/JobDetail';
+import HousingDetail from '@/views/HousingDetail';
 import Profile from '@/views/Profile';
 import SearchResults from '@/views/SearchResults';
 import type { PersonaMode, ProfessionalProfileIdentity, User } from '@/types';
@@ -56,9 +58,9 @@ const UserWorkspace: React.FC<UserWorkspaceProps> = ({
     case 'buscar':
       return <SearchResults />;
     case 'vagas':
-      return <JobList />;
+      return segments[1] ? <JobDetail jobId={decodeURIComponent(segments[1])} /> : <JobList user={currentUser} />;
     case 'moradia':
-      return <HousingList />;
+      return segments[1] ? <HousingDetail housingId={decodeURIComponent(segments[1])} /> : <HousingList user={currentUser} />;
     case 'profile':
       return (
         <Profile

@@ -2,6 +2,7 @@
 export enum UserRole {
   USER = 'USER',
   BUSINESS_OWNER = 'BUSINESS_OWNER',
+  COMPANY = 'COMPANY',
   ADMIN = 'ADMIN'
 }
 
@@ -21,6 +22,7 @@ export interface User {
   regionKey?: string | null;
   email?: string | null;
   phone?: string | null;
+  recruiterVerified?: boolean;
 }
 
 export interface ProfessionalProfileBusiness {

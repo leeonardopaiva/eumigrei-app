@@ -24,6 +24,8 @@ const mapUserRole = (role?: string | null): UserRole => {
       return UserRole.ADMIN;
     case UserRole.BUSINESS_OWNER:
       return UserRole.BUSINESS_OWNER;
+    case UserRole.COMPANY:
+      return UserRole.COMPANY;
     default:
       return UserRole.USER;
   }
@@ -39,6 +41,7 @@ const buildCurrentUser = (sessionUser: {
   locationLabel?: string | null;
   regionKey?: string | null;
   role?: string | null;
+  recruiterVerified?: boolean;
 }): User => ({
   id: sessionUser.id,
   name: sessionUser.name || 'Comunidade Gringoou',
@@ -49,6 +52,7 @@ const buildCurrentUser = (sessionUser: {
   regionKey: sessionUser.regionKey,
   email: sessionUser.email,
   phone: sessionUser.phone,
+  recruiterVerified: Boolean(sessionUser.recruiterVerified),
 });
 
 const App: React.FC<{
@@ -86,7 +90,10 @@ const App: React.FC<{
   } = parseAppRoute(pathname);
   const autoGoogleSelectTriggeredRef = useRef(false);
   const sessionRole = mapUserRole(session?.user?.role);
-  const canUseProfessionalMode = sessionRole === UserRole.BUSINESS_OWNER || sessionRole === UserRole.ADMIN;
+  const canUseProfessionalMode =
+    sessionRole === UserRole.BUSINESS_OWNER ||
+    sessionRole === UserRole.COMPANY ||
+    sessionRole === UserRole.ADMIN;
   const authCallbackUrl = pathname === '/login' ? '/inicio' : pathname || '/inicio';
 
   useEffect(() => {
