@@ -508,6 +508,9 @@ const Registration: React.FC<RegistrationProps> = ({
                     >
                       {submitting ? 'Entrando...' : passwordEnabled ? 'Entrar' : 'Receber link'}
                     </Button>
+                    <p className="text-center text-[11px] leading-5 text-slate-500">
+                      Ao se cadastrar, voce concorda com nossos <a href="/termos-de-uso" className="font-semibold text-brand-500 hover:underline">Termos de Uso</a> e <a href="/politica-de-privacidade" className="font-semibold text-brand-500 hover:underline">Politica de Privacidade</a>.
+                    </p>
 
                     <div className="flex items-center justify-center gap-3 pt-2">
                       {passwordEnabled ? (
@@ -691,12 +694,12 @@ const Registration: React.FC<RegistrationProps> = ({
               </div>
 
               <div className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
-                <a href="/termos" className="transition-colors hover:text-slate-600 hover:underline">
+                <a href="/termos-de-uso" className="transition-colors hover:text-slate-600 hover:underline">
                   Termos de uso
                 </a>
                 <span className="text-slate-300">•</span>
-                <a href="/privacidade" className="transition-colors hover:text-slate-600 hover:underline">
-                  Privacidade
+                <a href="/politica-de-privacidade" className="transition-colors hover:text-slate-600 hover:underline">
+                  Politica de Privacidade
                 </a>
               </div>
 
@@ -986,6 +989,9 @@ const Registration: React.FC<RegistrationProps> = ({
                         >
                           {submitting ? 'Entrando...' : 'Entrar com email e senha'}
                         </Button>
+                        <p className="text-center text-[11px] leading-5 text-slate-500">
+                          Ao se cadastrar, voce concorda com nossos <a href="/termos-de-uso" className="font-semibold text-brand-500 hover:underline">Termos de Uso</a> e <a href="/politica-de-privacidade" className="font-semibold text-brand-500 hover:underline">Politica de Privacidade</a>.
+                        </p>
                       </form>
                     ) : null}
 
@@ -1479,6 +1485,12 @@ const Registration: React.FC<RegistrationProps> = ({
                       ? 'Validando nome...'
                        : 'Continuar'}
                 </Button>
+                <p className="px-2 text-center text-[11px] leading-5 text-slate-500">
+                  Ao se cadastrar, voce concorda com nossos{' '}
+                  <a href="/termos-de-uso" className="font-semibold text-brand-500 hover:underline">Termos de Uso</a>
+                  {' '}e{' '}
+                  <a href="/politica-de-privacidade" className="font-semibold text-brand-500 hover:underline">Politica de Privacidade</a>.
+                </p>
               </form>
             )}
 

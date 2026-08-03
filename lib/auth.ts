@@ -66,6 +66,7 @@ export const authOptions: NextAuthOptions = {
                   locationLabel: true,
                   regionKey: true,
                   onboardingCompleted: true,
+                  recruiterVerified: true,
                   passwordHash: true,
                 },
               });
@@ -85,6 +86,7 @@ export const authOptions: NextAuthOptions = {
                 locationLabel: user.locationLabel,
                 regionKey: user.regionKey,
                 onboardingCompleted: user.onboardingCompleted,
+                recruiterVerified: user.recruiterVerified,
               };
             },
           }),
@@ -138,6 +140,7 @@ export const authOptions: NextAuthOptions = {
           locationLabel: true,
           regionKey: true,
           onboardingCompleted: true,
+          recruiterVerified: true,
         },
       });
 
@@ -156,6 +159,7 @@ export const authOptions: NextAuthOptions = {
       token.locationLabel = dbUser.locationLabel;
       token.regionKey = dbUser.regionKey;
       token.onboardingCompleted = dbUser.onboardingCompleted;
+      token.recruiterVerified = dbUser.recruiterVerified;
 
       return token;
     },
@@ -171,6 +175,7 @@ export const authOptions: NextAuthOptions = {
       session.user.locationLabel = (token.locationLabel as string | null | undefined) ?? null;
       session.user.regionKey = (token.regionKey as string | null | undefined) ?? null;
       session.user.onboardingCompleted = Boolean(token.onboardingCompleted);
+      session.user.recruiterVerified = Boolean(token.recruiterVerified);
       session.user.name = (token.name as string | null | undefined) ?? null;
       session.user.email = (token.email as string | null | undefined) ?? null;
       session.user.image = (token.picture as string | null | undefined) ?? null;

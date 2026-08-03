@@ -11,6 +11,7 @@ declare module 'next-auth' {
       locationLabel?: string | null;
       regionKey?: string | null;
       onboardingCompleted: boolean;
+      recruiterVerified: boolean;
     };
   }
 
@@ -21,6 +22,7 @@ declare module 'next-auth' {
     locationLabel?: string | null;
     regionKey?: string | null;
     onboardingCompleted: boolean;
+    recruiterVerified: boolean;
   }
 }
 
@@ -33,5 +35,6 @@ declare module 'next-auth/jwt' {
     locationLabel?: string | null;
     regionKey?: string | null;
     onboardingCompleted?: boolean;
+    recruiterVerified?: boolean;
   }
 }

@@ -1,59 +1,272 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { MapPin, Star } from 'lucide-react';
-import UnifiedSearchInput from '../components/search/UnifiedSearchInput';
-import { Button } from '../components/ui/Button';
-import { Card } from '../components/ui/Card';
-import { Tabs } from '../components/ui/Tabs';
-import { STATIC_HOUSING } from '../lib/static-catalog';
+import Link from "next/link";
+import React, { useEffect, useState } from "react";
+import { MapPin, Plus } from "lucide-react";
+import UnifiedSearchInput from "@/components/search/UnifiedSearchInput";
+import {
+  Button,
+  Card,
+  Input,
+  Modal,
+  Pagination,
+  Select,
+  Textarea,
+} from "@/components/ui";
+import { useToast } from "@/components/feedback/ToastProvider";
+import { User } from "@/types";
+import CloudinaryImageField from "@/components/forms/CloudinaryImageField";
 
-const housingFilters = [
-  { label: 'Apartamento', value: 'apartamento' },
-  { label: 'Casa', value: 'casa' },
-  { label: 'Quarto', value: 'quarto' },
-];
-
-const HousingList: React.FC = () => {
-  const [activeFilter, setActiveFilter] = useState('apartamento');
-  const [search, setSearch] = useState('');
-
-  return (
-    <div className="animate-in space-y-5 px-5 pb-24 fade-in duration-500">
-      <header className="mt-4 space-y-1">
-        <h1 className="text-h2 font-bold text-foreground">Moradia</h1>
-        <p className="text-body-sm text-muted-foreground">Encontre seu próximo lar na comunidade.</p>
-      </header>
-
-      <UnifiedSearchInput value={search} onChange={setSearch} staticPlaceholder="Buscar imóveis..." />
-      <div className="scrollbar-hide overflow-x-auto">
-        <Tabs items={housingFilters} value={activeFilter} onChange={setActiveFilter} />
-      </div>
-
-      <section className="space-y-3" aria-labelledby="housing-title">
-        <h2 id="housing-title" className="text-body-sm font-bold text-foreground">Imóveis disponíveis</h2>
-        {STATIC_HOUSING.map((item) => (
-          <Card key={item.id} padded={false} className="flex min-h-36 border border-border shadow-xs">
-            <img src={item.img} className="w-32 shrink-0 object-cover sm:w-40" alt={item.title} />
-            <div className="flex min-w-0 flex-1 flex-col justify-between p-4">
-              <div>
-                <h3 className="text-body-sm font-bold leading-snug text-foreground">{item.title}</h3>
-                <div className="mt-1 flex items-center gap-1 text-amber-500" aria-label={`Avaliação ${item.rating} de 5`}>
-                  <Star size={13} fill="currentColor" aria-hidden="true" />
-                  <span className="text-caption font-semibold">{item.rating},0</span>
-                </div>
-                <p className="mt-1 flex items-center gap-1 text-caption text-muted-foreground">
-                  <MapPin size={13} aria-hidden="true" /> {item.location}
-                </p>
-                <p className="mt-1 text-body-sm font-bold text-foreground">{item.price}</p>
-              </div>
-              <Button size="xs" className="mt-3 self-end">Ver detalhes</Button>
-            </div>
-          </Card>
-        ))}
-      </section>
-    </div>
-  );
+type Housing = {
+  id: string;
+  title: string;
+  description: string;
+  propertyType: string;
+  locationLabel: string;
+  price: string;
+  imageUrl?: string | null;
+};
+const emptyDraft = {
+  title: "",
+  description: "",
+  propertyType: "Apartamento",
+  locationLabel: "",
+  price: "",
+  imageUrl: "",
+  contactUrl: "",
 };
 
-export default HousingList;
+export default function HousingList({ user: _user }: { user: User }) {
+  const { showToast } = useToast();
+  const [items, setItems] = useState<Housing[]>([]);
+  const [search, setSearch] = useState("");
+  const [propertyType, setPropertyType] = useState("");
+  const [location, setLocation] = useState("");
+  const [price, setPrice] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [draft, setDraft] = useState(emptyDraft);
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setLoading(true);
+      const params = new URLSearchParams({ page: String(page), pageSize: "8" });
+      if (search) params.set("q", search);
+      if (propertyType) params.set("propertyType", propertyType);
+      if (location) params.set("location", location);
+      if (price) params.set("price", price);
+      try {
+        const response = await fetch(`/api/housing?${params}`, {
+          signal: controller.signal,
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error);
+        setItems(payload.housing || []);
+        setTotalPages(Math.max(1, payload.pagination?.totalPages || 1));
+      } catch (error) {
+        if (!controller.signal.aborted)
+          showToast(
+            error instanceof Error
+              ? error.message
+              : "Nao foi possivel carregar moradias.",
+            "error",
+          );
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }, 250);
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [location, page, price, propertyType, search, showToast]);
+  const createHousing = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch("/api/housing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draft),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok)
+        throw new Error(payload?.error || "Nao foi possivel publicar.");
+      setItems((current) => [payload.housing, ...current]);
+      setDraft(emptyDraft);
+      setModalOpen(false);
+      showToast("Anuncio publicado.", "success");
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Nao foi possivel publicar.",
+        "error",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <div className="animate-in space-y-5 px-5 pb-24 fade-in duration-500">
+      <header className="mt-4 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-h2 font-bold text-foreground">Moradia</h1>
+          <p className="text-body-sm text-muted-foreground">
+            Encontre seu proximo lar na comunidade.
+          </p>
+        </div>
+        <Button
+          size="sm"
+          iconLeft={<Plus size={16} />}
+          onClick={() => setModalOpen(true)}
+        >
+          Criar anuncio
+        </Button>
+      </header>
+      <UnifiedSearchInput
+        value={search}
+        onChange={(value) => {
+          setSearch(value);
+          setPage(1);
+        }}
+        staticPlaceholder="Buscar moradias..."
+      />
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Select
+          value={propertyType}
+          onChange={(e) => {
+            setPropertyType(e.target.value);
+            setPage(1);
+          }}
+        >
+          <option value="">Todos os tipos</option>
+          <option>Apartamento</option>
+          <option>Casa</option>
+          <option>Quarto</option>
+          <option>Republica</option>
+        </Select>
+        <Input
+          value={location}
+          onChange={(e) => {
+            setLocation(e.target.value);
+            setPage(1);
+          }}
+          placeholder="Localizacao"
+        />
+        <Input
+          value={price}
+          onChange={(e) => {
+            setPrice(e.target.value);
+            setPage(1);
+          }}
+          placeholder="Preco"
+        />
+      </div>
+      <section className="space-y-3">
+        <h2 className="text-body-sm font-bold">Imoveis disponiveis</h2>
+        {loading ? (
+          <p className="text-sm text-muted-foreground">
+            Atualizando resultados...
+          </p>
+        ) : items.length ? (
+          items.map((item) => (
+            <Card
+              key={item.id}
+              padded={false}
+              className="overflow-hidden border border-border shadow-xs"
+            >
+              {item.imageUrl ? (
+                <img
+                  src={item.imageUrl}
+                  className="h-44 w-full object-cover"
+                  alt={item.title}
+                />
+              ) : null}
+            <div className="p-4">
+                <h3 className="text-body-sm font-bold">{item.title}</h3>
+                <p className="mt-1 flex items-center gap-1 text-caption text-muted-foreground">
+                  <MapPin size={13} /> {item.locationLabel}
+                </p>
+                <p className="mt-2 font-bold">{item.price}</p>
+                <Link
+                  href={`/moradia/${item.id}`}
+                  className="mt-3 inline-flex rounded-full bg-brand-500 px-4 py-2 text-xs font-bold text-white"
+                >
+                  Ver detalhes
+                </Link>
+            </div>
+            </Card>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Nenhuma moradia encontrada.
+          </p>
+        )}
+      </section>
+      <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title="Criar anuncio de moradia"
+      >
+        <div className="space-y-3">
+          <Input
+            placeholder="Titulo"
+            value={draft.title}
+            onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+          />
+          <Textarea
+            placeholder="Descricao"
+            value={draft.description}
+            onChange={(e) =>
+              setDraft({ ...draft, description: e.target.value })
+            }
+          />
+          <Select
+            value={draft.propertyType}
+            onChange={(e) =>
+              setDraft({ ...draft, propertyType: e.target.value })
+            }
+          >
+            <option>Apartamento</option>
+            <option>Casa</option>
+            <option>Quarto</option>
+            <option>Republica</option>
+          </Select>
+          <Input
+            placeholder="Localizacao"
+            value={draft.locationLabel}
+            onChange={(e) =>
+              setDraft({ ...draft, locationLabel: e.target.value })
+            }
+          />
+          <Input
+            placeholder="Preco"
+            value={draft.price}
+            onChange={(e) => setDraft({ ...draft, price: e.target.value })}
+          />
+          <CloudinaryImageField
+            value={draft.imageUrl}
+            onChange={(imageUrl) => setDraft({ ...draft, imageUrl })}
+            folder="housing"
+            height={180}
+            hint="Clique na area para selecionar a foto do anuncio."
+          />
+          <Input
+            placeholder="Link de contato"
+            value={draft.contactUrl}
+            onChange={(e) => setDraft({ ...draft, contactUrl: e.target.value })}
+          />
+          <Button
+            fullWidth
+            loading={saving}
+            onClick={() => void createHousing()}
+          >
+            Publicar anuncio
+          </Button>
+        </div>
+      </Modal>
+    </div>
+  );
+}
