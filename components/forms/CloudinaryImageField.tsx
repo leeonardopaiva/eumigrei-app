@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { ImagePlus, Link2, LoaderCircle, Pencil } from 'lucide-react';
+import { ImagePlus, LoaderCircle, Pencil } from 'lucide-react';
 import { cloudinaryConfig, getCloudinaryFolderPath, isCloudinaryEnabled, type CloudinaryFolder } from '@/lib/cloudinary';
-import { normalizeUrlFieldValue } from '@/lib/forms/validation';
 import { isValidHttpUrl } from '@/lib/url';
 import FieldErrorMessage from './FieldErrorMessage';
 
@@ -35,7 +34,6 @@ const CloudinaryImageField: React.FC<CloudinaryImageFieldProps> = ({
   folder,
   width = '100%',
   height = 160,
-  placeholder = 'Link da imagem',
   hint,
   disabled = false,
   error,
@@ -52,20 +50,6 @@ const CloudinaryImageField: React.FC<CloudinaryImageFieldProps> = ({
     }
 
     fileInputRef.current?.click();
-  };
-
-  const handleInputChange = (nextValue: string) => {
-    setUploadError(null);
-    onClearError?.();
-    onChange(nextValue);
-  };
-
-  const handleBlur = () => {
-    const normalized = normalizeUrlFieldValue(currentImageUrl);
-
-    if (normalized !== currentImageUrl) {
-      onChange(normalized);
-    }
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,26 +136,14 @@ const CloudinaryImageField: React.FC<CloudinaryImageFieldProps> = ({
           </span>
         </button>
 
-        <div className="relative">
-          <Link2 className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-          <input
-            value={currentImageUrl}
-            onChange={(event) => handleInputChange(event.target.value)}
-            onBlur={handleBlur}
-            placeholder={placeholder}
-            aria-invalid={Boolean(error)}
-            disabled={disabled || uploading}
-            className="w-full rounded-full border border-input px-11 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-200 disabled:opacity-60"
-          />
-        </div>
         <FieldErrorMessage message={error} />
       </div>
       <FieldErrorMessage message={uploadError} />
       <p className="px-1 text-xs text-slate-500">
         {hint ||
           (isCloudinaryEnabled
-            ? 'Envie pela Cloudinary ou cole uma URL publica.'
-            : 'Cole uma URL publica. Para habilitar upload, configure Cloudinary no ambiente.')}
+            ? 'Clique ou toque na imagem para selecionar um arquivo.'
+            : 'Configure o Cloudinary no ambiente para habilitar o upload.')}
       </p>
     </div>
   );

@@ -113,6 +113,15 @@ export const onboardingSchema = z.object({
     message: 'Telefone muito curto',
   }),
   regionKey: z.string().trim().min(2, 'Selecione uma regiao valida'),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY'], {
+    message: 'Selecione uma opcao de genero',
+  }),
+  age: z.coerce.number().int().min(18, 'Voce deve ter pelo menos 18 anos').max(120, 'Informe uma idade valida'),
+  timeAbroad: z.enum(
+    ['LESS_THAN_ONE_YEAR', 'ONE_TO_THREE_YEARS', 'THREE_TO_FIVE_YEARS', 'MORE_THAN_FIVE_YEARS'],
+    { message: 'Selecione ha quanto tempo voce esta no exterior' },
+  ),
+  birthCity: z.string().trim().min(2, 'Informe sua cidade natal').max(100),
   referralUsername: z
     .string()
     .trim()
@@ -121,6 +130,28 @@ export const onboardingSchema = z.object({
       const normalized = value?.trim();
       return normalized ? normalized : undefined;
     }),
+});
+
+export const jobSchema = z.object({
+  title: z.string().trim().min(3).max(120),
+  company: z.string().trim().min(2).max(120),
+  description: z.string().trim().min(10).max(5000),
+  employmentType: z.string().trim().min(2).max(60),
+  locationLabel: z.string().trim().min(2).max(160),
+  salary: optionalString,
+  contactUrl: optionalUrl,
+  isActive: z.boolean().optional(),
+});
+
+export const housingSchema = z.object({
+  title: z.string().trim().min(3).max(120),
+  description: z.string().trim().min(10).max(5000),
+  propertyType: z.string().trim().min(2).max(60),
+  locationLabel: z.string().trim().min(2).max(160),
+  price: z.string().trim().min(1).max(80),
+  imageUrl: optionalUrl,
+  contactUrl: optionalUrl,
+  isActive: z.boolean().optional(),
 });
 
 export const updateRegionSchema = z.object({
@@ -138,6 +169,12 @@ export const updateProfileSchema = z.object({
   phone: optionalString.refine((value) => !value || value.length >= 8, {
     message: 'Telefone muito curto',
   }),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
+  age: z.coerce.number().int().min(18).max(120).optional(),
+  timeAbroad: z.enum(
+    ['LESS_THAN_ONE_YEAR', 'ONE_TO_THREE_YEARS', 'THREE_TO_FIVE_YEARS', 'MORE_THAN_FIVE_YEARS'],
+  ).optional(),
+  birthCity: z.string().trim().min(2).max(100).optional(),
   bio: z
     .string()
     .trim()

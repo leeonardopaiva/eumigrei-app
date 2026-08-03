@@ -102,6 +102,10 @@ export async function PUT(request: Request) {
         coverImageUrl: parsed.data.coverImageUrl ?? null,
         interests: parsed.data.interests,
         galleryUrls: parsed.data.galleryUrls,
+        gender: parsed.data.gender,
+        age: parsed.data.age,
+        timeAbroad: parsed.data.timeAbroad,
+        birthCity: parsed.data.birthCity,
       },
       select: {
         id: true,
@@ -113,6 +117,10 @@ export async function PUT(request: Request) {
         coverImageUrl: true,
         interests: true,
         galleryUrls: true,
+        gender: true,
+        age: true,
+        timeAbroad: true,
+        birthCity: true,
         updatedAt: true,
       },
     });

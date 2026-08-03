@@ -6,6 +6,8 @@ import RegionSelector from '../components/RegionSelector';
 import { Logo } from '../components/Layout';
 import GoogleIcon from '../components/icons/GoogleIcon';
 import { GringoouLogo } from '../components/icons/GringoouLogo';
+import { Autocomplete } from '../components/ui/Autocomplete';
+import { ProgressBar } from '../components/ui/ProgressBar';
 import {
   COUNTRY_CALLING_CODE_OPTIONS,
   findCountryByIso2,
@@ -30,6 +32,10 @@ type RegistrationValues = {
   email: string;
   phone: string;
   regionKey: string;
+  gender: string;
+  age: string;
+  timeAbroad: string;
+  birthCity: string;
   referralUsername?: string | null;
 };
 
@@ -62,6 +68,10 @@ type RegistrationField =
   | 'username'
   | 'phone'
   | 'regionKey'
+  | 'gender'
+  | 'age'
+  | 'timeAbroad'
+  | 'birthCity'
   | 'password'
   | 'confirmPassword'
   | 'captchaAnswer';
@@ -72,6 +82,12 @@ const fieldLabel = 'text-xs font-semibold uppercase tracking-[0.22em] text-slate
 const inputClass =
   'h-14 min-h-14 w-full min-w-0 rounded-full border border-input bg-surface px-5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-200';
 const secondaryCardClass = 'border border-slate-200 bg-slate-50 shadow-none';
+const birthCityOptions = [
+  'Sao Paulo, SP', 'Rio de Janeiro, RJ', 'Belo Horizonte, MG', 'Salvador, BA',
+  'Brasilia, DF', 'Fortaleza, CE', 'Recife, PE', 'Porto Alegre, RS',
+  'Curitiba, PR', 'Manaus, AM', 'Belem, PA', 'Goiania, GO', 'Campinas, SP',
+  'Florianopolis, SC', 'Vitoria, ES', 'Natal, RN', 'Joao Pessoa, PB',
+];
 
 const Registration: React.FC<RegistrationProps> = ({
   mode,
@@ -97,6 +113,10 @@ const Registration: React.FC<RegistrationProps> = ({
     email: defaultValues?.email || '',
     phone: initialPhoneState.localNumber,
     regionKey: defaultValues?.regionKey || '',
+    gender: defaultValues?.gender || '',
+    age: defaultValues?.age || '',
+    timeAbroad: defaultValues?.timeAbroad || '',
+    birthCity: defaultValues?.birthCity || '',
   });
   const [selectedCountryIso2, setSelectedCountryIso2] = useState(initialPhoneState.country.iso2);
   const [usernameFeedback, setUsernameFeedback] = useState<string | null>(null);
@@ -131,6 +151,10 @@ const Registration: React.FC<RegistrationProps> = ({
       email: defaultValues?.email || '',
       phone: nextPhoneState.localNumber,
       regionKey: defaultValues?.regionKey || '',
+      gender: defaultValues?.gender || '',
+      age: defaultValues?.age || '',
+      timeAbroad: defaultValues?.timeAbroad || '',
+      birthCity: defaultValues?.birthCity || '',
     });
   }, [
     defaultValues?.email,
@@ -138,6 +162,10 @@ const Registration: React.FC<RegistrationProps> = ({
     defaultValues?.phone,
     defaultValues?.regionKey,
     defaultValues?.username,
+    defaultValues?.gender,
+    defaultValues?.age,
+    defaultValues?.timeAbroad,
+    defaultValues?.birthCity,
   ]);
 
   useEffect(() => {
@@ -212,9 +240,25 @@ const Registration: React.FC<RegistrationProps> = ({
   const onboardingBlocked =
     isOnboarding &&
     (!formValues.regionKey ||
+      !formValues.gender ||
+      !formValues.age ||
+      !formValues.timeAbroad ||
+      !formValues.birthCity.trim() ||
       checkingUsername ||
       usernameAvailable !== true ||
       normalizedUsername.length < USERNAME_MIN_LENGTH);
+  const onboardingRequiredValues = [
+    formValues.name,
+    formValues.username,
+    formValues.regionKey,
+    formValues.gender,
+    formValues.age,
+    formValues.timeAbroad,
+    formValues.birthCity,
+  ];
+  const onboardingProgress = Math.round(
+    (onboardingRequiredValues.filter((value) => value.trim()).length / onboardingRequiredValues.length) * 100,
+  );
 
   const clearFieldError = (field: RegistrationField) => {
     setFieldErrors((current) => {
@@ -1172,6 +1216,13 @@ const Registration: React.FC<RegistrationProps> = ({
                     nextErrors.regionKey = requiredFieldError('uma regiao');
                   }
 
+                  if (!formValues.gender) nextErrors.gender = requiredFieldError('seu genero');
+                  const parsedAge = Number(formValues.age);
+                  if (!formValues.age) nextErrors.age = requiredFieldError('sua idade');
+                  else if (!Number.isInteger(parsedAge) || parsedAge < 18 || parsedAge > 120) nextErrors.age = 'Informe uma idade entre 18 e 120 anos.';
+                  if (!formValues.timeAbroad) nextErrors.timeAbroad = requiredFieldError('seu tempo no exterior');
+                  if (formValues.birthCity.trim().length < 2) nextErrors.birthCity = requiredFieldError('sua cidade natal');
+
                   const phoneError = validatePhoneField(formValues.phone, 'O telefone');
 
                   if (phoneError) {
@@ -1191,6 +1242,7 @@ const Registration: React.FC<RegistrationProps> = ({
                   });
                 }}
               >
+                <ProgressBar value={onboardingProgress} label="Conclusao do perfil" className="sticky top-0 z-20 -mx-1 rounded-2xl bg-white/95 p-3 backdrop-blur" />
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <p className={fieldLabel}>Nome completo</p>
@@ -1339,6 +1391,78 @@ const Registration: React.FC<RegistrationProps> = ({
                     }
                   />
                   <FieldErrorMessage message={fieldErrors.regionKey} />
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <p className={fieldLabel}>Genero</p>
+                      <select
+                        value={formValues.gender}
+                        onChange={(event) => {
+                          clearFieldError('gender');
+                          setFormValues((current) => ({ ...current, gender: event.target.value }));
+                        }}
+                        aria-invalid={Boolean(fieldErrors.gender)}
+                        className={inputClass}
+                      >
+                        <option value="">Selecione</option>
+                        <option value="MALE">Masculino</option>
+                        <option value="FEMALE">Feminino</option>
+                        <option value="OTHER">Outro</option>
+                        <option value="PREFER_NOT_TO_SAY">Prefiro nao informar</option>
+                      </select>
+                      <FieldErrorMessage message={fieldErrors.gender} />
+                    </div>
+                    <div className="space-y-2">
+                      <p className={fieldLabel}>Idade</p>
+                      <Input
+                        type="number"
+                        min={18}
+                        max={120}
+                        value={formValues.age}
+                        onChange={(event) => {
+                          clearFieldError('age');
+                          setFormValues((current) => ({ ...current, age: event.target.value }));
+                        }}
+                        aria-invalid={Boolean(fieldErrors.age)}
+                        className={inputClass}
+                      />
+                      <FieldErrorMessage message={fieldErrors.age} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className={fieldLabel}>Tempo no exterior</p>
+                    <select
+                      value={formValues.timeAbroad}
+                      onChange={(event) => {
+                        clearFieldError('timeAbroad');
+                        setFormValues((current) => ({ ...current, timeAbroad: event.target.value }));
+                      }}
+                      aria-invalid={Boolean(fieldErrors.timeAbroad)}
+                      className={inputClass}
+                    >
+                      <option value="">Selecione</option>
+                      <option value="LESS_THAN_ONE_YEAR">Menos de 1 ano</option>
+                      <option value="ONE_TO_THREE_YEARS">1 a 3 anos</option>
+                      <option value="THREE_TO_FIVE_YEARS">3 a 5 anos</option>
+                      <option value="MORE_THAN_FIVE_YEARS">Mais de 5 anos</option>
+                    </select>
+                    <FieldErrorMessage message={fieldErrors.timeAbroad} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className={fieldLabel}>Cidade onde nasceu</p>
+                    <Autocomplete
+                      value={formValues.birthCity}
+                      options={birthCityOptions}
+                      placeholder="Busque ou informe sua cidade natal"
+                      error={fieldErrors.birthCity}
+                      onChange={(birthCity) => {
+                        clearFieldError('birthCity');
+                        setFormValues((current) => ({ ...current, birthCity }));
+                      }}
+                    />
+                  </div>
                 </div>
 
                 <Button

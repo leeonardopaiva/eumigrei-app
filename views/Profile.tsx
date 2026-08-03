@@ -14,6 +14,7 @@ import PersonaModeDropdown from '../components/profile/PersonaModeDropdown';
 import ProfessionalModePanel from '../components/profile/ProfessionalModePanel';
 import { PersonaMode, ProfessionalProfileSummary, ReferralSummary, User } from '../types';
 import type { ProfileInitialData } from '../lib/content-contracts';
+import { Modal } from '../components/ui/Modal';
 
 const PROFILE_GRADIENT_CLASS = 'bg-brand-500';
 const PROFESSIONAL_PROFILE_GRADIENT_CLASS = 'bg-foreground';
@@ -497,7 +498,7 @@ const Profile: React.FC<{
             </p>
           </div>
 
-          {!isProfessionalView && editing.cover ? (
+          <Modal open={!isProfessionalView && editing.cover} onClose={() => setEditing((c) => ({ ...c, cover: false }))} title="Editar capa" description="Selecione uma imagem horizontal para o seu perfil.">
             <EditorCard>
               <CloudinaryImageField value={coverDraft} onChange={setCoverDraft} folder="profiles" placeholder="Link da capa do perfil" hint="Use uma imagem horizontal para destacar seu perfil publico." />
               <ActionRow>
@@ -505,9 +506,9 @@ const Profile: React.FC<{
                 <SecondaryButton className={secondaryButtonClass} label={coverDraft ? 'Limpar' : 'Cancelar'} onClick={() => { if (coverDraft) { setCoverDraft(''); return; } setEditing((c) => ({ ...c, cover: false })); }} disabled={savingKey === 'cover'} />
               </ActionRow>
             </EditorCard>
-          ) : null}
+          </Modal>
 
-          {!isProfessionalView && editing.avatar ? (
+          <Modal open={!isProfessionalView && editing.avatar} onClose={() => setEditing((c) => ({ ...c, avatar: false }))} title="Editar foto" description="Selecione uma nova foto para o seu perfil.">
             <EditorCard>
               <CloudinaryImageField value={avatarDraft} onChange={setAvatarDraft} folder="profiles" placeholder="Link da foto do perfil" hint="Envie sua foto pela Cloudinary ou cole uma URL publica." />
               <ActionRow>
@@ -515,7 +516,7 @@ const Profile: React.FC<{
                 <SecondaryButton className={secondaryButtonClass} label={avatarDraft ? 'Limpar' : 'Cancelar'} onClick={() => { if (avatarDraft) { setAvatarDraft(''); return; } setEditing((c) => ({ ...c, avatar: false })); }} disabled={savingKey === 'avatar'} />
               </ActionRow>
             </EditorCard>
-          ) : null}
+          </Modal>
         </div>
       </section>
 
@@ -655,11 +656,16 @@ const Section: React.FC<{ title: string; description: string; editing: boolean; 
       {!hideAction ? (
         <button type="button" onClick={onToggle} className={`inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-bold ${secondaryButtonClass}`}>
           <PencilLine size={14} />
-          {editing ? 'Fechar' : 'Editar'}
+          Editar
         </button>
       ) : null}
     </div>
-    <div className="mt-5">{children}</div>
+    {!editing ? <div className="mt-5">{children}</div> : null}
+    {!hideAction ? (
+      <Modal open={editing} onClose={onToggle} title={title} description={description} className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+        {children}
+      </Modal>
+    ) : null}
   </section>
 );
 
