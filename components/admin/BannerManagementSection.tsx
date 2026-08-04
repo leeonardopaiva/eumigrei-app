@@ -25,7 +25,7 @@ export type ManagedBanner = {
   campaignStatus: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'ENDED';
   objective: 'TRAFFIC' | 'LEAD' | 'AWARENESS';
   billingMode: 'FLAT' | 'CPC' | 'CPM' | 'CPL';
-  paymentStatus: 'NOT_REQUIRED' | 'PENDING' | 'PAID' | 'FAILED';
+  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
   targetInterests: string[];
   targetKeywords: string[];
   targetCategories: string[];
@@ -68,7 +68,7 @@ type BannerFormState = {
   campaignStatus: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'ENDED';
   objective: 'TRAFFIC' | 'LEAD' | 'AWARENESS';
   billingMode: 'FLAT' | 'CPC' | 'CPM' | 'CPL';
-  paymentStatus: 'NOT_REQUIRED' | 'PENDING' | 'PAID' | 'FAILED';
+  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
   targetInterests: string;
   targetKeywords: string;
   targetCategories: string;
@@ -94,7 +94,7 @@ const emptyBannerForm: BannerFormState = {
   campaignStatus: 'ACTIVE',
   objective: 'TRAFFIC',
   billingMode: 'FLAT',
-  paymentStatus: 'NOT_REQUIRED',
+  paymentStatus: 'PENDING',
   targetInterests: '',
   targetKeywords: '',
   targetCategories: '',
@@ -125,7 +125,7 @@ const centsFromCurrency = (value: string) => {
 };
 
 const currencyFromCents = (value: number | null | undefined) =>
-  typeof value === 'number' ? (value / 100).toFixed(2).replace('.', ',') : '';
+  typeof value === 'number' ? (value / 100).toFixed(2) : '';
 
 const toLocalDateTimeValue = (value: string | null | undefined) => {
   if (!value) {
@@ -637,10 +637,10 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                 }
                 className="theme-outline-ring h-11 w-full appearance-none rounded-full border-2 border-border bg-surface px-4 text-body-sm font-semibold text-foreground outline-none"
               >
-                <option value="NOT_REQUIRED">Sem cobranca</option>
                 <option value="PENDING">Aguardando pagamento</option>
                 <option value="PAID">Pago</option>
                 <option value="FAILED">Falhou</option>
+                <option value="REFUNDED">Reembolsado</option>
               </select>
             </label>
           </div>
@@ -683,8 +683,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
             <div>
               <p className="text-sm font-bold text-slate-700">Orcamento e cobranca</p>
               <p className="text-xs leading-5 text-slate-500">
-                Por enquanto o pagamento e controlado manualmente; o link de checkout prepara a
-                integracao com Stripe ou Mercado Pago.
+                Campanhas do wizard usam checkout e confirmacao assinada pelo Stripe.
               </p>
             </div>
           </div>
@@ -902,7 +901,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                         Total
                       </p>
                       <p className="text-sm font-bold text-slate-700">
-                        {banner.totalBudgetCents ? `R$ ${currencyFromCents(banner.totalBudgetCents)}` : 'Livre'}
+                        {banner.totalBudgetCents ? `US$ ${currencyFromCents(banner.totalBudgetCents)}` : 'Livre'}
                       </p>
                     </div>
                   </div>

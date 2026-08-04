@@ -12,9 +12,9 @@ type RouteContext = {
 };
 
 export async function PUT(request: Request, context: RouteContext) {
-  const { response } = await requireAdminSession();
+  const { session, response } = await requireAdminSession();
 
-  if (response) {
+  if (response || !session) {
     return response;
   }
 
@@ -63,6 +63,18 @@ export async function PUT(request: Request, context: RouteContext) {
         bidCents: parsed.data.bidCents,
         checkoutUrl: parsed.data.checkoutUrl ?? null,
         paymentProvider: parsed.data.paymentProvider ?? null,
+        moderationStatus:
+          parsed.data.paymentStatus === 'PAID' && parsed.data.campaignStatus === 'ACTIVE'
+            ? 'APPROVED'
+            : 'DRAFT',
+        approvedById:
+          parsed.data.paymentStatus === 'PAID' && parsed.data.campaignStatus === 'ACTIVE'
+            ? session.user.id
+            : null,
+        approvedAt:
+          parsed.data.paymentStatus === 'PAID' && parsed.data.campaignStatus === 'ACTIVE'
+            ? new Date()
+            : null,
       },
       select: {
         id: true,

@@ -119,11 +119,30 @@ enum AdBillingMode {
   CPL
 }
 
+enum AdGoal {
+  WHATSAPP
+  EXTERNAL_URL
+  MARKETPLACE
+}
+
+enum AdPlan {
+  BRONZE
+  SILVER
+  GOLD
+}
+
+enum AdModerationStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
 enum AdPaymentStatus {
-  NOT_REQUIRED
   PENDING
   PAID
   FAILED
+  REFUNDED
 }
 
 model User {
@@ -154,6 +173,8 @@ model User {
   accounts               Account[]
   adCharges              AdCharge[]
   adImpressions          AdImpression[]
+  createdAds             Banner[]               @relation("AdCreator")
+  approvedAds            Banner[]               @relation("AdApprover")
   sessions               Session[]
   businessMemberships    BusinessMember[]
   createdBusinesses      Business[]             @relation("BusinessCreator")
@@ -427,39 +448,77 @@ model PostReport {
 }
 
 model Banner {
-  id               String               @id @default(cuid())
-  name             String
-  imageUrl         String
-  type             BannerType           @default(LINK)
-  placement        BannerPlacement      @default(HOME)
-  targetUrl        String?
-  regionKey        String?
-  isActive         Boolean              @default(true)
-  campaignStatus   AdCampaignStatus     @default(ACTIVE)
-  objective        AdObjective          @default(TRAFFIC)
-  billingMode      AdBillingMode        @default(FLAT)
-  paymentStatus    AdPaymentStatus      @default(NOT_REQUIRED)
-  targetInterests  String[]             @default([])
-  targetKeywords   String[]             @default([])
-  targetCategories String[]             @default([])
-  startsAt         DateTime?
-  endsAt           DateTime?
-  dailyBudgetCents Int?
-  totalBudgetCents Int?
-  bidCents         Int                  @default(0)
-  spentCents       Int                  @default(0)
-  checkoutUrl      String?
-  paymentProvider  String?
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
-  region           Region?              @relation(fields: [regionKey], references: [key], onDelete: SetNull)
-  registrations    BannerRegistration[]
-  impressions      AdImpression[]
-  charges          AdCharge[]
+  id                  String               @id @default(cuid())
+  name                String
+  imageUrl            String
+  type                BannerType           @default(LINK)
+  placement           BannerPlacement      @default(HOME)
+  targetUrl           String?
+  regionKey           String?
+  isActive            Boolean              @default(true)
+  campaignStatus      AdCampaignStatus     @default(ACTIVE)
+  objective           AdObjective          @default(TRAFFIC)
+  billingMode         AdBillingMode        @default(FLAT)
+  paymentStatus       AdPaymentStatus      @default(PENDING)
+  createdById         String?
+  goal                AdGoal?
+  headline            String?
+  description         String?              @db.Text
+  ctaLabel            String?
+  whatsappNumber      String?
+  marketplaceItemId   String?
+  plan                AdPlan?
+  durationMonths      Int?
+  contractAmountCents Int?
+  moderationStatus    AdModerationStatus   @default(DRAFT)
+  submittedAt         DateTime?
+  approvedAt          DateTime?
+  approvedById        String?
+  rejectionReason     String?              @db.Text
+  targetInterests     String[]             @default([])
+  targetKeywords      String[]             @default([])
+  targetCategories    String[]             @default([])
+  startsAt            DateTime?
+  endsAt              DateTime?
+  dailyBudgetCents    Int?
+  totalBudgetCents    Int?
+  bidCents            Int                  @default(0)
+  spentCents          Int                  @default(0)
+  checkoutUrl         String?
+  paymentProvider     String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  region              Region?              @relation(fields: [regionKey], references: [key], onDelete: SetNull)
+  createdBy           User?                @relation("AdCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  approvedBy          User?                @relation("AdApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  registrations       BannerRegistration[]
+  impressions         AdImpression[]
+  charges             AdCharge[]
+  payments            AdPayment[]
 
   @@index([isActive, regionKey, updatedAt])
   @@index([campaignStatus, startsAt, endsAt])
   @@index([paymentStatus, updatedAt])
+  @@index([createdById, updatedAt])
+  @@index([moderationStatus, paymentStatus, updatedAt])
+}
+
+model AdPayment {
+  id                String          @id @default(cuid())
+  bannerId          String
+  provider          String
+  providerSessionId String?         @unique
+  providerPaymentId String?         @unique
+  amountCents       Int
+  currency          String          @default("USD")
+  status            AdPaymentStatus @default(PENDING)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  paidAt            DateTime?
+  banner            Banner          @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+
+  @@index([bannerId, createdAt])
+  @@index([status, updatedAt])
 }
 
 model AdCharge {

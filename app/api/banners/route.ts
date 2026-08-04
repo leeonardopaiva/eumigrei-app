@@ -78,23 +78,25 @@ export async function GET(request: Request) {
       ? {
           isActive: true,
           campaignStatus: 'ACTIVE',
+          moderationStatus: 'APPROVED',
+          paymentStatus: 'PAID',
           OR: placementFilter,
           AND: [
             { OR: [{ regionKey }, { regionKey: null }] },
             { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
             { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
-            { OR: [{ paymentStatus: 'NOT_REQUIRED' }, { paymentStatus: 'PAID' }] },
           ],
         }
       : {
           isActive: true,
           campaignStatus: 'ACTIVE',
+          moderationStatus: 'APPROVED',
+          paymentStatus: 'PAID',
           regionKey: null,
           OR: placementFilter,
           AND: [
             { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
             { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
-            { OR: [{ paymentStatus: 'NOT_REQUIRED' }, { paymentStatus: 'PAID' }] },
           ],
         },
     orderBy: [{ updatedAt: 'desc' }],
