@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import { Badge, Button, Card } from '@/components/ui';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui';
 import { useToast } from '@/components/feedback/ToastProvider';
 import { adCreativeStepSchema, adGoalStepSchema, adReachStepSchema, type AdWizardData } from '@/lib/ads/validation';
 import { CheckoutStep, AD_PAYMENT_FORM_ID } from './steps/CheckoutStep';
@@ -43,6 +44,7 @@ const getErrors = (issues: Array<{ path: PropertyKey[]; message: string }>) =>
   }, {});
 
 export const AdWizard: React.FC = () => {
+  const router = useRouter();
   const [state, dispatch] = useReducer(reducer, initialState);
   const [hydrated, setHydrated] = useState(false);
   const [errors, setErrors] = useState<AdFieldErrors>({});
@@ -167,14 +169,15 @@ export const AdWizard: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl pb-28">
-      <Card className="sticky top-0 z-30 mb-6 rounded-t-none border-t-0 shadow-md">
-        <div className="flex items-start justify-between gap-4">
-          <div><Badge tone="primary">Ads Manager</Badge><Card.Title className="mt-3">Crie sua campanha</Card.Title></div>
-          {state.draftId ? <Badge tone="neutro">Rascunho salvo</Badge> : null}
+    <div className="mx-auto w-full max-w-[1080px] pb-28">
+      <header className="mb-8">
+        <p className="text-[10px] font-bold text-slate-400">Criar Anuncio</p>
+        <div className="mt-1 flex items-end justify-between gap-4">
+          <h1 className="text-[28px] font-extrabold leading-tight text-[#132f40]">Novo Anuncio</h1>
+          {state.draftId ? <span className="text-[10px] font-semibold text-slate-400">Rascunho salvo</span> : null}
         </div>
         <WizardStepper currentStep={state.step} steps={STEPS} className="mt-5" />
-      </Card>
+      </header>
 
       {requestError ? <div className="mb-5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-body-sm text-red-700">{requestError}</div> : null}
       {paymentSubmitted ? <div className="mb-5 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-body-sm text-emerald-700">Pagamento recebido ou em processamento. A campanha sera enviada para moderacao pelo webhook do Stripe.</div> : null}
@@ -182,15 +185,18 @@ export const AdWizard: React.FC = () => {
       {state.step === 1 ? <GoalStep state={state} errors={errors} patch={patch} /> : null}
       {state.step === 2 ? <CreativeStep state={state} errors={errors} patch={patch} /> : null}
       {state.step === 3 ? <ReachAndPlanStep state={state} errors={errors} patch={patch} /> : null}
-      {state.step === 4 ? <CheckoutStep state={state} clientSecret={clientSecret} error={requestError} onProcessing={setPaymentProcessing} onError={setRequestError} onSuccess={() => { setPaymentSubmitted(true); sessionStorage.removeItem(STORAGE_KEY); showToast('Pagamento enviado. Campanha aguardando moderacao.', 'success'); }} /> : null}
+      {state.step === 4 ? <CheckoutStep state={state} clientSecret={clientSecret} error={requestError} onProcessing={setPaymentProcessing} onError={setRequestError} onSuccess={() => {
+        setPaymentSubmitted(true);
+        sessionStorage.removeItem(STORAGE_KEY);
+        showToast('Pagamento enviado. Campanha aguardando moderacao.', 'success');
+        router.replace(`/ads/anuncio-em-analise${state.draftId ? `?campaign=${encodeURIComponent(state.draftId)}` : ''}`);
+      }} /> : null}
 
-      <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-white/95 px-4 py-4 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur md:left-64">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
-          <Button variant="secondary" disabled={state.step === 1 || saving || paymentProcessing} onClick={() => dispatch({ type: 'STEP', payload: Math.max(1, state.step - 1) as AdWizardData['step'] })}>Voltar</Button>
-          <div className="flex items-center gap-2">
-            {state.step >= 2 && state.step < 4 ? <Button variant="ghost" loading={saving} onClick={() => void saveDraft(true)}>Salvar rascunho</Button> : null}
-            {state.step < 4 ? <Button loading={saving} disabled={state.step === 1 && !state.goal} onClick={() => void nextStep()}>Continuar</Button> : <Button type="submit" form={AD_PAYMENT_FORM_ID} loading={paymentProcessing || saving} disabled={!clientSecret || paymentSubmitted}>⚡ Finalizar e enviar</Button>}
-          </div>
+      <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-[#f5f7f9]/95 px-4 py-4 backdrop-blur md:left-48 md:px-9">
+        <div className="mx-auto grid max-w-[1080px] grid-cols-3 items-center gap-3">
+          <div><Button variant="ghost" disabled={state.step === 1 || saving || paymentProcessing} onClick={() => dispatch({ type: 'STEP', payload: Math.max(1, state.step - 1) as AdWizardData['step'] })}>← Voltar</Button></div>
+          <div className="flex justify-center">{state.step >= 2 && state.step < 4 ? <Button variant="ghost" loading={saving} onClick={() => void saveDraft(true)}>Salvar rascunho</Button> : null}</div>
+          <div className="flex justify-end">{state.step < 4 ? <Button loading={saving} disabled={state.step === 1 && !state.goal} onClick={() => void nextStep()}>Continuar →</Button> : <Button type="submit" form={AD_PAYMENT_FORM_ID} loading={paymentProcessing || saving} disabled={!clientSecret || paymentSubmitted}>⚡ Finalizar e enviar</Button>}</div>
         </div>
       </footer>
     </div>
