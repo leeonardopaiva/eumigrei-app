@@ -38,6 +38,17 @@ export async function PUT(request: Request, context: RouteContext) {
 
   const { bannerId } = await context.params;
 
+  const paidCampaign = await prisma.banner.findUnique({
+    where: { id: bannerId },
+    select: { adAccountId: true },
+  });
+  if (paidCampaign?.adAccountId) {
+    return NextResponse.json(
+      { error: 'Campanhas comerciais devem ser revisadas exclusivamente na fila de Ads.' },
+      { status: 409 },
+    );
+  }
+
   try {
     const banner = await prisma.banner.update({
       where: { id: bannerId },

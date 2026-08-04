@@ -40,7 +40,7 @@ const AppContent: React.FC<AppContentProps> = ({
   const { rootSegment } = parseAppRoute(pathname);
 
   if (rootSegment === 'admin') {
-    return <AdminWorkspace currentUser={currentUser} />;
+    return <AdminWorkspace currentUser={currentUser} pathname={pathname} />;
   }
 
   if (rootSegment === 'negocios' || rootSegment === 'eventos' || rootSegment === 'marketplace') {

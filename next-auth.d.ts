@@ -12,6 +12,7 @@ declare module 'next-auth' {
       regionKey?: string | null;
       onboardingCompleted: boolean;
       recruiterVerified: boolean;
+      isAdvertiser: boolean;
     };
   }
 
@@ -23,6 +24,7 @@ declare module 'next-auth' {
     regionKey?: string | null;
     onboardingCompleted: boolean;
     recruiterVerified: boolean;
+    isAdvertiser: boolean;
   }
 }
 
@@ -36,5 +38,6 @@ declare module 'next-auth/jwt' {
     regionKey?: string | null;
     onboardingCompleted?: boolean;
     recruiterVerified?: boolean;
+    isAdvertiser?: boolean;
   }
 }

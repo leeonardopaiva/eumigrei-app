@@ -153,60 +153,65 @@ enum AdAccountRole {
 }
 
 model User {
-  id                     String                 @id @default(cuid())
-  name                   String?
-  username               String?                @unique
-  email                  String?                @unique
-  passwordHash           String?
-  emailVerified          DateTime?
-  image                  String?
-  coverImageUrl          String?
-  bio                    String?
-  interests              String[]               @default([])
-  galleryUrls            String[]               @default([])
-  role                   UserRole               @default(USER)
-  phone                  String?
-  locationLabel          String?
-  regionKey              String?
-  referredById           String?
-  onboardingCompleted    Boolean                @default(false)
-  gender                 Gender?
-  age                    Int?
-  timeAbroad             TimeAbroad?
-  birthCity              String?
-  recruiterVerified      Boolean                @default(false)
-  createdAt              DateTime               @default(now())
-  updatedAt              DateTime               @updatedAt
-  accounts               Account[]
-  adCharges              AdCharge[]
-  adImpressions          AdImpression[]
-  adAccountMemberships   AdAccountUser[]
-  createdAds             Banner[]               @relation("AdCreator")
-  approvedAds            Banner[]               @relation("AdApprover")
-  sessions               Session[]
-  businessMemberships    BusinessMember[]
-  createdBusinesses      Business[]             @relation("BusinessCreator")
-  createdEvents          Event[]                @relation("EventCreator")
-  createdJobs            Job[]                  @relation("JobCreator")
-  createdHousing         Housing[]              @relation("HousingCreator")
-  communityPosts         CommunityPost[]        @relation("CommunityPostAuthor")
-  postComments           PostComment[]          @relation("PostCommentAuthor")
-  postReactions          PostReaction[]         @relation("PostReactionAuthor")
-  postReports            PostReport[]           @relation("PostReportAuthor")
-  emailChangeTokens      EmailChangeToken[]
-  suggestions            Suggestion[]
-  businessFavorites      BusinessFavorite[]
-  eventFavorites         EventFavorite[]
-  businessRatings        BusinessRating[]
-  eventRatings           EventRating[]
-  analyticsEvents        AnalyticsEvent[]
-  bannerRegistrations    BannerRegistration[]
-  sentFriendRequests     FriendRequest[]        @relation("FriendRequestSender")
-  receivedFriendRequests FriendRequest[]        @relation("FriendRequestRecipient")
-  createdGroups          CommunityGroup[]       @relation("CommunityGroupCreator")
-  groupMemberships       CommunityGroupMember[]
-  referredBy             User?                  @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
-  referrals              User[]                 @relation("UserReferrals")
+  id                        String                 @id @default(cuid())
+  name                      String?
+  username                  String?                @unique
+  email                     String?                @unique
+  passwordHash              String?
+  emailVerified             DateTime?
+  image                     String?
+  coverImageUrl             String?
+  bio                       String?
+  interests                 String[]               @default([])
+  profileObjective          String?
+  adsPersonalizationEnabled Boolean                @default(true)
+  galleryUrls               String[]               @default([])
+  role                      UserRole               @default(USER)
+  phone                     String?
+  locationLabel             String?
+  regionKey                 String?
+  referredById              String?
+  onboardingCompleted       Boolean                @default(false)
+  gender                    Gender?
+  age                       Int?
+  timeAbroad                TimeAbroad?
+  birthCity                 String?
+  recruiterVerified         Boolean                @default(false)
+  isAdvertiser              Boolean                @default(false)
+  marketingEmailsOptOut     Boolean                @default(false)
+  preferredLanguage         String                 @default("pt-BR")
+  createdAt                 DateTime               @default(now())
+  updatedAt                 DateTime               @updatedAt
+  accounts                  Account[]
+  adCharges                 AdCharge[]
+  adImpressions             AdImpression[]
+  adAccountMemberships      AdAccountUser[]
+  createdAds                Banner[]               @relation("AdCreator")
+  approvedAds               Banner[]               @relation("AdApprover")
+  sessions                  Session[]
+  businessMemberships       BusinessMember[]
+  createdBusinesses         Business[]             @relation("BusinessCreator")
+  createdEvents             Event[]                @relation("EventCreator")
+  createdJobs               Job[]                  @relation("JobCreator")
+  createdHousing            Housing[]              @relation("HousingCreator")
+  communityPosts            CommunityPost[]        @relation("CommunityPostAuthor")
+  postComments              PostComment[]          @relation("PostCommentAuthor")
+  postReactions             PostReaction[]         @relation("PostReactionAuthor")
+  postReports               PostReport[]           @relation("PostReportAuthor")
+  emailChangeTokens         EmailChangeToken[]
+  suggestions               Suggestion[]
+  businessFavorites         BusinessFavorite[]
+  eventFavorites            EventFavorite[]
+  businessRatings           BusinessRating[]
+  eventRatings              EventRating[]
+  analyticsEvents           AnalyticsEvent[]
+  bannerRegistrations       BannerRegistration[]
+  sentFriendRequests        FriendRequest[]        @relation("FriendRequestSender")
+  receivedFriendRequests    FriendRequest[]        @relation("FriendRequestRecipient")
+  createdGroups             CommunityGroup[]       @relation("CommunityGroupCreator")
+  groupMemberships          CommunityGroupMember[]
+  referredBy                User?                  @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals                 User[]                 @relation("UserReferrals")
 
   @@index([referredById, createdAt])
 }
@@ -459,6 +464,8 @@ model AdAccount {
   id               String          @id @default(cuid())
   name             String
   websiteUrl       String?
+  phone            String?
+  businessAddress  String?
   businessCategory String?
   subcategories    String[]
   country          String          @default("US")
@@ -466,6 +473,7 @@ model AdAccount {
   timezone         String          @default("UTC")
   isAgency         Boolean         @default(false)
   logoUrl          String?
+  useWebsitePhotos Boolean         @default(true)
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
   users            AdAccountUser[]
@@ -479,7 +487,7 @@ model AdAccountUser {
   id          String        @id @default(cuid())
   adAccountId String
   userId      String
-  role        AdAccountRole @default(ADMIN)
+  role        AdAccountRole @default(VIEWER)
   createdAt   DateTime      @default(now())
   adAccount   AdAccount     @relation(fields: [adAccountId], references: [id], onDelete: Cascade)
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -496,8 +504,8 @@ model Banner {
   placement           BannerPlacement      @default(HOME)
   targetUrl           String?
   regionKey           String?
-  isActive            Boolean              @default(true)
-  campaignStatus      AdCampaignStatus     @default(ACTIVE)
+  isActive            Boolean              @default(false)
+  campaignStatus      AdCampaignStatus     @default(DRAFT)
   objective           AdObjective          @default(TRAFFIC)
   billingMode         AdBillingMode        @default(FLAT)
   paymentStatus       AdPaymentStatus      @default(PENDING)

@@ -15,6 +15,10 @@ export type AdsOverviewRow = {
   label: string;
   imageUrl: string | null;
   goal: string | null;
+  description: string | null;
+  ctaLabel: string | null;
+  destination: string | null;
+  rejectionReason: string | null;
   plan: string | null;
   moderationStatus: AdModerationStatus;
   paymentStatus: string;
@@ -129,9 +133,9 @@ const countByKey = (items: Array<{ key: string; value?: number }>) =>
 
 const average = (numerator: number, denominator: number) => (denominator > 0 ? numerator / denominator : 0);
 
-export async function buildAdsOverviewData(userId: string, range: AdsDateRange): Promise<AdsOverviewData> {
+export async function buildAdsOverviewData(userId: string, range: AdsDateRange, adAccountId?: string): Promise<AdsOverviewData> {
   const banners = await prisma.banner.findMany({
-    where: { createdById: userId },
+    where: adAccountId ? { adAccountId } : { createdById: userId },
     orderBy: [{ updatedAt: 'desc' }],
     select: {
       id: true,
@@ -139,6 +143,12 @@ export async function buildAdsOverviewData(userId: string, range: AdsDateRange):
       headline: true,
       imageUrl: true,
       goal: true,
+      description: true,
+      ctaLabel: true,
+      targetUrl: true,
+      whatsappNumber: true,
+      marketplaceItemId: true,
+      rejectionReason: true,
       plan: true,
       moderationStatus: true,
       paymentStatus: true,
@@ -220,6 +230,15 @@ export async function buildAdsOverviewData(userId: string, range: AdsDateRange):
       label: banner.headline || banner.name,
       imageUrl: banner.imageUrl,
       goal: banner.goal,
+      description: banner.description,
+      ctaLabel: banner.ctaLabel,
+      destination:
+        banner.goal === 'WHATSAPP'
+          ? banner.whatsappNumber
+          : banner.goal === 'MARKETPLACE'
+            ? banner.marketplaceItemId
+            : banner.targetUrl,
+      rejectionReason: banner.rejectionReason,
       plan: banner.plan,
       moderationStatus: banner.moderationStatus,
       paymentStatus: banner.paymentStatus,
@@ -253,9 +272,7 @@ export async function buildAdsOverviewData(userId: string, range: AdsDateRange):
   const activeCampaigns = banners.filter(
     (banner) =>
       banner.isActive &&
-      banner.moderationStatus === AdModerationStatus.APPROVED &&
-      banner.paymentStatus === 'PAID' &&
-      banner.campaignStatus === 'ACTIVE',
+      banner.moderationStatus === AdModerationStatus.APPROVED,
   ).length;
 
   const rejectedCreatives = banners.filter((banner) => banner.moderationStatus === AdModerationStatus.REJECTED).length;
@@ -284,10 +301,10 @@ export async function buildAdsOverviewData(userId: string, range: AdsDateRange):
   };
 }
 
-export async function buildAdsReportData(userId: string): Promise<AdsReportData> {
+export async function buildAdsReportData(userId: string, adAccountId?: string): Promise<AdsReportData> {
   const [banners, regions] = await Promise.all([
     prisma.banner.findMany({
-      where: { createdById: userId },
+      where: adAccountId ? { adAccountId } : { createdById: userId },
       orderBy: [{ updatedAt: 'desc' }],
       select: {
         id: true,
@@ -334,6 +351,8 @@ export async function buildAdsReportData(userId: string): Promise<AdsReportData>
 export const reportDimensionCatalog = [
   { id: 'campaign_name', label: 'Nome da Campanha', accessor: (row: AdsOverviewRow) => row.label },
   { id: 'campaign_id', label: 'ID da Campanha', accessor: (row: AdsOverviewRow) => row.id },
+  { id: 'group_name', label: 'Nome do Grupo', accessor: () => 'Grupo padrao' },
+  { id: 'group_id', label: 'ID do Grupo', accessor: () => 'default' },
   { id: 'ad_name', label: 'Nome do Anuncio', accessor: (row: AdsOverviewRow) => row.label },
   { id: 'objective', label: 'Objetivo', accessor: (row: AdsOverviewRow) => row.goal ?? 'Sem objetivo' },
   {
@@ -378,6 +397,16 @@ export const reportMetricCatalog = [
     id: 'leads',
     label: 'Leads',
     accessor: (row: AdsOverviewRow) => row.conversions.toString(),
+  },
+  {
+    id: 'conversions',
+    label: 'Conversoes',
+    accessor: (row: AdsOverviewRow) => row.conversions.toString(),
+  },
+  {
+    id: 'engagement',
+    label: 'Engajamento',
+    accessor: (row: AdsOverviewRow) => (row.clicks + row.conversions).toString(),
   },
 ] as const;
 

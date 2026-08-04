@@ -21,6 +21,7 @@ import {
   Users,
 } from 'lucide-react';
 import BannerManagementSection, { type ManagedBanner } from '../components/admin/BannerManagementSection';
+import AdsModerationSection from '../components/admin/AdsModerationSection';
 import { useToast } from '../components/feedback/ToastProvider';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import ImageGalleryField from '../components/forms/ImageGalleryField';
@@ -484,7 +485,7 @@ const formatSuggestionCategory = (category: SuggestionCategoryValue) =>
 const ADMIN_LIST_PREVIEW_LIMIT = 5;
 type ExpandableSectionKey = 'regions' | 'businesses' | 'events' | 'users' | 'suggestions';
 
-const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
+const AdminPanel: React.FC<{ user: User; initialSection?: 'ads' }> = ({ user, initialSection }) => {
   const { showToast } = useToast();
   const [dashboard, setDashboard] = useState<AdminDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -505,6 +506,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
   const [eventSearch, setEventSearch] = useState('');
   const [activeSection, setActiveSection] = useState<
     | 'moderation'
+    | 'ads'
     | 'imports'
     | 'banners'
     | 'regions'
@@ -513,7 +515,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
     | 'users'
     | 'suggestions'
     | 'analytics'
-  >('moderation');
+  >(initialSection ?? 'moderation');
 
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [userForm, setUserForm] = useState<UserFormState>(emptyUserForm);
@@ -1181,6 +1183,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
 
   const sectionTabs = [
     { id: 'moderation' as const, label: 'Moderação', count: totalPending },
+    { id: 'ads' as const, label: 'Anúncios pagos', count: 0 },
     { id: 'imports' as const, label: 'Importação', count: importPreview ? importPreview.summary.regions + importPreview.summary.businesses + importPreview.summary.events : 0 },
     { id: 'banners' as const, label: 'Banners', count: dashboard?.banners.length ?? 0 },
     { id: 'regions' as const, label: 'Regiões', count: dashboard?.stats.totalRegions ?? 0 },
@@ -1276,6 +1279,7 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
               setActiveSection(
                 event.target.value as
                   | 'moderation'
+                  | 'ads'
                   | 'imports'
                   | 'banners'
                   | 'regions'
@@ -1558,6 +1562,8 @@ const AdminPanel: React.FC<{ user: User }> = ({ user }) => {
             onMessage={setMessage}
           />
         ) : null}
+
+        {activeSection === 'ads' ? <AdsModerationSection /> : null}
 
         {activeSection === 'regions' ? (
           <div className="space-y-3">

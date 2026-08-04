@@ -11,6 +11,8 @@ import { GoalStep } from './steps/GoalStep';
 import { ReachAndPlanStep } from './steps/ReachAndPlanStep';
 import type { AdFieldErrors } from './types';
 import { WizardStepper } from './WizardStepper';
+import { useAdAccount } from './AdAccountProvider';
+import { calculateAdContractAmount, formatAdCurrency } from '@/lib/ads/contracts';
 
 const STORAGE_KEY = 'gringoou:ad-wizard-draft';
 const STEPS = ['Objetivo', 'Criativo', 'Alcance', 'Checkout'];
@@ -45,6 +47,7 @@ const getErrors = (issues: Array<{ path: PropertyKey[]; message: string }>) =>
 
 export const AdWizard: React.FC = () => {
   const router = useRouter();
+  const { account, loading: accountLoading } = useAdAccount();
   const [state, dispatch] = useReducer(reducer, initialState);
   const [hydrated, setHydrated] = useState(false);
   const [errors, setErrors] = useState<AdFieldErrors>({});
@@ -55,6 +58,10 @@ export const AdWizard: React.FC = () => {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const checkoutKeyRef = useRef<string | null>(null);
   const { showToast } = useToast();
+  const checkoutAmount = state.plan && state.durationMonths
+    ? calculateAdContractAmount(state.plan, state.durationMonths)
+    : 0;
+  const canPay = account?.role === 'BUSINESS_ADMIN';
 
   useEffect(() => {
     try {
@@ -97,7 +104,7 @@ export const AdWizard: React.FC = () => {
       const response = await fetch('/api/banners/draft', {
         method: state.draftId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...state, bannerId: state.draftId }),
+        body: JSON.stringify({ ...state, bannerId: state.draftId, adAccountId: account?.id }),
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) throw new Error(payload?.error ?? 'Nao foi possivel salvar o rascunho.');
@@ -113,7 +120,7 @@ export const AdWizard: React.FC = () => {
     } finally {
       setSaving(false);
     }
-  }, [showToast, state]);
+  }, [account?.id, showToast, state]);
 
   const preparePayment = useCallback(async (draftId: string) => {
     if (!state.plan || !state.durationMonths) return false;
@@ -124,7 +131,7 @@ export const AdWizard: React.FC = () => {
       const response = await fetch('/api/ads/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...state, bannerId: draftId, idempotencyKey: checkoutKeyRef.current }),
+        body: JSON.stringify({ ...state, bannerId: draftId, adAccountId: account?.id, idempotencyKey: checkoutKeyRef.current }),
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) throw new Error(payload?.error ?? 'Nao foi possivel preparar o pagamento.');
@@ -137,13 +144,13 @@ export const AdWizard: React.FC = () => {
     } finally {
       setSaving(false);
     }
-  }, [state]);
+  }, [account?.id, state]);
 
   useEffect(() => {
-    if (hydrated && state.step === 4 && state.draftId && !clientSecret && !paymentSubmitted) {
+    if (hydrated && canPay && state.step === 4 && state.draftId && !clientSecret && !paymentSubmitted) {
       void preparePayment(state.draftId);
     }
-  }, [clientSecret, hydrated, paymentSubmitted, preparePayment, state.draftId, state.step]);
+  }, [canPay, clientSecret, hydrated, paymentSubmitted, preparePayment, state.draftId, state.step]);
 
   const nextStep = async () => {
     if (state.step === 1) {
@@ -163,13 +170,21 @@ export const AdWizard: React.FC = () => {
       if (!parsed.success) return setErrors(getErrors(parsed.error.issues));
       const draftId = await saveDraft();
       if (!draftId) return;
+      if (!canPay) {
+        setRequestError('Rascunho salvo. Apenas o administrador principal da conta pode concluir o pagamento.');
+        return;
+      }
       dispatch({ type: 'STEP', payload: 4 });
       await preparePayment(draftId);
     }
   };
 
+  if (accountLoading || !account) {
+    return <div className="mx-auto max-w-[1080px] rounded-3xl border border-slate-200 bg-white p-8 text-sm text-slate-500">Carregando conta comercial...</div>;
+  }
+
   return (
-    <div className="mx-auto w-full max-w-[1080px] pb-28">
+    <div className="mx-auto w-full max-w-[1160px] pb-28">
       <header className="mb-8">
         <p className="text-[10px] font-bold text-slate-400">Criar Anuncio</p>
         <div className="mt-1 flex items-end justify-between gap-4">
@@ -192,11 +207,11 @@ export const AdWizard: React.FC = () => {
         router.replace(`/ads/anuncio-em-analise${state.draftId ? `?campaign=${encodeURIComponent(state.draftId)}` : ''}`);
       }} /> : null}
 
-      <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-[#f5f7f9]/95 px-4 py-4 backdrop-blur md:left-48 md:px-9">
+      <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-[#f5f7f9]/95 px-4 py-4 backdrop-blur md:left-[272px] md:px-9">
         <div className="mx-auto grid max-w-[1080px] grid-cols-3 items-center gap-3">
-          <div><Button variant="ghost" disabled={state.step === 1 || saving || paymentProcessing} onClick={() => dispatch({ type: 'STEP', payload: Math.max(1, state.step - 1) as AdWizardData['step'] })}>← Voltar</Button></div>
+          <div><Button variant="ghost" disabled={state.step === 1 || saving || paymentProcessing} onClick={() => dispatch({ type: 'STEP', payload: Math.max(1, state.step - 1) as AdWizardData['step'] })}>Voltar</Button></div>
           <div className="flex justify-center">{state.step >= 2 && state.step < 4 ? <Button variant="ghost" loading={saving} onClick={() => void saveDraft(true)}>Salvar rascunho</Button> : null}</div>
-          <div className="flex justify-end">{state.step < 4 ? <Button loading={saving} disabled={state.step === 1 && !state.goal} onClick={() => void nextStep()}>Continuar →</Button> : <Button type="submit" form={AD_PAYMENT_FORM_ID} loading={paymentProcessing || saving} disabled={!clientSecret || paymentSubmitted}>⚡ Finalizar e enviar</Button>}</div>
+          <div className="flex justify-end">{state.step < 4 ? <Button loading={saving} disabled={state.step === 1 && !state.goal} onClick={() => void nextStep()}>Continuar</Button> : <Button type="submit" form={AD_PAYMENT_FORM_ID} loading={paymentProcessing || saving} disabled={!clientSecret || paymentSubmitted}>Pagar {formatAdCurrency(checkoutAmount)} e Enviar para Analise</Button>}</div>
         </div>
       </footer>
     </div>

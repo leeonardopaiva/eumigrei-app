@@ -1,8 +1,9 @@
-import { AdCampaignStatus, AdModerationStatus } from '@prisma/client';
+import { AdCampaignStatus, AdModerationStatus, AdPaymentStatus } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { requireAdminSession } from '@/lib/require-admin';
+import { sendAdModerationEmail } from '@/lib/ads/moderation-email';
 
 type RouteContext = { params: Promise<{ id: string }> };
 const rejectionSchema = z.object({ reason: z.string().trim().min(5).max(1000) });
@@ -18,7 +19,7 @@ export async function POST(request: Request, context: RouteContext) {
 
   const { id } = await context.params;
   const result = await prisma.banner.updateMany({
-    where: { id, moderationStatus: AdModerationStatus.PENDING_REVIEW },
+    where: { id, adAccountId: { not: null }, paymentStatus: AdPaymentStatus.PAID, moderationStatus: AdModerationStatus.PENDING_REVIEW },
     data: {
       moderationStatus: AdModerationStatus.REJECTED,
       campaignStatus: AdCampaignStatus.PAUSED,
@@ -32,6 +33,11 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ error: 'Campanha pendente de revisao nao encontrada.' }, { status: 404 });
   }
 
+  try {
+    await sendAdModerationEmail(id, 'REJECTED', parsed.data.reason);
+  } catch (error) {
+    console.error('Failed to send ad rejection email:', error);
+  }
+
   return NextResponse.json({ ok: true });
 }
-

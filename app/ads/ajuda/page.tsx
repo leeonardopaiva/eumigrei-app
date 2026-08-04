@@ -1,3 +1,2 @@
-import { AdsPlaceholderPage } from '@/components/ads/AdsPlaceholderPage';
-export default function AdsHelpPage() { return <AdsPlaceholderPage title="Ajuda" description="Consulte orientacoes sobre criativos, pagamentos e moderacao de campanhas." />; }
-
+import { redirect } from 'next/navigation';
+export default function LegacyAdsHelpPage() { redirect('/ads/help'); }

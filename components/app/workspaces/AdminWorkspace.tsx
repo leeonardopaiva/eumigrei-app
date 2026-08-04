@@ -7,6 +7,7 @@ import { UserRole, type User } from '@/types';
 
 type AdminWorkspaceProps = {
   currentUser: User;
+  pathname: string;
 };
 
 const AdminAccessDenied: React.FC = () => (
@@ -23,12 +24,12 @@ const AdminAccessDenied: React.FC = () => (
   </div>
 );
 
-const AdminWorkspace: React.FC<AdminWorkspaceProps> = ({ currentUser }) => {
+const AdminWorkspace: React.FC<AdminWorkspaceProps> = ({ currentUser, pathname }) => {
   if (currentUser.role !== UserRole.ADMIN) {
     return <AdminAccessDenied />;
   }
 
-  return <AdminPanel user={currentUser} />;
+  return <AdminPanel user={currentUser} initialSection={pathname.startsWith('/admin/ads') ? 'ads' : undefined} />;
 };
 
 export default AdminWorkspace;

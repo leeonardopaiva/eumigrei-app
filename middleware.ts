@@ -20,6 +20,9 @@ const PUBLIC_AUTH_PATHS = [
   '/access-blocked',
   '/maintenance',
   '/styleguide',
+  '/ads/login',
+  '/ads/register',
+  '/api/ads/auth/register',
 ];
 
 const isTruthyEnv = (value?: string | null) =>
@@ -27,6 +30,7 @@ const isTruthyEnv = (value?: string | null) =>
 
 const isPublicPath = (pathname: string) =>
   pathname === '/' ||
+  pathname === '/api/webhooks/stripe' ||
   PUBLIC_ASSET_PREFIXES.some((prefix) => pathname.startsWith(prefix)) ||
   PUBLIC_AUTH_PATHS.some((prefix) => pathname.startsWith(prefix));
 
@@ -78,7 +82,7 @@ export async function middleware(request: NextRequest) {
         }
 
         const url = request.nextUrl.clone();
-        url.pathname = '/login';
+        url.pathname = request.nextUrl.pathname.startsWith('/ads') ? '/ads/login' : '/login';
         url.search = '';
         return NextResponse.redirect(url, 307);
       }

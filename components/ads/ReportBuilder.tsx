@@ -6,7 +6,6 @@ import { useToast } from '@/components/feedback/ToastProvider';
 import { Button, Card, Input, Select, Toggle } from '@/components/ui';
 import { Checkbox } from '@/components/ui/Input';
 import {
-  createCsvReport,
   defaultReportDimensions,
   defaultReportMetrics,
   reportDimensionCatalog,
@@ -60,7 +59,7 @@ const defaultState: BuilderState = {
 const groupedDimensions = [
   {
     title: 'Entrega',
-    items: reportDimensionCatalog.filter((item) => ['campaign_name', 'campaign_id', 'ad_name', 'objective', 'platform'].includes(item.id)),
+    items: reportDimensionCatalog.filter((item) => ['campaign_name', 'campaign_id', 'group_name', 'group_id', 'ad_name', 'objective', 'platform'].includes(item.id)),
   },
   {
     title: 'Data',
@@ -78,6 +77,7 @@ const groupedMetrics = [
 export function ReportBuilder({ data, rows }: ReportBuilderProps) {
   const { showToast } = useToast();
   const [state, setState] = useState<BuilderState>(defaultState);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     try {
@@ -134,15 +134,30 @@ export function ReportBuilder({ data, rows }: ReportBuilderProps) {
         : [...current.selectedMetrics, id],
     }));
 
-  const downloadReport = () => {
-    const csv = createCsvReport(filteredRows, state.selectedDimensions, state.selectedMetrics);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${state.reportName || 'ads-report'}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+  const downloadReport = async () => {
+    setExporting(true);
+    try {
+      const response = await fetch('/api/ads/reports/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error ?? 'Nao foi possivel gerar o relatorio.');
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${state.reportName || 'ads-report'}.${state.outputFormat === 'XLSX' ? 'xlsx' : 'csv'}`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (reason) {
+      showToast(reason instanceof Error ? reason.message : 'Nao foi possivel gerar o relatorio.', 'error');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const saveReport = () => {
@@ -157,7 +172,7 @@ export function ReportBuilder({ data, rows }: ReportBuilderProps) {
           <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-slate-400">Build Report</p>
           <h1 className="mt-1 text-[34px] font-extrabold leading-none text-[#132f40]">Build Report</h1>
         </div>
-        <Button iconLeft={<Play size={18} />} onClick={downloadReport}>
+        <Button iconLeft={<Play size={18} />} onClick={() => void downloadReport()} loading={exporting}>
           Run report
         </Button>
       </div>
@@ -383,14 +398,14 @@ export function ReportBuilder({ data, rows }: ReportBuilderProps) {
               <div>
                 <p className="text-[16px] font-bold text-[#132f40]">Pronto para gerar?</p>
                 <p className="text-[12px] text-slate-400">
-                  {selectedMetricItems.length} metricas, {selectedDimensionItems.length} dimensoes e {data.activeCampaigns.length} campanhas disponiveis
+                  {selectedMetricItems.length} metricas, {selectedDimensionItems.length} dimensoes e {filteredRows.length} campanhas no filtro
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <Button variant="secondary" iconLeft={<Save size={16} />} onClick={saveReport}>
                   Salvar Relatorio
                 </Button>
-                <Button iconLeft={<Download size={16} />} onClick={downloadReport}>
+                <Button iconLeft={<Download size={16} />} onClick={() => void downloadReport()} loading={exporting}>
                   Run report
                 </Button>
               </div>
