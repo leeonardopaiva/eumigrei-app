@@ -145,6 +145,13 @@ enum AdPaymentStatus {
   REFUNDED
 }
 
+enum AdAccountRole {
+  BUSINESS_ADMIN
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
 model User {
   id                     String                 @id @default(cuid())
   name                   String?
@@ -173,6 +180,7 @@ model User {
   accounts               Account[]
   adCharges              AdCharge[]
   adImpressions          AdImpression[]
+  adAccountMemberships   AdAccountUser[]
   createdAds             Banner[]               @relation("AdCreator")
   approvedAds            Banner[]               @relation("AdApprover")
   sessions               Session[]
@@ -447,6 +455,39 @@ model PostReport {
   @@unique([postId, authorId])
 }
 
+model AdAccount {
+  id               String          @id @default(cuid())
+  name             String
+  websiteUrl       String?
+  businessCategory String?
+  subcategories    String[]
+  country          String          @default("US")
+  currency         String          @default("USD")
+  timezone         String          @default("UTC")
+  isAgency         Boolean         @default(false)
+  logoUrl          String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  users            AdAccountUser[]
+  banners          Banner[]
+
+  @@index([name])
+  @@index([businessCategory])
+}
+
+model AdAccountUser {
+  id          String        @id @default(cuid())
+  adAccountId String
+  userId      String
+  role        AdAccountRole @default(ADMIN)
+  createdAt   DateTime      @default(now())
+  adAccount   AdAccount     @relation(fields: [adAccountId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([adAccountId, userId])
+  @@index([userId, createdAt])
+}
+
 model Banner {
   id                  String               @id @default(cuid())
   name                String
@@ -460,6 +501,7 @@ model Banner {
   objective           AdObjective          @default(TRAFFIC)
   billingMode         AdBillingMode        @default(FLAT)
   paymentStatus       AdPaymentStatus      @default(PENDING)
+  adAccountId         String?
   createdById         String?
   goal                AdGoal?
   headline            String?
@@ -489,6 +531,7 @@ model Banner {
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   region              Region?              @relation(fields: [regionKey], references: [key], onDelete: SetNull)
+  adAccount           AdAccount?           @relation(fields: [adAccountId], references: [id], onDelete: SetNull)
   createdBy           User?                @relation("AdCreator", fields: [createdById], references: [id], onDelete: SetNull)
   approvedBy          User?                @relation("AdApprover", fields: [approvedById], references: [id], onDelete: SetNull)
   registrations       BannerRegistration[]
@@ -499,6 +542,7 @@ model Banner {
   @@index([isActive, regionKey, updatedAt])
   @@index([campaignStatus, startsAt, endsAt])
   @@index([paymentStatus, updatedAt])
+  @@index([adAccountId, updatedAt])
   @@index([createdById, updatedAt])
   @@index([moderationStatus, paymentStatus, updatedAt])
 }
@@ -506,7 +550,7 @@ model Banner {
 model AdPayment {
   id                String          @id @default(cuid())
   bannerId          String
-  provider          String
+  provider          String          @default("STRIPE")
   providerSessionId String?         @unique
   providerPaymentId String?         @unique
   amountCents       Int
