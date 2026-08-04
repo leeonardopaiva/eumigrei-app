@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 import { calculateAdContractAmount, AD_PLAN_CATALOG } from '@/lib/ads/contracts';
 import { getAdDestinationFields, getStripe } from '@/lib/ads/server';
 import { adCheckoutSchema } from '@/lib/ads/validation';
-import { getAppBaseUrl } from '@/lib/app-url';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -28,20 +27,20 @@ export async function POST(request: Request) {
         where: { status: AdPaymentStatus.PENDING, provider: 'STRIPE' },
         orderBy: { createdAt: 'desc' },
         take: 1,
-        select: { providerSessionId: true },
+        select: { providerPaymentId: true },
       },
     },
   });
   if (!banner) return NextResponse.json({ error: 'Rascunho nao encontrado ou indisponivel.' }, { status: 404 });
 
-  const pendingSessionId = banner.payments[0]?.providerSessionId;
-  if (pendingSessionId) {
+  const pendingPaymentIntentId = banner.payments[0]?.providerPaymentId;
+  if (pendingPaymentIntentId) {
     try {
-      const existingCheckout = await getStripe().checkout.sessions.retrieve(pendingSessionId);
-      if (existingCheckout.status === 'open' && existingCheckout.url) {
-        return NextResponse.json({ checkoutUrl: existingCheckout.url, clientSecret: existingCheckout.client_secret });
+      const existingIntent = await getStripe().paymentIntents.retrieve(pendingPaymentIntentId);
+      if (['requires_payment_method', 'requires_confirmation', 'requires_action'].includes(existingIntent.status)) {
+        return NextResponse.json({ clientSecret: existingIntent.client_secret });
       }
-      if (existingCheckout.status === 'complete') {
+      if (existingIntent.status === 'processing' || existingIntent.status === 'succeeded') {
         return NextResponse.json({ error: 'Pagamento em processamento. Aguarde a confirmacao do Stripe.' }, { status: 409 });
       }
     } catch (error) {
@@ -49,7 +48,7 @@ export async function POST(request: Request) {
     }
 
     await prisma.adPayment.updateMany({
-      where: { providerSessionId: pendingSessionId, status: AdPaymentStatus.PENDING },
+      where: { providerPaymentId: pendingPaymentIntentId, status: AdPaymentStatus.PENDING },
       data: { status: AdPaymentStatus.FAILED },
     });
   }
@@ -83,44 +82,32 @@ export async function POST(request: Request) {
 
   try {
     const stripe = getStripe();
-    const baseUrl = getAppBaseUrl(request);
-    const checkout = await stripe.checkout.sessions.create(
+    const paymentIntent = await stripe.paymentIntents.create(
       {
-        mode: 'payment',
-        customer_email: session.user.email ?? undefined,
-        success_url: `${baseUrl}/anuncios?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/anuncios?checkout=canceled`,
-        line_items: [{
-          quantity: 1,
-          price_data: {
-            currency: 'usd',
-            unit_amount: amountCents,
-            product_data: {
-              name: `Campanha ${AD_PLAN_CATALOG[parsed.data.plan].name} - ${parsed.data.durationMonths} mes(es)`,
-              description: parsed.data.headline,
-            },
-          },
-        }],
+        amount: amountCents,
+        currency: 'usd',
+        automatic_payment_methods: { enabled: true },
+        description: `Campanha ${AD_PLAN_CATALOG[parsed.data.plan].name} - ${parsed.data.durationMonths} mes(es): ${parsed.data.headline}`,
+        receipt_email: session.user.email ?? undefined,
         metadata: { bannerId: banner.id, userId: session.user.id },
-        payment_intent_data: { metadata: { bannerId: banner.id, userId: session.user.id } },
       },
       { idempotencyKey: parsed.data.idempotencyKey },
     );
 
     await prisma.adPayment.upsert({
-      where: { providerSessionId: checkout.id },
+      where: { providerPaymentId: paymentIntent.id },
       update: { amountCents, currency: 'USD', status: AdPaymentStatus.PENDING },
       create: {
         bannerId: banner.id,
         provider: 'STRIPE',
-        providerSessionId: checkout.id,
+        providerPaymentId: paymentIntent.id,
         amountCents,
         currency: 'USD',
         status: AdPaymentStatus.PENDING,
       },
     });
 
-    return NextResponse.json({ checkoutUrl: checkout.url, clientSecret: checkout.client_secret });
+    return NextResponse.json({ clientSecret: paymentIntent.client_secret });
   } catch (error) {
     console.error('Failed to create Stripe checkout:', error);
     return NextResponse.json(

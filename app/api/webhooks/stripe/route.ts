@@ -7,6 +7,51 @@ import { prisma } from '@/lib/prisma';
 const paymentIntentId = (session: Stripe.Checkout.Session) =>
   typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id ?? null;
 
+const confirmPayment = async (intent: Stripe.PaymentIntent) => {
+  const bannerId = intent.metadata.bannerId;
+  if (!bannerId || intent.currency.toLowerCase() !== 'usd') {
+    throw new Error('Pagamento sem campanha ou moeda USD valida.');
+  }
+
+  const campaign = await prisma.banner.findUnique({
+    where: { id: bannerId },
+    select: { contractAmountCents: true },
+  });
+  if (!campaign || campaign.contractAmountCents !== intent.amount_received) {
+    throw new Error('Valor do pagamento divergente do contrato.');
+  }
+
+  await prisma.$transaction([
+    prisma.adPayment.upsert({
+      where: { providerPaymentId: intent.id },
+      update: {
+        amountCents: intent.amount_received,
+        currency: 'USD',
+        status: AdPaymentStatus.PAID,
+        paidAt: new Date(),
+      },
+      create: {
+        bannerId,
+        provider: 'STRIPE',
+        providerPaymentId: intent.id,
+        amountCents: intent.amount_received,
+        currency: 'USD',
+        status: AdPaymentStatus.PAID,
+        paidAt: new Date(),
+      },
+    }),
+    prisma.banner.update({
+      where: { id: bannerId },
+      data: {
+        paymentStatus: AdPaymentStatus.PAID,
+        moderationStatus: AdModerationStatus.PENDING_REVIEW,
+        submittedAt: new Date(),
+        isActive: false,
+      },
+    }),
+  ]);
+};
+
 export async function POST(request: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
   const signature = request.headers.get('stripe-signature');
@@ -22,6 +67,22 @@ export async function POST(request: Request) {
       { error: error instanceof Error ? error.message : 'Assinatura Stripe invalida.' },
       { status: 400 },
     );
+  }
+
+  if (event.type === 'payment_intent.succeeded') {
+    try {
+      await confirmPayment(event.data.object);
+    } catch (error) {
+      console.error('Failed to confirm Stripe PaymentIntent:', error);
+      return NextResponse.json({ error: error instanceof Error ? error.message : 'Pagamento invalido.' }, { status: 409 });
+    }
+  }
+
+  if (event.type === 'payment_intent.payment_failed' || event.type === 'payment_intent.canceled') {
+    await prisma.adPayment.updateMany({
+      where: { providerPaymentId: event.data.object.id },
+      data: { status: AdPaymentStatus.FAILED },
+    });
   }
 
   if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {

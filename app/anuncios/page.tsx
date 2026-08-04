@@ -1,10 +1,6 @@
-import AdWizard from '@/components/ads/AdWizard';
+import { redirect } from 'next/navigation';
 
-export default function AdsPage() {
-  return (
-    <main className="min-h-screen bg-bg px-4 py-8 sm:px-6 lg:py-12">
-      <AdWizard />
-    </main>
-  );
+export default function LegacyAdsPage() {
+  redirect('/ads/criar');
 }
 

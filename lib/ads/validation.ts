@@ -64,7 +64,7 @@ export const adCheckoutSchema = adCreativeStepSchema.and(adReachStepSchema).and(
 );
 
 export type AdWizardData = {
-  bannerId?: string;
+  draftId?: string;
   step: 1 | 2 | 3 | 4;
   goal?: (typeof AD_GOALS)[number];
   headline: string;

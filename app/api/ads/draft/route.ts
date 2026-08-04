@@ -5,7 +5,7 @@ import { adDraftSchema } from '@/lib/ads/validation';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function POST(request: Request) {
+async function saveDraft(request: Request, requireExisting: boolean) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -40,6 +40,10 @@ export async function POST(request: Request) {
   };
 
   let banner;
+  if (requireExisting && !parsed.data.bannerId) {
+    return NextResponse.json({ error: 'Informe o ID do rascunho.' }, { status: 400 });
+  }
+
   if (parsed.data.bannerId) {
     const current = await prisma.banner.findFirst({
       where: {
@@ -60,4 +64,12 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ banner });
+}
+
+export async function POST(request: Request) {
+  return saveDraft(request, false);
+}
+
+export async function PUT(request: Request) {
+  return saveDraft(request, true);
 }
