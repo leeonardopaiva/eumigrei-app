@@ -5,6 +5,7 @@ import { getAdDestinationFields, getStripe } from '@/lib/ads/server';
 import { adCheckoutSchema } from '@/lib/ads/validation';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { canManageAdBilling } from '@/lib/ads/account';
 
 export async function POST(request: Request) {
   const session = await getServerAuthSession();
@@ -15,11 +16,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Dados invalidos.' }, { status: 400 });
   }
 
+  const membership = await prisma.adAccountUser.findUnique({
+    where: { adAccountId_userId: { adAccountId: parsed.data.adAccountId, userId: session.user.id } },
+    select: { role: true },
+  });
+  if (!membership || !canManageAdBilling(membership.role)) {
+    return NextResponse.json({ error: 'Apenas o administrador principal da conta pode contratar e pagar anuncios.' }, { status: 403 });
+  }
+
   const banner = await prisma.banner.findFirst({
     where: {
       id: parsed.data.bannerId,
-      createdById: session.user.id,
-      moderationStatus: { in: [AdModerationStatus.DRAFT, AdModerationStatus.REJECTED] },
+      adAccountId: parsed.data.adAccountId,
+      moderationStatus: AdModerationStatus.DRAFT,
     },
     select: {
       id: true,
@@ -86,10 +95,9 @@ export async function POST(request: Request) {
       {
         amount: amountCents,
         currency: 'usd',
-        automatic_payment_methods: { enabled: true },
         description: `Campanha ${AD_PLAN_CATALOG[parsed.data.plan].name} - ${parsed.data.durationMonths} mes(es): ${parsed.data.headline}`,
         receipt_email: session.user.email ?? undefined,
-        metadata: { bannerId: banner.id, userId: session.user.id },
+        metadata: { bannerId: banner.id, userId: session.user.id, adAccountId: parsed.data.adAccountId },
       },
       { idempotencyKey: parsed.data.idempotencyKey },
     );
@@ -111,7 +119,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Failed to create Stripe checkout:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Nao foi possivel iniciar o pagamento.' },
+      { error: 'Nao foi possivel iniciar o pagamento. Tente novamente em instantes.' },
       { status: 503 },
     );
   }

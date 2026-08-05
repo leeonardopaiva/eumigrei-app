@@ -1,4 +1,4 @@
-import { AdModerationStatus, AdPaymentStatus } from '@prisma/client';
+import { AdCampaignStatus, AdModerationStatus, AdPaymentStatus } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 import { getStripe } from '@/lib/ads/server';
@@ -40,13 +40,35 @@ const confirmPayment = async (intent: Stripe.PaymentIntent) => {
         paidAt: new Date(),
       },
     }),
-    prisma.banner.update({
-      where: { id: bannerId },
+    prisma.banner.updateMany({
+      where: {
+        id: bannerId,
+        paymentStatus: AdPaymentStatus.PENDING,
+        moderationStatus: AdModerationStatus.DRAFT,
+      },
       data: {
         paymentStatus: AdPaymentStatus.PAID,
         moderationStatus: AdModerationStatus.PENDING_REVIEW,
         submittedAt: new Date(),
         isActive: false,
+      },
+    }),
+  ]);
+};
+
+const refundPayment = async (providerPaymentId: string) => {
+  const payment = await prisma.adPayment.findUnique({ where: { providerPaymentId }, select: { id: true, bannerId: true } });
+  if (!payment) return;
+  await prisma.$transaction([
+    prisma.adPayment.update({ where: { id: payment.id }, data: { status: AdPaymentStatus.REFUNDED } }),
+    prisma.banner.update({
+      where: { id: payment.bannerId },
+      data: {
+        isActive: false,
+        paymentStatus: AdPaymentStatus.REFUNDED,
+        campaignStatus: AdCampaignStatus.PAUSED,
+        moderationStatus: AdModerationStatus.REJECTED,
+        rejectionReason: 'Pagamento reembolsado.',
       },
     }),
   ]);
@@ -78,11 +100,21 @@ export async function POST(request: Request) {
     }
   }
 
-  if (event.type === 'payment_intent.payment_failed' || event.type === 'payment_intent.canceled') {
+  if (event.type === 'payment_intent.payment_failed') {
     await prisma.adPayment.updateMany({
       where: { providerPaymentId: event.data.object.id },
       data: { status: AdPaymentStatus.FAILED },
     });
+  }
+
+  if (event.type === 'payment_intent.canceled') {
+    await refundPayment(event.data.object.id);
+  }
+
+  if (event.type === 'charge.refunded') {
+    const charge = event.data.object;
+    const intentId = typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent?.id;
+    if (intentId) await refundPayment(intentId);
   }
 
   if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
@@ -123,8 +155,12 @@ export async function POST(request: Request) {
             paidAt: new Date(),
           },
         }),
-        prisma.banner.update({
-          where: { id: bannerId },
+        prisma.banner.updateMany({
+          where: {
+            id: bannerId,
+            paymentStatus: AdPaymentStatus.PENDING,
+            moderationStatus: AdModerationStatus.DRAFT,
+          },
           data: {
             paymentStatus: AdPaymentStatus.PAID,
             moderationStatus: AdModerationStatus.PENDING_REVIEW,

@@ -1,6 +1,5 @@
-import { redirect } from 'next/navigation';
 import { AdReviewConfirmation } from '@/components/ads/AdReviewConfirmation';
-import { getServerAuthSession } from '@/lib/auth';
+import { requireAdAccountPage } from '@/lib/ads/account';
 import { prisma } from '@/lib/prisma';
 
 type PageProps = {
@@ -10,13 +9,12 @@ type PageProps = {
 };
 
 export default async function AdReviewPage({ searchParams }: PageProps) {
-  const session = await getServerAuthSession();
-  if (!session?.user?.id) redirect('/login');
+  const { membership } = await requireAdAccountPage();
 
   const params = await searchParams;
   const campaign = params?.campaign
     ? await prisma.banner.findFirst({
-        where: { id: params.campaign, createdById: session.user.id },
+        where: { id: params.campaign, adAccountId: membership.adAccountId },
         select: { headline: true, name: true, paymentStatus: true },
       })
     : null;

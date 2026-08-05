@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AD_DURATIONS, AD_GOALS, AD_PLANS } from './contracts';
+import { AD_DURATIONS, AD_GOALS, AD_PLANS, isValidAdPlanDuration } from './contracts';
 
 const destinationSchema = z.string().trim().min(1, 'Informe o destino do anuncio.').max(500);
 
@@ -39,11 +39,16 @@ export const adReachStepSchema = z.object({
     (value): value is (typeof AD_DURATIONS)[number] => AD_DURATIONS.includes(value as never),
     'Selecione uma vigencia de 1, 3 ou 6 meses.',
   ),
+}).superRefine((data, context) => {
+  if (!isValidAdPlanDuration(data.plan, data.durationMonths)) {
+    context.addIssue({ code: 'custom', path: ['durationMonths'], message: 'A vigencia selecionada nao corresponde ao plano.' });
+  }
 });
 
 export const adDraftSchema = adCreativeStepSchema.and(
   z.object({
     bannerId: z.string().cuid().optional(),
+    adAccountId: z.string().cuid(),
     regionKey: z.preprocess(
       (value) => (typeof value === 'string' && !value.trim() ? undefined : value),
       z.string().trim().min(1).optional(),
@@ -59,6 +64,7 @@ export const adDraftSchema = adCreativeStepSchema.and(
 export const adCheckoutSchema = adCreativeStepSchema.and(adReachStepSchema).and(
   z.object({
     bannerId: z.string().cuid(),
+    adAccountId: z.string().cuid(),
     idempotencyKey: z.string().trim().min(16).max(255),
   }),
 );

@@ -1,6 +1,5 @@
-import AdWizard from '@/components/ads/AdWizard';
+import { redirect } from 'next/navigation';
 
 export default function CreateAdPage() {
-  return <AdWizard />;
+  redirect('/ads/wizard');
 }
-

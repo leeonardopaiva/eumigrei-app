@@ -62,7 +62,7 @@ export function AdReviewConfirmation({ headline, paymentConfirmed }: AdReviewCon
         <p className="mt-8 text-xs text-slate-400">
           Você poderá acompanhar o status da campanha no painel de anúncios.
         </p>
-        <Button className="mt-6" iconLeft={<LayoutDashboard size={17} />} onClick={() => router.push('/ads')}>
+        <Button className="mt-6" iconLeft={<LayoutDashboard size={17} />} onClick={() => router.push('/ads/overview')}>
           Voltar ao dashboard
         </Button>
       </Card>

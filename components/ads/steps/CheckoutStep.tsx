@@ -2,6 +2,7 @@
 
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
+import { LockKeyhole, ShieldCheck } from 'lucide-react';
 import { Alert, Card } from '@/components/ui';
 import { AD_PLAN_CATALOG, calculateAdContractAmount, formatAdCurrency } from '@/lib/ads/contracts';
 import type { AdWizardData } from '@/lib/ads/validation';
@@ -44,18 +45,22 @@ export function CheckoutStep({ state, clientSecret, error, onProcessing, onSucce
   const amount = calculateAdContractAmount(state.plan, state.durationMonths);
 
   return (
-    <Card className="border border-slate-200 p-6 shadow-xs">
+    <Card className="rounded-3xl border border-slate-200 p-5 shadow-sm sm:p-7">
       <div className="mb-6 flex items-center gap-3"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#078cf5] text-xs font-bold text-white">4</span><Card.Title className="text-[17px]">Checkout</Card.Title></div>
       <div className="grid gap-5 lg:grid-cols-2">
       <Card className="border border-slate-200 bg-[#fbfcfd] shadow-none">
         <Card.Title>Resumo do contrato</Card.Title>
-        <div className="mt-6 divide-y divide-border rounded-2xl border border-border px-5">
-          {[['Campanha', state.headline], ['Objetivo', state.goal], ['Plano', AD_PLAN_CATALOG[state.plan].name], ['Vigencia', `${state.durationMonths} ${state.durationMonths === 1 ? 'mes' : 'meses'}`], ['Regiao', state.regionKey], ['Valor total', formatAdCurrency(amount)]].map(([label, value]) => <div key={label} className="flex items-center justify-between gap-4 py-4 text-body-sm"><span className="text-muted-foreground">{label}</span><strong className="text-right text-text">{value}</strong></div>)}
+        <div className="mt-5 divide-y divide-border rounded-2xl border border-border bg-white px-5">
+          {[['Plano', AD_PLAN_CATALOG[state.plan].name], ['Vigencia', `${state.durationMonths} ${state.durationMonths === 1 ? 'mes' : 'meses'}`], ['Regiao', state.regionKey]].map(([label, value]) => <div key={label} className="flex items-center justify-between gap-4 py-3.5 text-body-sm"><span className="text-muted-foreground">{label}</span><strong className="text-right text-text">{value}</strong></div>)}
         </div>
-        <Alert className="mt-5" tone="info" title="Contrato em USD" description="O valor e calculado no servidor. A campanha entra em moderacao somente depois da confirmacao do Stripe." />
+        <div className="mt-5 rounded-2xl bg-[#eaf5ff] p-5">
+          <p className="text-xs font-bold uppercase tracking-wide text-[#176daa]">Total em dolar americano</p>
+          <p className="mt-1 text-4xl font-extrabold tracking-tight text-[#0787f9]">{formatAdCurrency(amount)}</p>
+          <p className="mt-2 text-xs leading-5 text-slate-500">Valor calculado e validado no servidor. A campanha segue para analise depois da confirmacao do Stripe.</p>
+        </div>
       </Card>
       <Card className="self-start border border-slate-200 bg-[#fbfcfd] shadow-none">
-        <Card.Title>Pagamento seguro</Card.Title>
+        <div className="flex items-center gap-2"><ShieldCheck size={20} className="text-emerald-600" /><Card.Title>Pagamento seguro</Card.Title></div>
         <Card.Description className="mb-5 mt-1">Seus dados de cartao sao processados diretamente pelo Stripe.</Card.Description>
         {!publishableKey ? <Alert tone="erro" title="Stripe nao configurado" description="Configure NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY." /> : null}
         {error ? <Alert className="mb-4" tone="erro" title="Falha no pagamento" description={error} /> : null}
@@ -69,6 +74,7 @@ export function CheckoutStep({ state, clientSecret, error, onProcessing, onSucce
             />
           </Elements>
         ) : publishableKey ? <p className="text-body-sm text-muted-foreground">Preparando formulario de pagamento...</p> : null}
+        <div className="mt-5 flex items-center gap-2 border-t border-slate-200 pt-4 text-xs text-slate-500"><LockKeyhole size={14} /> Dados criptografados e protegidos pelo Stripe.</div>
       </Card>
       </div>
     </Card>
