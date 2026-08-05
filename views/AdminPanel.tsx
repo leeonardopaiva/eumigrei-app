@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import BannerManagementSection, { type ManagedBanner } from '../components/admin/BannerManagementSection';
 import AdsModerationSection from '../components/admin/AdsModerationSection';
+import AdminOverview from '../components/admin/AdminOverview';
 import { useToast } from '../components/feedback/ToastProvider';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import ImageGalleryField from '../components/forms/ImageGalleryField';
@@ -485,7 +486,9 @@ const formatSuggestionCategory = (category: SuggestionCategoryValue) =>
 const ADMIN_LIST_PREVIEW_LIMIT = 5;
 type ExpandableSectionKey = 'regions' | 'businesses' | 'events' | 'users' | 'suggestions';
 
-const AdminPanel: React.FC<{ user: User; initialSection?: 'ads' }> = ({ user, initialSection }) => {
+type AdminSection = 'overview' | 'moderation' | 'ads' | 'imports' | 'banners' | 'regions' | 'businesses' | 'events' | 'users' | 'suggestions' | 'analytics';
+
+const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ user, initialSection }) => {
   const { showToast } = useToast();
   const [dashboard, setDashboard] = useState<AdminDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -505,6 +508,7 @@ const AdminPanel: React.FC<{ user: User; initialSection?: 'ads' }> = ({ user, in
   const [eventForm, setEventForm] = useState<EventFormState>(emptyEventForm);
   const [eventSearch, setEventSearch] = useState('');
   const [activeSection, setActiveSection] = useState<
+    | 'overview'
     | 'moderation'
     | 'ads'
     | 'imports'
@@ -1202,6 +1206,14 @@ const AdminPanel: React.FC<{ user: User; initialSection?: 'ads' }> = ({ user, in
   ];
   const analyticsMaxValue = Math.max(...analyticsHighlightData.map((item) => item.value), 1);
 
+  if (activeSection === 'overview') {
+    return <AdminOverview dashboard={dashboard} loading={loading} refreshing={refreshing} onRefresh={() => void loadDashboard(true)} onNavigate={(section) => window.location.assign(`/admin/${section === 'moderation' ? 'moderation' : section}`)} />;
+  }
+
+  if (activeSection === 'ads') {
+    return <AdsModerationSection />;
+  }
+
   return (
     <div className="animate-in space-y-6 fade-in duration-500 pb-20">
       <div className="mt-4 px-5">
@@ -1562,8 +1574,6 @@ const AdminPanel: React.FC<{ user: User; initialSection?: 'ads' }> = ({ user, in
             onMessage={setMessage}
           />
         ) : null}
-
-        {activeSection === 'ads' ? <AdsModerationSection /> : null}
 
         {activeSection === 'regions' ? (
           <div className="space-y-3">

@@ -3,6 +3,7 @@
 import React from 'react';
 import { ShieldAlert } from 'lucide-react';
 import AdminPanel from '@/views/AdminPanel';
+import AdminShell from '@/components/admin/AdminShell';
 import { UserRole, type User } from '@/types';
 
 type AdminWorkspaceProps = {
@@ -29,7 +30,21 @@ const AdminWorkspace: React.FC<AdminWorkspaceProps> = ({ currentUser, pathname }
     return <AdminAccessDenied />;
   }
 
-  return <AdminPanel user={currentUser} initialSection={pathname.startsWith('/admin/ads') ? 'ads' : undefined} />;
+  const segment = pathname.split('/')[2] || '';
+  const sectionBySegment = {
+    ads: 'ads',
+    moderation: 'moderation',
+    businesses: 'businesses',
+    events: 'events',
+    users: 'users',
+    regions: 'regions',
+    imports: 'imports',
+    banners: 'banners',
+    analytics: 'analytics',
+  } as const;
+  const initialSection = sectionBySegment[segment as keyof typeof sectionBySegment] ?? 'overview';
+
+  return <AdminShell user={currentUser}><AdminPanel user={currentUser} initialSection={initialSection} /></AdminShell>;
 };
 
 export default AdminWorkspace;
