@@ -23,6 +23,7 @@ import {
 import BannerManagementSection, { type ManagedBanner } from '../components/admin/BannerManagementSection';
 import AdsModerationSection from '../components/admin/AdsModerationSection';
 import AdminOverview from '../components/admin/AdminOverview';
+import { Button, Modal } from '../components/ui';
 import { useToast } from '../components/feedback/ToastProvider';
 import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import ImageGalleryField from '../components/forms/ImageGalleryField';
@@ -498,6 +499,7 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
   const [message, setMessage] = useState<string | null>(null);
 
   const [editingRegionKey, setEditingRegionKey] = useState<string | null>(null);
+  const [regionModalOpen, setRegionModalOpen] = useState(false);
   const [regionForm, setRegionForm] = useState<RegionFormState>(emptyRegionForm);
 
   const [editingBusinessId, setEditingBusinessId] = useState<string | null>(null);
@@ -702,6 +704,7 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
   const resetRegionForm = () => {
     setEditingRegionKey(null);
     setRegionForm(emptyRegionForm);
+    setRegionModalOpen(false);
   };
 
   const startRegionEdit = (region: ManagedRegion) => {
@@ -718,6 +721,7 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
     });
     setError(null);
     setMessage(null);
+    setRegionModalOpen(true);
   };
 
   const submitRegion = async () => {
@@ -1205,6 +1209,17 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
     { label: 'Posts', value: dashboard?.stats.publishedPosts ?? 0 },
   ];
   const analyticsMaxValue = Math.max(...analyticsHighlightData.map((item) => item.value), 1);
+  const sectionMeta: Record<Exclude<AdminSection, 'overview' | 'ads'>, { title: string; description: string }> = {
+    moderation: { title: 'Moderacao da Comunidade', description: 'Revise conteudos, negocios e eventos sinalizados pela comunidade.' },
+    imports: { title: 'Importacoes', description: 'Valide e importe dados operacionais com seguranca.' },
+    banners: { title: 'Banners', description: 'Gerencie os banners editoriais e seus periodos de exibicao.' },
+    regions: { title: 'Regioes', description: 'Organize as localidades disponiveis em toda a plataforma.' },
+    businesses: { title: 'Negocios', description: 'Consulte, revise e atualize os negocios cadastrados.' },
+    events: { title: 'Eventos', description: 'Gerencie eventos publicados e pendentes de revisao.' },
+    users: { title: 'Usuarios', description: 'Administre perfis, acessos e permissoes da plataforma.' },
+    suggestions: { title: 'Sugestoes', description: 'Acompanhe os feedbacks enviados pelos usuarios.' },
+    analytics: { title: 'Analytics', description: 'Analise uso, buscas, campanhas e interacoes na plataforma.' },
+  };
 
   if (activeSection === 'overview') {
     return <AdminOverview dashboard={dashboard} loading={loading} refreshing={refreshing} onRefresh={() => void loadDashboard(true)} onNavigate={(section) => window.location.assign(`/admin/${section === 'moderation' ? 'moderation' : section}`)} />;
@@ -1215,8 +1230,16 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
   }
 
   return (
-    <div className="animate-in space-y-6 fade-in duration-500 pb-20">
-      <div className="mt-4 px-5">
+    <div className="mx-auto max-w-[1500px] animate-in space-y-6 px-4 py-7 fade-in duration-500 sm:px-7 lg:px-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">Admin · {sectionMeta[activeSection as Exclude<AdminSection, 'overview' | 'ads'>].title}</p>
+          <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-[#132F40] sm:text-[28px]">{sectionMeta[activeSection as Exclude<AdminSection, 'overview' | 'ads'>].title}</h1>
+          <p className="mt-1 text-sm text-slate-400">{sectionMeta[activeSection as Exclude<AdminSection, 'overview' | 'ads'>].description}</p>
+        </div>
+        <Button iconLeft={<RefreshCcw size={16} className={refreshing || analyticsLoading ? 'animate-spin' : ''} />} disabled={refreshing || loading || analyticsLoading} onClick={() => void (activeSection === 'analytics' ? loadAnalytics(selectedAnalyticsUserId) : loadDashboard(true))}>Atualizar</Button>
+      </div>
+      <div className="hidden">
         <div className="rounded-[32px] bg-gradient-to-br from-[#345CFF] via-[#5B4BFF] to-[#7A54F5] p-5 text-white shadow-xl">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-2">
@@ -1259,8 +1282,8 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
         </div>
       </div>
 
-      <div className="space-y-4 px-5">
-        <div className="grid grid-cols-2 gap-3">
+      <div className="space-y-5">
+        <div className="hidden">
           {loading && !dashboard
             ? Array.from({ length: 6 }).map((_, index) => (
                 <div key={index} className="h-[104px] animate-pulse rounded-3xl bg-white shadow-sm" />
@@ -1281,7 +1304,7 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
               ))}
         </div>
 
-        <div className="rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="hidden">
           <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
             Seção do painel
           </label>
@@ -1312,7 +1335,7 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
           </select>
         </div>
 
-        <div className="rounded-[28px] border border-slate-100 bg-white p-5 shadow-sm">
+        <div className="hidden">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-slate-900">Resumo do analytics</h2>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
@@ -1337,8 +1360,9 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
 
         {activeSection === 'regions' ? (
           <section className="space-y-3">
-          <SectionHeader title="Gestão de regiões" count={dashboard?.stats.totalRegions ?? 0} />
-          <div className="space-y-3 rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between"><SectionHeader title="Gestão de regiões" count={dashboard?.stats.totalRegions ?? 0} /><Button size="sm" iconLeft={<Plus size={15} />} onClick={() => { resetRegionForm(); setRegionModalOpen(true); }}>Nova regiao</Button></div>
+          <Modal open={regionModalOpen} onClose={resetRegionForm} title={editingRegionKey ? 'Editar regiao' : 'Nova regiao'} description="O cadastro alimenta onboarding, perfil e filtros locais." className="max-w-xl">
+          <div className="space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-bold text-slate-700">
@@ -1348,15 +1372,6 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
                   O cadastro abaixo alimenta onboarding, perfil e filtros locais.
                 </p>
               </div>
-              {editingRegionKey ? (
-                <button
-                  type="button"
-                  onClick={resetRegionForm}
-                  className="rounded-2xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500"
-                >
-                  Cancelar
-                </button>
-              ) : null}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -1439,6 +1454,7 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
                   : 'Cadastrar regiao'}
             </button>
           </div>
+          </Modal>
           </section>
         ) : null}
 
@@ -1847,7 +1863,8 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
                   </div>
 
                   {editingBusinessId === business.id ? (
-                    <div className="mt-4 space-y-3 rounded-3xl bg-slate-50 p-4">
+                    <Modal open onClose={resetBusinessForm} title="Editar negocio" description={business.name} className="max-w-3xl">
+                    <div className="max-h-[72vh] space-y-3 overflow-y-auto pr-1">
                       <FormInput
                         value={businessForm.name}
                         onChange={(value) => setBusinessForm((current) => ({ ...current, name: value }))}
@@ -1985,6 +2002,7 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
                         />
                       </div>
                     </div>
+                    </Modal>
                   ) : null}
                 </div>
               ))}
@@ -2066,7 +2084,8 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
                   </div>
 
                   {editingEventId === event.id ? (
-                    <div className="mt-4 space-y-3 rounded-3xl bg-slate-50 p-4">
+                    <Modal open onClose={resetEventForm} title="Editar evento" description={event.title} className="max-w-3xl">
+                    <div className="max-h-[72vh] space-y-3 overflow-y-auto pr-1">
                       <FormInput
                         value={eventForm.title}
                         onChange={(value) => setEventForm((current) => ({ ...current, title: value }))}
@@ -2195,6 +2214,7 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
                         />
                       </div>
                     </div>
+                    </Modal>
                   ) : null}
                 </div>
               ))}
@@ -2371,11 +2391,11 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
             ) : analytics ? (
               <>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/40">
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Eventos rastreados</p>
                     <p className="mt-2 text-3xl font-bold text-slate-900">{analytics.summary.totalEvents}</p>
                   </div>
-                  <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/40">
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Cliques em breve</p>
                     <p className="mt-2 text-3xl font-bold text-slate-900">{analytics.summary.disabledFeatureClicks}</p>
                   </div>
@@ -2551,7 +2571,7 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
           ) : dashboard && filteredUsers.length > 0 ? (
             <div className="space-y-3">
               {visibleUsers.map((managedUser) => (
-                <div key={managedUser.id} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                <div key={managedUser.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/40">
                   <div className="flex items-start gap-4">
                     <img
                       src={managedUser.image || `https://picsum.photos/seed/${managedUser.id}/120`}
@@ -2604,7 +2624,8 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
                   </div>
 
                   {editingUserId === managedUser.id ? (
-                    <div className="mt-4 space-y-3 rounded-3xl bg-slate-50 p-4">
+                    <Modal open onClose={resetUserForm} title="Editar usuario" description={managedUser.name || managedUser.email || 'Usuario'} className="max-w-2xl">
+                    <div className="max-h-[72vh] space-y-3 overflow-y-auto pr-1">
                       <FormInput
                         value={userForm.name}
                         onChange={(value) => setUserForm((current) => ({ ...current, name: value }))}
@@ -2692,6 +2713,7 @@ const AdminPanel: React.FC<{ user: User; initialSection?: AdminSection }> = ({ u
                         />
                       </div>
                     </div>
+                    </Modal>
                   ) : null}
                 </div>
               ))}
@@ -2740,8 +2762,8 @@ const Feedback: React.FC<{ tone: 'error' | 'success'; text: string }> = ({ tone,
 
 const SectionHeader: React.FC<{ title: string; count: number }> = ({ title, count }) => (
   <div className="flex items-center justify-between">
-    <h2 className="text-lg font-bold theme-text">{title}</h2>
-    <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500 shadow-sm">
+    <h2 className="text-lg font-bold text-slate-950">{title}</h2>
+    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
       {count}
     </span>
   </div>
@@ -2752,7 +2774,7 @@ const SupportText: React.FC<{ text: string }> = ({ text }) => (
 );
 
 const ImportMetric: React.FC<{ label: string; value: number }> = ({ label, value }) => (
-  <div className="rounded-3xl bg-slate-50 px-4 py-4 text-center">
+  <div className="rounded-2xl border border-slate-200 bg-[#F8FAFC] px-4 py-4 text-center">
     <p className="text-2xl font-bold text-slate-900">{value}</p>
     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">{label}</p>
   </div>
@@ -2767,7 +2789,7 @@ const SectionListToggle: React.FC<{
   <button
     type="button"
     onClick={onToggle}
-    className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-800"
+    className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition hover:border-[#2B5DF5] hover:text-[#2B5DF5]"
   >
     {expanded ? 'Mostrar menos' : `Ver todos (${total})`}
     {!expanded ? (
@@ -2788,7 +2810,7 @@ const SearchFilterInput: React.FC<{
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
-      className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm outline-none focus:ring-2 theme-ring"
+      className="w-full rounded-full border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm outline-none transition focus:border-[#2B5DF5] focus:ring-2 focus:ring-blue-100"
     />
   </div>
 );
@@ -2818,25 +2840,27 @@ const QueueCard: React.FC<{
   lines: string[];
   children: React.ReactNode;
 }> = ({ title, subtitle, lines, children }) => (
-  <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
-    <div className="flex items-start justify-between gap-3">
-      <div>
+  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/40">
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="min-w-0 flex-1">
         <p className="text-lg font-bold theme-text">{title}</p>
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">{subtitle}</p>
+        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-600">
+          {lines.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </div>
       </div>
-      <StatusBadge label="PENDENTE" tone="warning" />
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusBadge label="PENDENTE" tone="warning" />
+        {children}
+      </div>
     </div>
-    <div className="mt-4 space-y-1 text-sm text-slate-600">
-      {lines.map((line) => (
-        <p key={line}>{line}</p>
-      ))}
-    </div>
-    <div className="mt-4 flex gap-2">{children}</div>
   </div>
 );
 
 const EmptyState: React.FC<{ text: string }> = ({ text }) => (
-  <div className="rounded-3xl border border-dashed border-slate-200 bg-white px-5 py-7 text-center text-sm font-medium text-slate-500">
+  <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center text-sm font-medium text-slate-500">
     {text}
   </div>
 );
@@ -2850,12 +2874,13 @@ const ConfirmationDialog: React.FC<{
   onCancel: () => void;
   onConfirm: () => void | Promise<void>;
 }> = ({ title, description, confirmLabel, tone, disabled = false, onCancel, onConfirm }) => (
-  <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/35 px-4 backdrop-blur-sm">
-    <div className="w-full max-w-md rounded-[32px] border border-white/70 bg-white p-6 shadow-2xl">
-      <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-400">Confirmacao</p>
-      <h3 className="mt-3 text-xl font-bold text-slate-900">{title}</h3>
-      <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
-      <div className="mt-6 flex gap-2">
+  <Modal
+    open
+    onClose={onCancel}
+    title={title}
+    description={description}
+    footer={
+      <>
         <ActionButton
           label="Cancelar"
           tone="neutral"
@@ -2868,15 +2893,15 @@ const ConfirmationDialog: React.FC<{
           disabled={disabled}
           onClick={() => void onConfirm()}
         />
-      </div>
-    </div>
-  </div>
+      </>
+    }
+  />
 );
 
 const LoadingCards: React.FC = () => (
   <div className="space-y-3">
     {Array.from({ length: 2 }).map((_, index) => (
-      <div key={index} className="h-[184px] animate-pulse rounded-3xl bg-white shadow-sm" />
+      <div key={index} className="h-[152px] animate-pulse rounded-2xl border border-slate-200 bg-white" />
     ))}
   </div>
 );
@@ -2959,9 +2984,9 @@ const ActionButton: React.FC<{
     type="button"
     onClick={onClick}
     disabled={disabled}
-    className={`inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl px-4 text-sm font-bold transition disabled:opacity-60 ${
+    className={`inline-flex min-h-9 flex-none items-center justify-center rounded-full px-4 text-sm font-bold transition disabled:opacity-60 ${
       tone === 'primary'
-        ? 'theme-bg text-white theme-bg-hover'
+        ? 'bg-[#2B5DF5] text-white hover:bg-[#214bd1]'
         : tone === 'danger'
           ? 'bg-red-50 text-red-700 hover:bg-red-100'
           : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
