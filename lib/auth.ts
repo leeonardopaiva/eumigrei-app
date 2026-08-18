@@ -67,6 +67,7 @@ export const authOptions: NextAuthOptions = {
                   regionKey: true,
                   onboardingCompleted: true,
                   recruiterVerified: true,
+                  isAdvertiser: true,
                   passwordHash: true,
                 },
               });
@@ -87,6 +88,7 @@ export const authOptions: NextAuthOptions = {
                 regionKey: user.regionKey,
                 onboardingCompleted: user.onboardingCompleted,
                 recruiterVerified: user.recruiterVerified,
+                isAdvertiser: user.isAdvertiser,
               };
             },
           }),
@@ -141,6 +143,7 @@ export const authOptions: NextAuthOptions = {
           regionKey: true,
           onboardingCompleted: true,
           recruiterVerified: true,
+          isAdvertiser: true,
         },
       });
 
@@ -160,6 +163,7 @@ export const authOptions: NextAuthOptions = {
       token.regionKey = dbUser.regionKey;
       token.onboardingCompleted = dbUser.onboardingCompleted;
       token.recruiterVerified = dbUser.recruiterVerified;
+      token.isAdvertiser = dbUser.isAdvertiser;
 
       return token;
     },
@@ -176,6 +180,7 @@ export const authOptions: NextAuthOptions = {
       session.user.regionKey = (token.regionKey as string | null | undefined) ?? null;
       session.user.onboardingCompleted = Boolean(token.onboardingCompleted);
       session.user.recruiterVerified = Boolean(token.recruiterVerified);
+      session.user.isAdvertiser = Boolean(token.isAdvertiser);
       session.user.name = (token.name as string | null | undefined) ?? null;
       session.user.email = (token.email as string | null | undefined) ?? null;
       session.user.image = (token.picture as string | null | undefined) ?? null;

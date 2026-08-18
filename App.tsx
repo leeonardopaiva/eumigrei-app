@@ -525,6 +525,20 @@ const App: React.FC<{
     );
   }
 
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    return (
+      <AppContent
+        currentUser={currentUser!}
+        pathname={pathname}
+        personaMode={personaMode}
+        effectivePersonaMode={effectivePersonaMode}
+        professionalIdentity={professionalIdentity}
+        canUseProfessionalMode={canUseProfessionalMode}
+        onPersonaModeChange={handlePersonaModeChange}
+      />
+    );
+  }
+
   return (
     <Layout
       user={currentUser!}

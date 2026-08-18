@@ -1,0 +1,6 @@
+ALTER TABLE "AdAccountUser"
+ALTER COLUMN "role" SET DEFAULT 'VIEWER';
+
+ALTER TABLE "Banner"
+ALTER COLUMN "isActive" SET DEFAULT false,
+ALTER COLUMN "campaignStatus" SET DEFAULT 'DRAFT';

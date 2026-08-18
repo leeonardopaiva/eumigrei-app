@@ -119,65 +119,99 @@ enum AdBillingMode {
   CPL
 }
 
+enum AdGoal {
+  WHATSAPP
+  EXTERNAL_URL
+  MARKETPLACE
+}
+
+enum AdPlan {
+  BRONZE
+  SILVER
+  GOLD
+}
+
+enum AdModerationStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
 enum AdPaymentStatus {
-  NOT_REQUIRED
   PENDING
   PAID
   FAILED
+  REFUNDED
+}
+
+enum AdAccountRole {
+  BUSINESS_ADMIN
+  ADMIN
+  EDITOR
+  VIEWER
 }
 
 model User {
-  id                     String                 @id @default(cuid())
-  name                   String?
-  username               String?                @unique
-  email                  String?                @unique
-  passwordHash           String?
-  emailVerified          DateTime?
-  image                  String?
-  coverImageUrl          String?
-  bio                    String?
-  interests              String[]               @default([])
-  galleryUrls            String[]               @default([])
-  role                   UserRole               @default(USER)
-  phone                  String?
-  locationLabel          String?
-  regionKey              String?
-  referredById           String?
-  onboardingCompleted    Boolean                @default(false)
-  gender                 Gender?
-  age                    Int?
-  timeAbroad             TimeAbroad?
-  birthCity              String?
-  recruiterVerified      Boolean                @default(false)
-  createdAt              DateTime               @default(now())
-  updatedAt              DateTime               @updatedAt
-  accounts               Account[]
-  adCharges              AdCharge[]
-  adImpressions          AdImpression[]
-  sessions               Session[]
-  businessMemberships    BusinessMember[]
-  createdBusinesses      Business[]             @relation("BusinessCreator")
-  createdEvents          Event[]                @relation("EventCreator")
-  createdJobs            Job[]                  @relation("JobCreator")
-  createdHousing         Housing[]              @relation("HousingCreator")
-  communityPosts         CommunityPost[]        @relation("CommunityPostAuthor")
-  postComments           PostComment[]          @relation("PostCommentAuthor")
-  postReactions          PostReaction[]         @relation("PostReactionAuthor")
-  postReports            PostReport[]           @relation("PostReportAuthor")
-  emailChangeTokens      EmailChangeToken[]
-  suggestions            Suggestion[]
-  businessFavorites      BusinessFavorite[]
-  eventFavorites         EventFavorite[]
-  businessRatings        BusinessRating[]
-  eventRatings           EventRating[]
-  analyticsEvents        AnalyticsEvent[]
-  bannerRegistrations    BannerRegistration[]
-  sentFriendRequests     FriendRequest[]        @relation("FriendRequestSender")
-  receivedFriendRequests FriendRequest[]        @relation("FriendRequestRecipient")
-  createdGroups          CommunityGroup[]       @relation("CommunityGroupCreator")
-  groupMemberships       CommunityGroupMember[]
-  referredBy             User?                  @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
-  referrals              User[]                 @relation("UserReferrals")
+  id                        String                 @id @default(cuid())
+  name                      String?
+  username                  String?                @unique
+  email                     String?                @unique
+  passwordHash              String?
+  emailVerified             DateTime?
+  image                     String?
+  coverImageUrl             String?
+  bio                       String?
+  interests                 String[]               @default([])
+  profileObjective          String?
+  adsPersonalizationEnabled Boolean                @default(true)
+  galleryUrls               String[]               @default([])
+  role                      UserRole               @default(USER)
+  phone                     String?
+  locationLabel             String?
+  regionKey                 String?
+  referredById              String?
+  onboardingCompleted       Boolean                @default(false)
+  gender                    Gender?
+  age                       Int?
+  timeAbroad                TimeAbroad?
+  birthCity                 String?
+  recruiterVerified         Boolean                @default(false)
+  isAdvertiser              Boolean                @default(false)
+  marketingEmailsOptOut     Boolean                @default(false)
+  preferredLanguage         String                 @default("pt-BR")
+  createdAt                 DateTime               @default(now())
+  updatedAt                 DateTime               @updatedAt
+  accounts                  Account[]
+  adCharges                 AdCharge[]
+  adImpressions             AdImpression[]
+  adAccountMemberships      AdAccountUser[]
+  createdAds                Banner[]               @relation("AdCreator")
+  approvedAds               Banner[]               @relation("AdApprover")
+  sessions                  Session[]
+  businessMemberships       BusinessMember[]
+  createdBusinesses         Business[]             @relation("BusinessCreator")
+  createdEvents             Event[]                @relation("EventCreator")
+  createdJobs               Job[]                  @relation("JobCreator")
+  createdHousing            Housing[]              @relation("HousingCreator")
+  communityPosts            CommunityPost[]        @relation("CommunityPostAuthor")
+  postComments              PostComment[]          @relation("PostCommentAuthor")
+  postReactions             PostReaction[]         @relation("PostReactionAuthor")
+  postReports               PostReport[]           @relation("PostReportAuthor")
+  emailChangeTokens         EmailChangeToken[]
+  suggestions               Suggestion[]
+  businessFavorites         BusinessFavorite[]
+  eventFavorites            EventFavorite[]
+  businessRatings           BusinessRating[]
+  eventRatings              EventRating[]
+  analyticsEvents           AnalyticsEvent[]
+  bannerRegistrations       BannerRegistration[]
+  sentFriendRequests        FriendRequest[]        @relation("FriendRequestSender")
+  receivedFriendRequests    FriendRequest[]        @relation("FriendRequestRecipient")
+  createdGroups             CommunityGroup[]       @relation("CommunityGroupCreator")
+  groupMemberships          CommunityGroupMember[]
+  referredBy                User?                  @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals                 User[]                 @relation("UserReferrals")
 
   @@index([referredById, createdAt])
 }
@@ -426,40 +460,117 @@ model PostReport {
   @@unique([postId, authorId])
 }
 
-model Banner {
-  id               String               @id @default(cuid())
+model AdAccount {
+  id               String          @id @default(cuid())
   name             String
-  imageUrl         String
-  type             BannerType           @default(LINK)
-  placement        BannerPlacement      @default(HOME)
-  targetUrl        String?
-  regionKey        String?
-  isActive         Boolean              @default(true)
-  campaignStatus   AdCampaignStatus     @default(ACTIVE)
-  objective        AdObjective          @default(TRAFFIC)
-  billingMode      AdBillingMode        @default(FLAT)
-  paymentStatus    AdPaymentStatus      @default(NOT_REQUIRED)
-  targetInterests  String[]             @default([])
-  targetKeywords   String[]             @default([])
-  targetCategories String[]             @default([])
-  startsAt         DateTime?
-  endsAt           DateTime?
-  dailyBudgetCents Int?
-  totalBudgetCents Int?
-  bidCents         Int                  @default(0)
-  spentCents       Int                  @default(0)
-  checkoutUrl      String?
-  paymentProvider  String?
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
-  region           Region?              @relation(fields: [regionKey], references: [key], onDelete: SetNull)
-  registrations    BannerRegistration[]
-  impressions      AdImpression[]
-  charges          AdCharge[]
+  websiteUrl       String?
+  phone            String?
+  businessAddress  String?
+  businessCategory String?
+  subcategories    String[]
+  country          String          @default("US")
+  currency         String          @default("USD")
+  timezone         String          @default("UTC")
+  isAgency         Boolean         @default(false)
+  logoUrl          String?
+  useWebsitePhotos Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  users            AdAccountUser[]
+  banners          Banner[]
+
+  @@index([name])
+  @@index([businessCategory])
+}
+
+model AdAccountUser {
+  id          String        @id @default(cuid())
+  adAccountId String
+  userId      String
+  role        AdAccountRole @default(VIEWER)
+  createdAt   DateTime      @default(now())
+  adAccount   AdAccount     @relation(fields: [adAccountId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([adAccountId, userId])
+  @@index([userId, createdAt])
+}
+
+model Banner {
+  id                  String               @id @default(cuid())
+  name                String
+  imageUrl            String
+  type                BannerType           @default(LINK)
+  placement           BannerPlacement      @default(HOME)
+  targetUrl           String?
+  regionKey           String?
+  isActive            Boolean              @default(false)
+  campaignStatus      AdCampaignStatus     @default(DRAFT)
+  objective           AdObjective          @default(TRAFFIC)
+  billingMode         AdBillingMode        @default(FLAT)
+  paymentStatus       AdPaymentStatus      @default(PENDING)
+  adAccountId         String?
+  createdById         String?
+  goal                AdGoal?
+  headline            String?
+  description         String?              @db.Text
+  ctaLabel            String?
+  whatsappNumber      String?
+  marketplaceItemId   String?
+  plan                AdPlan?
+  durationMonths      Int?
+  contractAmountCents Int?
+  moderationStatus    AdModerationStatus   @default(DRAFT)
+  submittedAt         DateTime?
+  approvedAt          DateTime?
+  approvedById        String?
+  rejectionReason     String?              @db.Text
+  targetInterests     String[]             @default([])
+  targetKeywords      String[]             @default([])
+  targetCategories    String[]             @default([])
+  startsAt            DateTime?
+  endsAt              DateTime?
+  dailyBudgetCents    Int?
+  totalBudgetCents    Int?
+  bidCents            Int                  @default(0)
+  spentCents          Int                  @default(0)
+  checkoutUrl         String?
+  paymentProvider     String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  region              Region?              @relation(fields: [regionKey], references: [key], onDelete: SetNull)
+  adAccount           AdAccount?           @relation(fields: [adAccountId], references: [id], onDelete: SetNull)
+  createdBy           User?                @relation("AdCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  approvedBy          User?                @relation("AdApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  registrations       BannerRegistration[]
+  impressions         AdImpression[]
+  charges             AdCharge[]
+  payments            AdPayment[]
 
   @@index([isActive, regionKey, updatedAt])
   @@index([campaignStatus, startsAt, endsAt])
   @@index([paymentStatus, updatedAt])
+  @@index([adAccountId, updatedAt])
+  @@index([createdById, updatedAt])
+  @@index([moderationStatus, paymentStatus, updatedAt])
+}
+
+model AdPayment {
+  id                String          @id @default(cuid())
+  bannerId          String
+  provider          String          @default("STRIPE")
+  providerSessionId String?         @unique
+  providerPaymentId String?         @unique
+  amountCents       Int
+  currency          String          @default("USD")
+  status            AdPaymentStatus @default(PENDING)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  paidAt            DateTime?
+  banner            Banner          @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+
+  @@index([bannerId, createdAt])
+  @@index([status, updatedAt])
 }
 
 model AdCharge {

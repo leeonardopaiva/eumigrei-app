@@ -5,9 +5,9 @@ import { requireAdminSession } from '@/lib/require-admin';
 import { adminBannerSchema } from '@/lib/validators';
 
 export async function POST(request: Request) {
-  const { response } = await requireAdminSession();
+  const { session, response } = await requireAdminSession();
 
-  if (response) {
+  if (response || !session) {
     return response;
   }
 
@@ -52,6 +52,18 @@ export async function POST(request: Request) {
       bidCents: parsed.data.bidCents,
       checkoutUrl: parsed.data.checkoutUrl ?? null,
       paymentProvider: parsed.data.paymentProvider ?? null,
+      moderationStatus:
+        parsed.data.paymentStatus === 'PAID' && parsed.data.campaignStatus === 'ACTIVE'
+          ? 'APPROVED'
+          : 'DRAFT',
+      approvedById:
+        parsed.data.paymentStatus === 'PAID' && parsed.data.campaignStatus === 'ACTIVE'
+          ? session.user.id
+          : null,
+      approvedAt:
+        parsed.data.paymentStatus === 'PAID' && parsed.data.campaignStatus === 'ACTIVE'
+          ? new Date()
+          : null,
     },
     select: {
       id: true,

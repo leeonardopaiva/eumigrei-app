@@ -1,0 +1,71 @@
+import 'server-only';
+
+import { AdAccountRole } from '@prisma/client';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { getServerAuthSession } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+
+export const AD_ACCOUNT_COOKIE = 'gringoou_ad_account';
+export const AD_ACCOUNT_DRAFT_ROLES: AdAccountRole[] = [
+  AdAccountRole.BUSINESS_ADMIN,
+  AdAccountRole.ADMIN,
+  AdAccountRole.EDITOR,
+];
+
+export const AD_ACCOUNT_CAMPAIGN_ROLES: AdAccountRole[] = [
+  AdAccountRole.BUSINESS_ADMIN,
+  AdAccountRole.ADMIN,
+];
+
+export async function getAdAccountMembership(userId: string, requestedAccountId?: string | null) {
+  const cookieStore = await cookies();
+  const selectedId = requestedAccountId || cookieStore.get(AD_ACCOUNT_COOKIE)?.value;
+
+  if (selectedId) {
+    const selected = await prisma.adAccountUser.findUnique({
+      where: { adAccountId_userId: { adAccountId: selectedId, userId } },
+      include: { adAccount: true },
+    });
+    if (selected) return selected;
+  }
+
+  return prisma.adAccountUser.findFirst({
+    where: { userId },
+    orderBy: { createdAt: 'asc' },
+    include: { adAccount: true },
+  });
+}
+
+export function canEditAdDraft(role: AdAccountRole) {
+  return AD_ACCOUNT_DRAFT_ROLES.includes(role);
+}
+
+export function canManageAdCampaign(role: AdAccountRole) {
+  return AD_ACCOUNT_CAMPAIGN_ROLES.includes(role);
+}
+
+export function canManageAdBilling(role: AdAccountRole) {
+  return role === AdAccountRole.BUSINESS_ADMIN;
+}
+
+export function canManageAdMembers(role: AdAccountRole) {
+  return role === AdAccountRole.BUSINESS_ADMIN;
+}
+
+export function canViewAdReports(_role: AdAccountRole) {
+  return true;
+}
+
+/** @deprecated Use a capability-specific check instead. */
+export function canManageAdAccount(role: AdAccountRole) {
+  return canEditAdDraft(role);
+}
+
+export async function requireAdAccountPage() {
+  const session = await getServerAuthSession();
+  if (!session?.user?.id) redirect('/ads/login');
+  const membership = await getAdAccountMembership(session.user.id);
+  if (!membership) redirect('/ads/onboarding');
+  return { session, membership };
+}

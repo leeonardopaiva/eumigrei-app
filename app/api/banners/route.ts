@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 
 const MAX_BANNERS_BY_PLACEMENT = 4;
 const FREQUENCY_CAP_PER_DAY = 3;
+const PLAN_WEIGHT = { GOLD: 3, SILVER: 2, BRONZE: 1 } as const;
 
 const getPlacementFilter = (placement: string | null) => {
   if (placement === 'feed') {
@@ -78,23 +79,25 @@ export async function GET(request: Request) {
       ? {
           isActive: true,
           campaignStatus: 'ACTIVE',
+          moderationStatus: 'APPROVED',
+          paymentStatus: 'PAID',
           OR: placementFilter,
           AND: [
             { OR: [{ regionKey }, { regionKey: null }] },
             { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
             { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
-            { OR: [{ paymentStatus: 'NOT_REQUIRED' }, { paymentStatus: 'PAID' }] },
           ],
         }
       : {
           isActive: true,
           campaignStatus: 'ACTIVE',
+          moderationStatus: 'APPROVED',
+          paymentStatus: 'PAID',
           regionKey: null,
           OR: placementFilter,
           AND: [
             { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
             { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
-            { OR: [{ paymentStatus: 'NOT_REQUIRED' }, { paymentStatus: 'PAID' }] },
           ],
         },
     orderBy: [{ updatedAt: 'desc' }],
@@ -110,6 +113,7 @@ export async function GET(request: Request) {
       targetKeywords: true,
       targetCategories: true,
       objective: true,
+      plan: true,
       billingMode: true,
       bidCents: true,
       dailyBudgetCents: true,
@@ -166,6 +170,7 @@ export async function GET(request: Request) {
         categoryMatch ? 'category' : null,
       ].filter((value): value is string => Boolean(value));
       const score =
+        (banner.plan ? PLAN_WEIGHT[banner.plan] * 100 : 0) +
         (regionMatch ? 30 : 0) +
         (interestMatch ? 25 : 0) +
         (keywordMatch ? 35 : 0) +

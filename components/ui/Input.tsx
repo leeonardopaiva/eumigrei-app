@@ -102,15 +102,17 @@ Textarea.displayName = 'Textarea';
 export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   state?: FieldState;
   helperText?: string;
+  prefixIcon?: React.ReactNode;
 }
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ state = 'default', helperText, disabled, className, children, ...rest }, ref) => {
+  ({ state = 'default', helperText, prefixIcon, disabled, className, children, ...rest }, ref) => {
     const resolvedState = disabled ? 'disabled' : state;
 
     return (
       <div>
-        <div className={cn('relative flex items-center rounded-full border-2 bg-white px-4', stateBorderClasses[resolvedState])}>
+        <div className={cn('relative flex items-center gap-2 rounded-full border-2 bg-white px-4', stateBorderClasses[resolvedState])}>
+          {prefixIcon && <span className="shrink-0 text-slate-400">{prefixIcon}</span>}
           <select
             ref={ref}
             disabled={disabled}

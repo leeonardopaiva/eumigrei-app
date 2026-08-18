@@ -320,7 +320,7 @@ import { Card } from '@/components/ui/Card';
   <Card.Title>MacBook Pro 14"</Card.Title>
   <Card.Description>Produto em excelente estado.</Card.Description>
   <Card.Footer>
-    <span className="text-h3 font-extrabold text-brand-500">R$ 12.499</span>
+    <span className="text-h3 font-extrabold text-brand-500">US$ 12,499</span>
     <Button size="sm">Ver mais</Button>
   </Card.Footer>
 </Card>
@@ -339,7 +339,7 @@ import { Card } from '@/components/ui/Card';
             <Card.Title>MacBook Pro 14&quot;</Card.Title>
             <Card.Description>Produto em excelente estado, acompanha carregador.</Card.Description>
             <Card.Footer>
-              <span className="text-h3 font-extrabold text-brand-500">R$ 12.499</span>
+              <span className="text-h3 font-extrabold text-brand-500">US$ 12,499</span>
               <Button size="sm">Ver mais</Button>
             </Card.Footer>
           </Card>

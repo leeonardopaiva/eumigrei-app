@@ -5,6 +5,7 @@ import { ImagePlus, PencilLine, Plus, Target, WalletCards } from 'lucide-react';
 import CloudinaryImageField from '../forms/CloudinaryImageField';
 import FieldErrorMessage from '../forms/FieldErrorMessage';
 import RegionSelector from '../RegionSelector';
+import { Button, Modal } from '@/components/ui';
 import {
   type FieldErrors,
   hasFieldErrors,
@@ -25,7 +26,7 @@ export type ManagedBanner = {
   campaignStatus: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'ENDED';
   objective: 'TRAFFIC' | 'LEAD' | 'AWARENESS';
   billingMode: 'FLAT' | 'CPC' | 'CPM' | 'CPL';
-  paymentStatus: 'NOT_REQUIRED' | 'PENDING' | 'PAID' | 'FAILED';
+  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
   targetInterests: string[];
   targetKeywords: string[];
   targetCategories: string[];
@@ -68,7 +69,7 @@ type BannerFormState = {
   campaignStatus: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'ENDED';
   objective: 'TRAFFIC' | 'LEAD' | 'AWARENESS';
   billingMode: 'FLAT' | 'CPC' | 'CPM' | 'CPL';
-  paymentStatus: 'NOT_REQUIRED' | 'PENDING' | 'PAID' | 'FAILED';
+  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
   targetInterests: string;
   targetKeywords: string;
   targetCategories: string;
@@ -94,7 +95,7 @@ const emptyBannerForm: BannerFormState = {
   campaignStatus: 'ACTIVE',
   objective: 'TRAFFIC',
   billingMode: 'FLAT',
-  paymentStatus: 'NOT_REQUIRED',
+  paymentStatus: 'PENDING',
   targetInterests: '',
   targetKeywords: '',
   targetCategories: '',
@@ -125,7 +126,7 @@ const centsFromCurrency = (value: string) => {
 };
 
 const currencyFromCents = (value: number | null | undefined) =>
-  typeof value === 'number' ? (value / 100).toFixed(2).replace('.', ',') : '';
+  typeof value === 'number' ? (value / 100).toFixed(2) : '';
 
 const toLocalDateTimeValue = (value: string | null | undefined) => {
   if (!value) {
@@ -163,6 +164,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
   const [processingKey, setProcessingKey] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<BannerField>>({});
   const [showAllBanners, setShowAllBanners] = useState(false);
+  const [bannerModalOpen, setBannerModalOpen] = useState(false);
 
   const visibleBanners = showAllBanners ? banners : banners.slice(0, BANNER_PREVIEW_LIMIT);
 
@@ -183,6 +185,16 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
     setEditingBannerId(null);
     setBannerForm(emptyBannerForm);
     setFieldErrors({});
+    setBannerModalOpen(false);
+  };
+
+  const startBannerCreate = () => {
+    setEditingBannerId(null);
+    setBannerForm(emptyBannerForm);
+    setFieldErrors({});
+    onError(null);
+    onMessage(null);
+    setBannerModalOpen(true);
   };
 
   const startBannerEdit = (banner: ManagedBanner) => {
@@ -213,6 +225,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
     onError(null);
     onMessage(null);
     setFieldErrors({});
+    setBannerModalOpen(true);
   };
 
   const runBannerAction = async (
@@ -352,19 +365,29 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
 
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold theme-text">Banners</h2>
-        <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500 shadow-sm">
-          {banners.length}
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold text-slate-950">Banners</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Cadastre campanhas visuais globais ou segmentadas por regiao.
+          </p>
+        </div>
+        <Button type="button" onClick={startBannerCreate} className="rounded-full bg-[#2B5DF5]">
+          <Plus size={16} />
+          Novo banner
+        </Button>
       </div>
-      <p className="text-sm text-slate-500">
-        Cadastre um ou mais banners e limite a exibicao por regiao ou para toda a plataforma.
-      </p>
 
-      <div className="space-y-5 rounded-[32px] border border-slate-100 bg-white p-5 shadow-sm">
+      <Modal
+        open={bannerModalOpen}
+        onClose={resetBannerForm}
+        title={editingBannerId ? 'Editar banner' : 'Novo banner'}
+        description="Defina o criativo, a segmentacao e as regras de veiculacao."
+        className="max-w-4xl"
+      >
+      <div className="max-h-[72vh] space-y-5 overflow-y-auto pr-1">
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="sr-only">
             <p className="text-sm font-bold text-slate-700">
               {editingBannerId ? 'Editar banner' : 'Novo banner'}
             </p>
@@ -637,10 +660,10 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                 }
                 className="theme-outline-ring h-11 w-full appearance-none rounded-full border-2 border-border bg-surface px-4 text-body-sm font-semibold text-foreground outline-none"
               >
-                <option value="NOT_REQUIRED">Sem cobranca</option>
                 <option value="PENDING">Aguardando pagamento</option>
                 <option value="PAID">Pago</option>
                 <option value="FAILED">Falhou</option>
+                <option value="REFUNDED">Reembolsado</option>
               </select>
             </label>
           </div>
@@ -683,8 +706,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
             <div>
               <p className="text-sm font-bold text-slate-700">Orcamento e cobranca</p>
               <p className="text-xs leading-5 text-slate-500">
-                Por enquanto o pagamento e controlado manualmente; o link de checkout prepara a
-                integracao com Stripe ou Mercado Pago.
+                Campanhas do wizard usam checkout e confirmacao assinada pelo Stripe.
               </p>
             </div>
           </div>
@@ -790,6 +812,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
               : 'Cadastrar banner'}
         </button>
       </div>
+      </Modal>
 
       {loading ? (
         <div className="space-y-3">
@@ -820,7 +843,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
             </div>
           ) : null}
           {visibleBanners.map((banner) => (
-            <div key={banner.id} className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+            <div key={banner.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/40">
               <div className="flex items-start gap-4">
                 <img
                   src={banner.imageUrl}
@@ -902,7 +925,7 @@ const BannerManagementSection: React.FC<BannerManagementSectionProps> = ({
                         Total
                       </p>
                       <p className="text-sm font-bold text-slate-700">
-                        {banner.totalBudgetCents ? `R$ ${currencyFromCents(banner.totalBudgetCents)}` : 'Livre'}
+                        {banner.totalBudgetCents ? `US$ ${currencyFromCents(banner.totalBudgetCents)}` : 'Livre'}
                       </p>
                     </div>
                   </div>

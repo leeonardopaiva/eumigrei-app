@@ -192,12 +192,20 @@ const SidebarContent: React.FC<{
             />
           ))}
           {user.role === UserRole.ADMIN ? (
-            <SidebarMenuItem
-              label="Admin"
-              icon={<ShieldCheck size={18} />}
-              active={isActive('/admin')}
-              onClick={() => onNavigate('/admin')}
-            />
+            <>
+              <SidebarMenuItem
+                label="Admin"
+                icon={<ShieldCheck size={18} />}
+                active={sourcePath === '/admin'}
+                onClick={() => onNavigate('/admin')}
+              />
+              <SidebarMenuItem
+                label="Moderar anuncios"
+                icon={<ShieldCheck size={18} />}
+                active={isActive('/admin/ads')}
+                onClick={() => onNavigate('/admin/ads')}
+              />
+            </>
           ) : null}
           <SidebarMenuItem
             label={isProfessionalTheme ? 'Meu negocio' : 'Meu perfil'}

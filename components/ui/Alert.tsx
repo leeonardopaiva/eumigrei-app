@@ -24,11 +24,12 @@ export interface AlertProps {
   tone?: AlertTone;
   title: string;
   description?: string;
+  children?: React.ReactNode;
   onClose?: () => void;
   className?: string;
 }
 
-export const Alert: React.FC<AlertProps> = ({ tone = 'info', title, description, onClose, className }) => (
+export const Alert: React.FC<AlertProps> = ({ tone = 'info', title, description, children, onClose, className }) => (
   <div
     className={cn(
       'flex items-start gap-3 rounded-xl border px-4 py-4 shadow-xs',
@@ -41,6 +42,7 @@ export const Alert: React.FC<AlertProps> = ({ tone = 'info', title, description,
       <p className="text-body-sm font-bold">{title}</p>
       {description && <p className="mt-0.5 text-body-sm opacity-90">{description}</p>}
     </div>
+    {children && <div className="shrink-0 pl-3">{children}</div>}
     {onClose && (
       <button
         type="button"

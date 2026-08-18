@@ -244,7 +244,7 @@ export const adminBannerSchema = z.object({
   campaignStatus: z.nativeEnum(AdCampaignStatus).default(AdCampaignStatus.ACTIVE),
   objective: z.nativeEnum(AdObjective).default(AdObjective.TRAFFIC),
   billingMode: z.nativeEnum(AdBillingMode).default(AdBillingMode.FLAT),
-  paymentStatus: z.nativeEnum(AdPaymentStatus).default(AdPaymentStatus.NOT_REQUIRED),
+  paymentStatus: z.nativeEnum(AdPaymentStatus).default(AdPaymentStatus.PENDING),
   targetInterests: targetListSchema,
   targetKeywords: targetListSchema,
   targetCategories: targetListSchema,
