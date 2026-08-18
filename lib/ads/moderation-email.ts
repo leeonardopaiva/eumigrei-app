@@ -56,7 +56,7 @@ export async function sendAdModerationEmail(
         <h1 style="margin:0 0 12px;font-size:24px;color:#0f172a;">${approved ? 'Seu anuncio foi aprovado' : 'Seu anuncio precisa de ajustes'}</h1>
         <p style="margin:0 0 18px;line-height:1.6;color:#475569;">Ola, ${escapeHtml(recipientName)}. Revisamos <strong>${escapeHtml(campaignName)}</strong>.</p>
         ${approved ? '' : `<div style="margin:0 0 20px;padding:16px;border-radius:16px;background:#fff7ed;color:#9a3412;"><strong>Motivo:</strong> ${escapeHtml(reasonText)}</div>`}
-        <a href="${escapeHtml(adsUrl)}" style="display:inline-block;background:#0ea5e9;color:#fff;text-decoration:none;padding:13px 22px;border-radius:999px;font-weight:700;">Abrir Ads Manager</a>
+        <a href="${escapeHtml(adsUrl)}" style="display:inline-block;background:#0ea5e9;color:#fff;text-decoration:none;padding:13px 22px;border-radius:999px;font-weight:700;">Ver meus anúncios</a>
       </div>
     </div>`;
 

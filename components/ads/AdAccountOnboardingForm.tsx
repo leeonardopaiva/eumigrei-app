@@ -39,7 +39,7 @@ export function AdAccountOnboardingForm() {
         <GringoouLogo size={34} />
         <p className="mt-6 text-xs font-bold uppercase tracking-wider text-brand-500">Configuracao inicial</p>
         <h1 className="mt-2 text-3xl font-extrabold text-[#132f40]">Cadastre sua empresa</h1>
-        <p className="mt-2 text-sm text-slate-500">Esta sera sua conta comercial no Ads Manager.</p>
+        <p className="mt-2 text-sm text-slate-500">Esta será a conta comercial usada para administrar os anúncios da sua empresa.</p>
         <form onSubmit={submit} className="mt-7 grid gap-4 sm:grid-cols-2">
           <label className="space-y-2 sm:col-span-2"><span className="text-sm font-bold">Nome da empresa</span><Input required value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} /></label>
           <label className="space-y-2 sm:col-span-2"><span className="text-sm font-bold">Website</span><Input type="url" placeholder="https://empresa.com" value={form.websiteUrl} onChange={(event) => setForm((current) => ({ ...current, websiteUrl: event.target.value }))} /></label>
@@ -50,7 +50,7 @@ export function AdAccountOnboardingForm() {
           <label className="space-y-2"><span className="text-sm font-bold">Timezone</span><Input required value={form.timezone} onChange={(event) => setForm((current) => ({ ...current, timezone: event.target.value }))} /></label>
           <label className="flex items-center gap-3 text-sm font-semibold sm:col-span-2"><input type="checkbox" checked={form.isAgency} onChange={(event) => setForm((current) => ({ ...current, isAgency: event.target.checked }))} /> Esta empresa e uma agencia</label>
           {error ? <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 sm:col-span-2">{error}</p> : null}
-          <div className="sm:col-span-2"><Button type="submit" fullWidth loading={loading}>Continuar para o Ads Manager</Button></div>
+          <div className="sm:col-span-2"><Button type="submit" fullWidth loading={loading}>Continuar</Button></div>
         </form>
       </Card>
     </div>

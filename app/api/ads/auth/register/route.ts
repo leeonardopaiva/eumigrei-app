@@ -27,6 +27,21 @@ export async function POST(request: Request) {
   if (passwordIssues.length) return NextResponse.json({ error: passwordIssues[0] }, { status: 400 });
 
   const email = normalizeAuthEmail(parsed.data.email);
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, email: true },
+  });
+
+  if (existingUser) {
+    return NextResponse.json(
+      {
+        error: 'Esse e-mail já está cadastrado. Entre com essa conta para continuar.',
+        code: 'ACCOUNT_ALREADY_EXISTS',
+      },
+      { status: 409 },
+    );
+  }
+
   try {
     const user = await prisma.user.create({
       data: {
@@ -41,7 +56,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ user }, { status: 201 });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      return NextResponse.json({ error: 'Este email ja esta cadastrado.' }, { status: 409 });
+      return NextResponse.json(
+        {
+          error: 'Esse e-mail já está cadastrado. Entre com essa conta para continuar.',
+          code: 'ACCOUNT_ALREADY_EXISTS',
+        },
+        { status: 409 },
+      );
     }
     throw error;
   }
