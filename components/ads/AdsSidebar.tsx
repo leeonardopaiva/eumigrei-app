@@ -32,7 +32,7 @@ export function AdsSidebar({ mobileOpen, onMobileClose }: AdsSidebarProps) {
       <div className="flex items-center px-7 pb-10 pt-9">
         <GringoouLogo size={34} />
       </div>
-      <nav className="flex flex-1 flex-col gap-1 px-5" aria-label="Menu do Ads Manager">
+      <nav className="flex flex-1 flex-col gap-1 px-5" aria-label="Menu de anúncios">
         <p className="px-3 pb-3 pt-1 text-[11px] font-extrabold uppercase tracking-[0.08em] text-slate-400">Anuncios</p>
         {items.map((item) => {
           const Icon = item.icon;

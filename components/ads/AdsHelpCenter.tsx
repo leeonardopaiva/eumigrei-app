@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ChevronDown, Search } from 'lucide-react';
 
 const sections = [
-  { title: 'Top articles', articles: ['Como criar sua conta comercial', 'Especificacoes de criativos', 'Primeiros passos no Ads Manager'] },
+  { title: 'Top articles', articles: ['Como criar sua conta comercial', 'Especificacoes de criativos', 'Primeiros passos para anunciar'] },
   { title: 'Gestao de Contas', articles: ['Editar dados da empresa', 'Convidar usuarios e definir roles', 'Alternar entre contas comerciais'] },
   { title: 'Formatos de Anuncios', articles: ['Campanhas para WhatsApp', 'Campanhas para URL externa', 'Promover Marketplace e Moradia'] },
   { title: 'Segmentacao', articles: ['Selecionar uma regiao', 'Como funciona a prioridade dos planos', 'Boas praticas de alcance local'] },

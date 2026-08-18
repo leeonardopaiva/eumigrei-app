@@ -14,6 +14,16 @@ export default function AdsLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  async function signInWithGoogle() {
+    setLoading(true);
+    setError(null);
+    const result = await signIn('google', { callbackUrl: '/ads/overview', redirect: false });
+    if (result?.error) {
+      setError('Nao foi possivel entrar com Google.');
+      setLoading(false);
+    }
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     setLoading(true);
@@ -35,14 +45,16 @@ export default function AdsLoginPage() {
       <Card className="w-full rounded-[28px] border border-slate-200 p-8 shadow-sm">
         <GringoouLogo size={34} />
         <p className="mt-6 text-xs font-bold uppercase tracking-wider text-brand-500">Portal do anunciante</p>
-        <h1 className="mt-2 text-3xl font-extrabold text-[#132f40]">Acesse o Gringoou Ads</h1>
+        <h1 className="mt-2 text-3xl font-extrabold text-[#132f40]">Acesse sua conta de negócio</h1>
+        <p className="mt-2 text-sm text-slate-500">Entre para gerenciar sua empresa e criar anúncios no Gringoou.</p>
         <form onSubmit={submit} className="mt-7 space-y-4">
           <label className="block space-y-2"><span className="text-sm font-bold">Email</span><Input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
           <label className="block space-y-2"><span className="text-sm font-bold">Senha</span><Input type="password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
           {error ? <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
           <Button type="submit" fullWidth loading={loading}>Entrar</Button>
+          <Button type="button" variant="secondary" fullWidth loading={loading} onClick={() => void signInWithGoogle()}>Entrar com Google</Button>
         </form>
-        <p className="mt-6 text-center text-sm text-slate-500">Ainda nao anuncia? <Link href="/ads/register" className="font-bold text-brand-500">Criar conta</Link></p>
+        <p className="mt-6 text-center text-sm text-slate-500">Ainda não tem uma conta de negócio? <Link href="/ads/register" className="font-bold text-brand-500">Criar conta</Link></p>
       </Card>
     </div>
   );

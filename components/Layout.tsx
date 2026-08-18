@@ -218,7 +218,7 @@ const SidebarContent: React.FC<{
 
       <div className="space-y-2">
         <Button variant="secondary" fullWidth onClick={() => onNavigate('/ads/register')}>
-          Cadastrar negócio
+          Anunciar seu negócio
         </Button>
         <button
           type="button"
@@ -367,7 +367,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
                       handleNavigate('/ads/register');
                     }}
                   >
-                    Cadastrar negócio
+                    Anunciar seu negócio
                   </Button>
                   <Button
                     variant="yellow"
