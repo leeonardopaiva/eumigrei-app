@@ -1,6 +1,6 @@
 import { AdCampaignStatus, AdModerationStatus, AdPaymentStatus } from '@prisma/client';
 import { NextResponse } from 'next/server';
-import { calculateAdContractAmount, AD_PLAN_CATALOG } from '@/lib/ads/contracts';
+import { AD_PLAN_CATALOG, getAdCheckoutAmount } from '@/lib/ads/contracts';
 import { getAdDestinationFields, getStripe } from '@/lib/ads/server';
 import { adCheckoutSchema } from '@/lib/ads/validation';
 import { getServerAuthSession } from '@/lib/auth';
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
   const region = await prisma.region.findFirst({ where: { key: parsed.data.regionKey, isActive: true }, select: { key: true } });
   if (!region) return NextResponse.json({ error: 'Regiao invalida.' }, { status: 400 });
 
-  const amountCents = calculateAdContractAmount(parsed.data.plan, parsed.data.durationMonths);
+  const amountCents = getAdCheckoutAmount(parsed.data.plan, parsed.data.durationMonths);
   const destinationFields = getAdDestinationFields(parsed.data.goal, parsed.data.destination);
 
   await prisma.banner.update({

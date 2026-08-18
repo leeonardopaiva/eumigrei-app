@@ -39,6 +39,11 @@ export const AD_PLAN_CATALOG: Record<
 export const calculateAdContractAmount = (plan: AdPlanValue, durationMonths: AdDuration) =>
   AD_PLAN_CATALOG[plan].monthlyPriceCents * durationMonths;
 
+export const isAdsSmokeTestModeEnabled = () => process.env.NEXT_PUBLIC_ADS_SMOKE_TEST_MODE === 'true';
+
+export const getAdCheckoutAmount = (plan: AdPlanValue, durationMonths: AdDuration) =>
+  isAdsSmokeTestModeEnabled() ? 100 : calculateAdContractAmount(plan, durationMonths);
+
 export const isValidAdPlanDuration = (plan: AdPlanValue, durationMonths: number) =>
   AD_PLAN_CATALOG[plan].durationMonths === durationMonths;
 
