@@ -217,7 +217,7 @@ const SidebarContent: React.FC<{
       </div>
 
       <div className="space-y-2">
-        <Button variant="secondary" fullWidth onClick={() => onNavigate('/negocios?create=1')}>
+        <Button variant="secondary" fullWidth onClick={() => onNavigate('/ads/register')}>
           Cadastrar negócio
         </Button>
         <button
@@ -364,7 +364,7 @@ const Layout: React.FC<LayoutWithUserProps> = ({
                     size="sm"
                     onClick={() => {
                       setIsQuickMenuOpen(false);
-                      handleNavigate('/negocios?create=1');
+                      handleNavigate('/ads/register');
                     }}
                   >
                     Cadastrar negócio
