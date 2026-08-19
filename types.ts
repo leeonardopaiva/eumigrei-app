@@ -299,6 +299,7 @@ export interface BannerAd {
   scope?: 'global' | 'regional';
   objective?: 'TRAFFIC' | 'LEAD' | 'AWARENESS';
   matchedBy?: string[];
+  deliveryReasons?: string[];
   sponsored?: boolean;
 }
 

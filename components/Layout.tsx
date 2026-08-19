@@ -31,6 +31,7 @@ import { trackAnalyticsEvent } from '../lib/analytics';
 import { GringoouLogo } from './icons/GringoouLogo';
 import { SidebarMenu, SidebarMenuItem } from './navigation/SidebarMenu';
 import { PersonaMode, ProfessionalProfileIdentity, User, UserRole } from '../types';
+import { CommunityAccountMenu } from './account/CommunityAccountMenu';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -339,9 +340,10 @@ const Layout: React.FC<LayoutWithUserProps> = ({
 
             <div className="flex h-10 items-center gap-2">
               <FriendRequestBell />
-              <Link href={publicProfileHref} aria-label="Meu perfil" className="shrink-0">
-                <Avatar src={activeAvatar} name={activeName} size="md" />
-              </Link>
+              <CommunityAccountMenu
+                user={{ name: user.name, avatar: user.avatar, email: user.email }}
+                profileHref={publicProfileHref}
+              />
             </div>
           </header>
 

@@ -1,7 +1,9 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
-import { Bell, ChevronDown, Menu } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { signOut, useSession } from 'next-auth/react';
+import { Bell, BriefcaseBusiness, Check, ChevronDown, LogOut, Menu, Settings, Users } from 'lucide-react';
 import { Avatar } from '@/components/ui';
 import { useAdAccount } from '@/components/ads/AdAccountProvider';
 import GringoouLogo from '@/components/icons/GringoouLogo';
@@ -11,45 +13,58 @@ type AdsTopbarProps = { onMenuToggle: () => void };
 export function AdsTopbar({ onMenuToggle }: AdsTopbarProps) {
   const { data: session } = useSession();
   const { account, accounts, selectAccount } = useAdAccount();
-  const accountName = session?.user?.name || 'Anunciante';
-  const accountId = session?.user?.id ? session.user.id.slice(0, 7) : '-';
-  const accountAvatar = session?.user?.image || null;
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const userName = session?.user?.name || 'Anunciante';
+  const userEmail = session?.user?.email || 'Conta pessoal';
+  const accountId = account?.id ?? session?.user?.id ?? '-';
+  const triggerAvatar = account?.logoUrl || session?.user?.image || null;
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  async function changeAccount(accountIdToSelect: string) {
+    await selectAccount(accountIdToSelect);
+    setOpen(false);
+  }
 
   return (
     <header className="fixed left-0 right-0 top-0 z-50 border-b border-slate-200 bg-white">
       <div className="flex h-[72px] items-center justify-between gap-4 px-4 md:justify-end md:px-7 md:pl-[calc(1.75rem+272px)]">
         <div className="flex items-center gap-3 md:hidden">
-          <button type="button" onClick={onMenuToggle} aria-label="Abrir menu" className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-[#132f40]">
-            <Menu size={21} />
-          </button>
+          <button type="button" onClick={onMenuToggle} aria-label="Abrir menu" className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-[#132f40]"><Menu size={21} /></button>
           <GringoouLogo size={28} />
         </div>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            aria-label="Notificacoes"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-          >
-            <Bell size={18} />
-          </button>
-          <div className="flex items-center gap-2">
-            <Avatar src={accountAvatar} name={accountName} size="md" />
-            <div className="hidden min-w-0 sm:block">
-              {accounts.length > 1 ? (
-                <div className="relative flex items-center gap-1">
-                  <select
-                    aria-label="Conta comercial selecionada"
-                    value={account?.id ?? ''}
-                    onChange={(event) => void selectAccount(event.target.value)}
-                    className="max-w-[210px] appearance-none bg-transparent pr-5 text-body-sm font-bold text-[#132f40] outline-none"
-                  >
-                    {accounts.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                  </select>
-                  <ChevronDown size={14} className="pointer-events-none absolute right-0 text-slate-400" />
+          <button type="button" aria-label="Notificacoes" className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"><Bell size={18} /></button>
+          <div ref={menuRef} className="relative">
+            <button type="button" aria-label="Abrir menu da conta" aria-expanded={open} onClick={() => setOpen((value) => !value)} className="flex items-center gap-2 rounded-full bg-slate-50 py-1 pl-1 pr-3 transition hover:bg-slate-100">
+              <Avatar src={triggerAvatar} name={account?.name ?? userName} size="md" />
+              <div className="hidden min-w-0 text-left sm:block"><strong className="block max-w-[180px] truncate text-sm text-[#132f40]">{account?.name ?? userName}</strong><span className="block max-w-[180px] truncate text-[11px] text-slate-400">Account ID: {accountId.slice(0, 10)}...</span></div>
+              <ChevronDown size={16} className="text-slate-500" />
+            </button>
+            {open ? (
+              <div className="absolute right-0 top-[calc(100%+10px)] w-[330px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-950/10">
+                <div className="p-4"><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Conectado como</p><div className="mt-3 flex items-center gap-3 rounded-xl p-2"><Avatar src={session?.user?.image} name={userName} size="md" /><span className="min-w-0 flex-1"><strong className="block truncate text-sm text-slate-900">{userName}</strong><span className="block truncate text-xs text-slate-500">{userEmail}</span></span></div></div>
+                <div className="border-t border-slate-100 p-4">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Contas de negócio ({accounts.length})</p>
+                  <div className="mt-2 space-y-1">{accounts.map((item) => (
+                    <button key={item.id} type="button" onClick={() => void changeAccount(item.id)} className="flex w-full items-center gap-3 rounded-xl p-2 text-left hover:bg-brand-50"><Avatar src={item.logoUrl} name={item.name} size="md" /><span className="min-w-0 flex-1"><strong className="block truncate text-sm text-slate-900">{item.name}</strong><span className="block truncate text-xs text-slate-500">ID: {item.id.slice(0, 12)}...</span></span>{item.id === account?.id ? <Check size={18} className="text-brand-500" /> : <BriefcaseBusiness size={18} className="text-slate-300" />}</button>
+                  ))}</div>
                 </div>
-              ) : <span className="block max-w-[210px] truncate text-body-sm font-bold text-[#132f40]">{account?.name ?? accountName}</span>}
-              <p className="truncate text-[12px] text-slate-400">Account ID: {(account?.id ?? accountId).slice(0, 10)}...</p>
-            </div>
+                <div className="border-t border-slate-100 p-2">
+                  <Link href="/ads/settings" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"><Settings size={17} />Configurações do negócio</Link>
+                  <Link href="/inicio" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"><Users size={17} />Voltar à comunidade</Link>
+                  <button type="button" onClick={() => void signOut({ callbackUrl: '/login' })} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50"><LogOut size={17} />Sair</button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
