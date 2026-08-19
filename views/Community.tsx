@@ -16,6 +16,7 @@ import { loadRegionCommunityPosts } from '@/lib/content-api';
 import { trackAnalyticsEvent } from '@/lib/analytics';
 import type { BannerAd, PersonaMode, Post, ProfessionalProfileIdentity, ReferralSummary, User } from '@/types';
 import type { CommunityInitialData } from '@/lib/content-contracts';
+import { ViewableAdSlot } from '@/components/ads/ViewableAdSlot';
 
 const getPostTimestamp = (post: Post) => new Date(post.createdAt).getTime() || 0;
 
@@ -894,7 +895,7 @@ const FeedBannerCard: React.FC<{
   onOpen: () => void;
   onRegister: () => void;
 }> = ({ banner, submitting, onOpen, onRegister }) => (
-  <div className="relative overflow-hidden rounded-sheet bg-foreground shadow-sm">
+  <ViewableAdSlot banner={banner} placement="FEED" className="relative overflow-hidden rounded-sheet bg-foreground shadow-sm">
     <img src={banner.imageUrl} alt={banner.name} className="h-[220px] w-full object-cover opacity-90" />
     <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
     <div className="absolute left-5 right-5 top-5 flex items-center justify-between gap-3">
@@ -930,7 +931,7 @@ const FeedBannerCard: React.FC<{
         </button>
       )}
     </div>
-  </div>
+  </ViewableAdSlot>
 );
 
 export default Community;

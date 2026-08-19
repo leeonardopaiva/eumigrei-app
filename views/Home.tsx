@@ -27,6 +27,7 @@ import { TrendsCarousel, type TrendItem } from '../components/app/TrendsCarousel
 import { STATIC_HOUSING, STATIC_JOBS } from '../lib/static-catalog';
 import { BannerAd, Business, EventItem, User } from '../types';
 import type { HomeInitialData } from '../lib/content-contracts';
+import { ViewableAdSlot } from '../components/ads/ViewableAdSlot';
 
 const animatedSearchTerms = ['restaurantes', 'bares', 'eventos', 'pessoas'];
 
@@ -304,8 +305,10 @@ const Home: React.FC<{ user: User; initialData?: HomeInitialData }> = ({ user, i
               style={{ transform: `translateX(-${activeBannerIndex * 100}%)` }}
             >
               {banners.map((banner) => (
-                <div
+                <ViewableAdSlot
                   key={banner.id}
+                  banner={banner}
+                  placement="HOME"
                   className="group relative h-[180px] w-full flex-none overflow-hidden rounded-2xl md:h-[200px]"
                 >
                   <img
@@ -342,7 +345,7 @@ const Home: React.FC<{ user: User; initialData?: HomeInitialData }> = ({ user, i
                       <ExternalLink size={22} strokeWidth={3} />
                     </button>
                   )}
-                </div>
+                </ViewableAdSlot>
               ))}
             </div>
           </div>
