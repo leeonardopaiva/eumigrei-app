@@ -8,7 +8,13 @@ import { useAdAccount } from '@/components/ads/AdAccountProvider';
 import { BusinessCategoryField } from '@/components/ads/BusinessCategoryField';
 import { formatInternationalPhone } from '@/lib/phone';
 
-export function AdAccountOnboardingForm() {
+type AdAccountOnboardingFormProps = {
+  mode?: 'initial' | 'additional';
+  currentCount?: number;
+  maxAccounts?: number;
+};
+
+export function AdAccountOnboardingForm({ mode = 'initial', currentCount = 0, maxAccounts = 3 }: AdAccountOnboardingFormProps) {
   const router = useRouter();
   const { refreshAccounts } = useAdAccount();
   const [form, setForm] = useState({ name: '', websiteUrl: '', phone: '', businessAddress: '', businessCategory: '', country: 'US', currency: 'USD', timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', isAgency: false, useWebsitePhotos: true, subcategories: [] as string[] });
@@ -34,15 +40,16 @@ export function AdAccountOnboardingForm() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-2xl items-center">
+    <div className={`mx-auto flex max-w-2xl items-center ${mode === 'initial' ? 'min-h-[calc(100vh-5rem)]' : 'py-6'}`}>
       <Card className="w-full rounded-[28px] border border-slate-200 p-8 shadow-sm">
-        <GringoouLogo size={34} />
-        <p className="mt-6 text-xs font-bold uppercase tracking-wider text-brand-500">Configuracao inicial</p>
-        <h1 className="mt-2 text-3xl font-extrabold text-[#132f40]">Cadastre sua empresa</h1>
-        <p className="mt-2 text-sm text-slate-500">Esta será a conta comercial usada para administrar os anúncios da sua empresa.</p>
+        {mode === 'initial' ? <GringoouLogo size={34} /> : null}
+        <p className={`${mode === 'initial' ? 'mt-6' : ''} text-xs font-bold uppercase tracking-wider text-brand-500`}>{mode === 'initial' ? 'Configuracao inicial' : `Conta ${currentCount + 1} de ${maxAccounts}`}</p>
+        <h1 className="mt-2 text-3xl font-extrabold text-[#132f40]">{mode === 'initial' ? 'Cadastre sua empresa' : 'Criar nova conta de negócio'}</h1>
+        <p className="mt-2 text-sm text-slate-500">Gerencie empresas ou locais diferentes com a mesma conta pessoal.</p>
         <form onSubmit={submit} className="mt-7 grid gap-4 sm:grid-cols-2">
           <label className="space-y-2 sm:col-span-2"><span className="text-sm font-bold">Nome da empresa</span><Input required value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} /></label>
           <label className="space-y-2 sm:col-span-2"><span className="text-sm font-bold">Website</span><Input type="url" placeholder="https://empresa.com" value={form.websiteUrl} onChange={(event) => setForm((current) => ({ ...current, websiteUrl: event.target.value }))} /></label>
+          <label className="space-y-2 sm:col-span-2"><span className="text-sm font-bold">Endereço comercial</span><Input placeholder="Rua, número, cidade, estado e CEP" value={form.businessAddress} onChange={(event) => setForm((current) => ({ ...current, businessAddress: event.target.value }))} /></label>
           <label className="space-y-2 sm:col-span-2"><span className="text-sm font-bold">Telefone / WhatsApp comercial</span><Input type="tel" required inputMode="tel" placeholder="+1 (555) 000-0000" value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: formatInternationalPhone(event.target.value) }))} /></label>
           <div className="sm:col-span-2"><BusinessCategoryField category={form.businessCategory} subcategories={form.subcategories} onCategoryChange={(businessCategory) => setForm((current) => ({ ...current, businessCategory }))} onSubcategoriesChange={(subcategories) => setForm((current) => ({ ...current, subcategories }))} /></div>
           <label className="space-y-2"><span className="text-sm font-bold">Pais</span><Select value={form.country} onChange={(event) => setForm((current) => ({ ...current, country: event.target.value }))}><option value="US">Estados Unidos</option><option value="BR">Brasil</option><option value="PT">Portugal</option><option value="CA">Canada</option></Select></label>
@@ -50,7 +57,10 @@ export function AdAccountOnboardingForm() {
           <label className="space-y-2"><span className="text-sm font-bold">Timezone</span><Input required value={form.timezone} onChange={(event) => setForm((current) => ({ ...current, timezone: event.target.value }))} /></label>
           <label className="flex items-center gap-3 text-sm font-semibold sm:col-span-2"><input type="checkbox" checked={form.isAgency} onChange={(event) => setForm((current) => ({ ...current, isAgency: event.target.checked }))} /> Esta empresa e uma agencia</label>
           {error ? <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 sm:col-span-2">{error}</p> : null}
-          <div className="sm:col-span-2"><Button type="submit" fullWidth loading={loading}>Continuar</Button></div>
+          <div className="flex flex-col-reverse gap-3 sm:col-span-2 sm:flex-row sm:justify-end">
+            {mode === 'additional' ? <Button type="button" variant="secondary" onClick={() => router.back()}>Voltar</Button> : null}
+            <Button type="submit" fullWidth={mode === 'initial'} loading={loading}>{mode === 'initial' ? 'Continuar' : 'Criar conta'}</Button>
+          </div>
         </form>
       </Card>
     </div>
