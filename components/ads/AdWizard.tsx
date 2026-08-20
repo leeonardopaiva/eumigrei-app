@@ -14,7 +14,8 @@ import { WizardStepper } from './WizardStepper';
 import { useAdAccount } from './AdAccountProvider';
 import { formatAdCurrency, getAdCheckoutAmount, isAdsSmokeTestModeEnabled } from '@/lib/ads/contracts';
 
-const STORAGE_KEY = 'gringoou:ad-wizard-draft';
+const LEGACY_STORAGE_KEY = 'gringoou:ad-wizard-draft';
+const STORAGE_KEY_PREFIX = 'gringoou:ad-wizard-draft';
 const STEPS = ['Objetivo', 'Criativo', 'Alcance', 'Checkout'];
 
 const initialState: AdWizardData = {
@@ -30,11 +31,13 @@ const initialState: AdWizardData = {
 type Action =
   | { type: 'PATCH'; payload: Partial<AdWizardData> }
   | { type: 'STEP'; payload: AdWizardData['step'] }
-  | { type: 'HYDRATE'; payload: AdWizardData };
+  | { type: 'HYDRATE'; payload: AdWizardData }
+  | { type: 'RESET' };
 
 const reducer = (state: AdWizardData, action: Action): AdWizardData => {
   if (action.type === 'PATCH') return { ...state, ...action.payload };
   if (action.type === 'STEP') return { ...state, step: action.payload };
+  if (action.type === 'RESET') return { ...initialState };
   return { ...initialState, ...action.payload };
 };
 
@@ -47,9 +50,9 @@ const getErrors = (issues: Array<{ path: PropertyKey[]; message: string }>) =>
 
 export const AdWizard: React.FC = () => {
   const router = useRouter();
-  const { account, loading: accountLoading } = useAdAccount();
+  const { account, loading: accountLoading, setAccountSwitchLocked } = useAdAccount();
   const [state, dispatch] = useReducer(reducer, initialState);
-  const [hydrated, setHydrated] = useState(false);
+  const [hydratedAccountId, setHydratedAccountId] = useState<string | null>(null);
   const [errors, setErrors] = useState<AdFieldErrors>({});
   const [requestError, setRequestError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -63,24 +66,45 @@ export const AdWizard: React.FC = () => {
     : 0;
   const smokeTestMode = isAdsSmokeTestModeEnabled();
   const canPay = account?.role === 'BUSINESS_ADMIN';
+  const storageKey = account?.id ? `${STORAGE_KEY_PREFIX}:${account.id}` : null;
+  const hydrated = Boolean(account?.id && hydratedAccountId === account.id);
 
   useEffect(() => {
+    if (!account?.id) {
+      setHydratedAccountId(null);
+      return;
+    }
+    setHydratedAccountId(null);
+    dispatch({ type: 'RESET' });
+    setErrors({});
+    setRequestError(null);
+    setClientSecret(null);
+    setPaymentSubmitted(false);
+    setPaymentProcessing(false);
+    checkoutKeyRef.current = null;
+    const nextStorageKey = `${STORAGE_KEY_PREFIX}:${account.id}`;
     try {
-      const stored = sessionStorage.getItem(STORAGE_KEY);
+      sessionStorage.removeItem(LEGACY_STORAGE_KEY);
+      const stored = sessionStorage.getItem(nextStorageKey);
       if (stored) {
         const parsed = JSON.parse(stored) as AdWizardData & { bannerId?: string };
         dispatch({ type: 'HYDRATE', payload: { ...parsed, draftId: parsed.draftId ?? parsed.bannerId } });
       }
     } catch {
-      sessionStorage.removeItem(STORAGE_KEY);
+      sessionStorage.removeItem(nextStorageKey);
     } finally {
-      setHydrated(true);
+      setHydratedAccountId(account.id);
     }
-  }, []);
+  }, [account?.id]);
 
   useEffect(() => {
-    if (hydrated) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [hydrated, state]);
+    if (hydrated && storageKey) sessionStorage.setItem(storageKey, JSON.stringify(state));
+  }, [hydrated, state, storageKey]);
+
+  useEffect(() => {
+    setAccountSwitchLocked(paymentProcessing);
+    return () => setAccountSwitchLocked(false);
+  }, [paymentProcessing, setAccountSwitchLocked]);
 
   const patch = (payload: Partial<AdWizardData>) => {
     dispatch({ type: 'PATCH', payload });
@@ -204,7 +228,7 @@ export const AdWizard: React.FC = () => {
       {state.step === 3 ? <ReachAndPlanStep state={state} errors={errors} patch={patch} /> : null}
       {state.step === 4 ? <CheckoutStep state={state} clientSecret={clientSecret} error={requestError} onProcessing={setPaymentProcessing} onError={setRequestError} onSuccess={() => {
         setPaymentSubmitted(true);
-        sessionStorage.removeItem(STORAGE_KEY);
+        if (storageKey) sessionStorage.removeItem(storageKey);
         showToast('Pagamento enviado. Campanha aguardando moderacao.', 'success');
         router.replace(`/ads/anuncio-em-analise${state.draftId ? `?campaign=${encodeURIComponent(state.draftId)}` : ''}`);
       }} /> : null}

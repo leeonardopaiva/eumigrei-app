@@ -12,7 +12,7 @@ type AdsTopbarProps = { onMenuToggle: () => void };
 
 export function AdsTopbar({ onMenuToggle }: AdsTopbarProps) {
   const { data: session } = useSession();
-  const { account, accounts, canCreateAccount, maxAccounts, selectAccount } = useAdAccount();
+  const { account, accounts, accountSwitchLocked, canCreateAccount, maxAccounts, selectAccount } = useAdAccount();
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const userName = session?.user?.name || 'Anunciante';
@@ -55,11 +55,12 @@ export function AdsTopbar({ onMenuToggle }: AdsTopbarProps) {
                 <div className="border-t border-slate-100 p-4">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Contas de negócio ({accounts.length})</p>
                   <div className="mt-2 space-y-1">{accounts.map((item) => (
-                    <button key={item.id} type="button" onClick={() => void changeAccount(item.id)} className="flex w-full items-center gap-3 rounded-xl p-2 text-left hover:bg-brand-50"><Avatar src={item.logoUrl} name={item.name} size="md" /><span className="min-w-0 flex-1"><strong className="block truncate text-sm text-slate-900">{item.name}</strong><span className="block truncate text-xs text-slate-500">ID: {item.id.slice(0, 12)}...</span></span>{item.id === account?.id ? <Check size={18} className="text-brand-500" /> : <BriefcaseBusiness size={18} className="text-slate-300" />}</button>
+                    <button key={item.id} type="button" disabled={accountSwitchLocked} onClick={() => void changeAccount(item.id)} className="flex w-full items-center gap-3 rounded-xl p-2 text-left hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"><Avatar src={item.logoUrl} name={item.name} size="md" /><span className="min-w-0 flex-1"><strong className="block truncate text-sm text-slate-900">{item.name}</strong><span className="block truncate text-xs text-slate-500">ID: {item.id.slice(0, 12)}...</span></span>{item.id === account?.id ? <Check size={18} className="text-brand-500" /> : <BriefcaseBusiness size={18} className="text-slate-300" />}</button>
                   ))}</div>
-                  {canCreateAccount ? (
+                  {accountSwitchLocked ? <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">Confirmando pagamento. A troca de conta foi pausada.</p> : null}
+                  {!accountSwitchLocked && canCreateAccount ? (
                     <Link href="/ads/accounts/new" onClick={() => setOpen(false)} className="mt-3 flex items-center gap-2 rounded-xl border border-dashed border-brand-200 px-3 py-2.5 text-sm font-bold text-brand-600 hover:bg-brand-50"><Plus size={17} />Criar nova conta de negócio</Link>
-                  ) : <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-500">Limite de {maxAccounts} contas atingido.</p>}
+                  ) : !accountSwitchLocked ? <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-500">Limite de {maxAccounts} contas atingido.</p> : null}
                 </div>
                 <div className="border-t border-slate-100 p-2">
                   <Link href="/ads/settings" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"><Settings size={17} />Configurações do negócio</Link>

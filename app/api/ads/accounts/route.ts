@@ -6,10 +6,14 @@ import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { AD_BUSINESS_CATEGORY_VALUES } from '@/lib/ads/categories';
 import { normalizeInternationalPhone } from '@/lib/phone';
+import { normalizeHttpUrlInput } from '@/lib/url';
 
 const accountSchema = z.object({
   name: z.string().trim().min(2).max(120),
-  websiteUrl: z.preprocess((value) => (value === '' ? undefined : value), z.string().url().optional()),
+  websiteUrl: z.preprocess(
+    (value) => typeof value === 'string' && value.trim() ? normalizeHttpUrlInput(value) : undefined,
+    z.string().url().optional(),
+  ),
   phone: z.string().trim().min(8).max(30),
   businessAddress: z.string().trim().max(300).optional(),
   businessCategory: z.enum(AD_BUSINESS_CATEGORY_VALUES as [string, ...string[]]),
@@ -59,7 +63,7 @@ export async function POST(request: Request) {
 
   const account = await prisma.$transaction(async (transaction) => {
     // Serializes account creation for this user so parallel requests cannot bypass the limit.
-    await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${session.user.id}))`;
+    await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${session.user.id}))`;
     const accountCount = await transaction.adAccountUser.count({ where: { userId: session.user.id } });
     if (accountCount >= MAX_AD_ACCOUNTS_PER_USER) return null;
 
