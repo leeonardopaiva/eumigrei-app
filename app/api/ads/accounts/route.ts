@@ -1,7 +1,7 @@
 import { AdAccountRole } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { AD_ACCOUNT_COOKIE, getAdAccountMembership } from '@/lib/ads/account';
+import { AD_ACCOUNT_COOKIE, getAdAccountMembership, MAX_AD_ACCOUNTS_PER_USER } from '@/lib/ads/account';
 import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { AD_BUSINESS_CATEGORY_VALUES } from '@/lib/ads/categories';
@@ -43,6 +43,8 @@ export async function GET() {
   return NextResponse.json({
     accounts: memberships.map(({ role, adAccount }) => ({ ...adAccount, role })),
     selectedAccountId: selected?.adAccountId ?? null,
+    maxAccounts: MAX_AD_ACCOUNTS_PER_USER,
+    canCreateAccount: memberships.length < MAX_AD_ACCOUNTS_PER_USER,
   });
 }
 
@@ -56,13 +58,23 @@ export async function POST(request: Request) {
   }
 
   const account = await prisma.$transaction(async (transaction) => {
+    // Serializes account creation for this user so parallel requests cannot bypass the limit.
+    await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${session.user.id}))`;
+    const accountCount = await transaction.adAccountUser.count({ where: { userId: session.user.id } });
+    if (accountCount >= MAX_AD_ACCOUNTS_PER_USER) return null;
+
     const created = await transaction.adAccount.create({ data: { ...parsed.data, phone: normalizeInternationalPhone(parsed.data.phone) } });
-    await transaction.adAccountUser.create({
-      data: { adAccountId: created.id, userId: session.user.id, role: AdAccountRole.BUSINESS_ADMIN },
-    });
+    await transaction.adAccountUser.create({ data: { adAccountId: created.id, userId: session.user.id, role: AdAccountRole.BUSINESS_ADMIN } });
     await transaction.user.update({ where: { id: session.user.id }, data: { isAdvertiser: true } });
     return created;
   });
+
+  if (!account) {
+    return NextResponse.json(
+      { error: `Voce pode gerenciar no maximo ${MAX_AD_ACCOUNTS_PER_USER} contas de negocio.`, code: 'AD_ACCOUNT_LIMIT_REACHED' },
+      { status: 409 },
+    );
+  }
 
   const response = NextResponse.json({ account }, { status: 201 });
   response.cookies.set(AD_ACCOUNT_COOKIE, account.id, {

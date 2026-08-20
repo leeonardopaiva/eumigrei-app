@@ -17,6 +17,8 @@ export type AdAccountSummary = {
 type AdAccountContextValue = {
   accounts: AdAccountSummary[];
   account: AdAccountSummary | null;
+  maxAccounts: number;
+  canCreateAccount: boolean;
   loading: boolean;
   refreshAccounts: () => Promise<void>;
   selectAccount: (accountId: string) => Promise<void>;
@@ -29,6 +31,7 @@ export function AdAccountProvider({ children }: { children: React.ReactNode }) {
   const { status } = useSession();
   const [accounts, setAccounts] = useState<AdAccountSummary[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [maxAccounts, setMaxAccounts] = useState(3);
   const [loading, setLoading] = useState(true);
 
   const refreshAccounts = useCallback(async () => {
@@ -45,6 +48,7 @@ export function AdAccountProvider({ children }: { children: React.ReactNode }) {
       const payload = await response.json();
       setAccounts(payload.accounts ?? []);
       setSelectedAccountId(payload.selectedAccountId ?? null);
+      setMaxAccounts(payload.maxAccounts ?? 3);
     } finally {
       setLoading(false);
     }
@@ -68,10 +72,12 @@ export function AdAccountProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<AdAccountContextValue>(() => ({
     accounts,
     account: accounts.find((item) => item.id === selectedAccountId) ?? accounts[0] ?? null,
+    maxAccounts,
+    canCreateAccount: accounts.length < maxAccounts,
     loading,
     refreshAccounts,
     selectAccount,
-  }), [accounts, loading, refreshAccounts, selectAccount, selectedAccountId]);
+  }), [accounts, loading, maxAccounts, refreshAccounts, selectAccount, selectedAccountId]);
 
   return <AdAccountContext.Provider value={value}>{children}</AdAccountContext.Provider>;
 }

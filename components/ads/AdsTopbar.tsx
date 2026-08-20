@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
-import { Bell, BriefcaseBusiness, Check, ChevronDown, LogOut, Menu, Settings, Users } from 'lucide-react';
+import { Bell, BriefcaseBusiness, Check, ChevronDown, LogOut, Menu, Plus, Settings, Users } from 'lucide-react';
 import { Avatar } from '@/components/ui';
 import { useAdAccount } from '@/components/ads/AdAccountProvider';
 import GringoouLogo from '@/components/icons/GringoouLogo';
@@ -12,7 +12,7 @@ type AdsTopbarProps = { onMenuToggle: () => void };
 
 export function AdsTopbar({ onMenuToggle }: AdsTopbarProps) {
   const { data: session } = useSession();
-  const { account, accounts, selectAccount } = useAdAccount();
+  const { account, accounts, canCreateAccount, maxAccounts, selectAccount } = useAdAccount();
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const userName = session?.user?.name || 'Anunciante';
@@ -57,6 +57,9 @@ export function AdsTopbar({ onMenuToggle }: AdsTopbarProps) {
                   <div className="mt-2 space-y-1">{accounts.map((item) => (
                     <button key={item.id} type="button" onClick={() => void changeAccount(item.id)} className="flex w-full items-center gap-3 rounded-xl p-2 text-left hover:bg-brand-50"><Avatar src={item.logoUrl} name={item.name} size="md" /><span className="min-w-0 flex-1"><strong className="block truncate text-sm text-slate-900">{item.name}</strong><span className="block truncate text-xs text-slate-500">ID: {item.id.slice(0, 12)}...</span></span>{item.id === account?.id ? <Check size={18} className="text-brand-500" /> : <BriefcaseBusiness size={18} className="text-slate-300" />}</button>
                   ))}</div>
+                  {canCreateAccount ? (
+                    <Link href="/ads/accounts/new" onClick={() => setOpen(false)} className="mt-3 flex items-center gap-2 rounded-xl border border-dashed border-brand-200 px-3 py-2.5 text-sm font-bold text-brand-600 hover:bg-brand-50"><Plus size={17} />Criar nova conta de negócio</Link>
+                  ) : <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-500">Limite de {maxAccounts} contas atingido.</p>}
                 </div>
                 <div className="border-t border-slate-100 p-2">
                   <Link href="/ads/settings" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"><Settings size={17} />Configurações do negócio</Link>

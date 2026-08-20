@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Building2, Edit3, Globe2, Mail, MapPin, ShieldCheck } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { Building2, Edit3, Globe2, Mail, MapPin, Plus, ShieldCheck } from 'lucide-react';
 import CloudinaryImageField from '@/components/forms/CloudinaryImageField';
 import { useToast } from '@/components/feedback/ToastProvider';
 import { Avatar, Badge, Button, Card, Input, Modal, Select, Toggle } from '@/components/ui';
@@ -19,7 +20,7 @@ type UserData = { name: string | null; email: string | null; marketingEmailsOptO
 
 export function AdsSettingsClient({ initialAccount, initialUser }: { initialAccount: AccountData; initialUser: UserData }) {
   const { showToast } = useToast();
-  const { refreshAccounts } = useAdAccount();
+  const { accounts, canCreateAccount, maxAccounts, refreshAccounts } = useAdAccount();
   const [account, setAccount] = useState(initialAccount);
   const [editOpen, setEditOpen] = useState(false);
   const [savingAccount, setSavingAccount] = useState(false);
@@ -27,6 +28,12 @@ export function AdsSettingsClient({ initialAccount, initialUser }: { initialAcco
   const [accountForm, setAccountForm] = useState({ ...initialAccount, phone: formatInternationalPhone(initialAccount.phone ?? '') });
   const names = useMemo(() => { const parts = (initialUser.name ?? '').trim().split(/\s+/); return { firstName: parts.shift() ?? '', lastName: parts.join(' ') }; }, [initialUser.name]);
   const [userForm, setUserForm] = useState({ ...names, email: initialUser.email ?? '', marketingEmailsOptOut: initialUser.marketingEmailsOptOut, preferredLanguage: initialUser.preferredLanguage });
+
+  useEffect(() => {
+    setAccount(initialAccount);
+    setAccountForm({ ...initialAccount, phone: formatInternationalPhone(initialAccount.phone ?? '') });
+    setEditOpen(false);
+  }, [initialAccount]);
 
   const saveAccount = async () => {
     setSavingAccount(true);
@@ -55,7 +62,7 @@ export function AdsSettingsClient({ initialAccount, initialUser }: { initialAcco
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div><p className="text-xs font-bold uppercase tracking-wider text-brand-500">Conta</p><h1 className="mt-1 text-3xl font-extrabold text-[#132f40]">Configuracoes</h1></div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-brand-500">Conta</p><h1 className="mt-1 text-3xl font-extrabold text-[#132f40]">Configuracoes</h1><p className="mt-1 text-sm text-slate-500">{accounts.length} de {maxAccounts} contas de negócio vinculadas.</p></div>{canCreateAccount ? <Link href="/ads/accounts/new" className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-brand-500 px-5 text-sm font-bold text-white hover:brightness-105"><Plus size={17} />Nova conta de negócio</Link> : null}</div>
       <Card className="rounded-3xl border border-slate-200 p-6 shadow-sm">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
           <Avatar src={account.logoUrl} name={account.name} size="xl" />

@@ -7,6 +7,7 @@ import { getServerAuthSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export const AD_ACCOUNT_COOKIE = 'gringoou_ad_account';
+export const MAX_AD_ACCOUNTS_PER_USER = 3;
 export const AD_ACCOUNT_DRAFT_ROLES: AdAccountRole[] = [
   AdAccountRole.BUSINESS_ADMIN,
   AdAccountRole.ADMIN,
