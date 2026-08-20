@@ -9,6 +9,8 @@ import { Avatar, Badge, Button, Card, Input, Modal, Select, Toggle } from '@/com
 import { BusinessCategoryField } from '@/components/ads/BusinessCategoryField';
 import { useAdAccount } from '@/components/ads/AdAccountProvider';
 import { formatInternationalPhone } from '@/lib/phone';
+import { normalizeUrlFieldValue } from '@/lib/forms/validation';
+import { AD_TIMEZONE_OPTIONS, getDefaultAdTimezone } from '@/lib/ads/timezones';
 
 type AccountData = {
   id: string; name: string; websiteUrl: string | null; phone: string | null; businessAddress: string | null;
@@ -89,10 +91,11 @@ export function AdsSettingsClient({ initialAccount, initialUser }: { initialAcco
         <div className="max-h-[70vh] space-y-5 overflow-y-auto pr-1">
           <div><span className="mb-2 block text-sm font-bold">Logo da empresa</span><CloudinaryImageField value={accountForm.logoUrl ?? ''} onChange={(logoUrl) => setAccountForm((current) => ({ ...current, logoUrl }))} folder="businesses" width={120} height={120} /></div>
           <label className="block space-y-2"><span className="text-sm font-bold">Nome da empresa</span><Input value={accountForm.name} onChange={(event) => setAccountForm((current) => ({ ...current, name: event.target.value }))} /></label>
-          <label className="block space-y-2"><span className="text-sm font-bold">Website URL</span><Input type="url" value={accountForm.websiteUrl ?? ''} onChange={(event) => setAccountForm((current) => ({ ...current, websiteUrl: event.target.value }))} prefixIcon={<Globe2 size={16} />} /></label>
+          <label className="block space-y-2"><span className="text-sm font-bold">Website URL</span><Input type="text" inputMode="url" placeholder="empresa.com" value={accountForm.websiteUrl ?? ''} onChange={(event) => setAccountForm((current) => ({ ...current, websiteUrl: event.target.value }))} onBlur={() => setAccountForm((current) => ({ ...current, websiteUrl: normalizeUrlFieldValue(current.websiteUrl ?? '') }))} prefixIcon={<Globe2 size={16} />} /></label>
           <label className="block space-y-2"><span className="text-sm font-bold">Telefone comercial</span><Input type="tel" value={accountForm.phone ?? ''} onChange={(event) => setAccountForm((current) => ({ ...current, phone: formatInternationalPhone(event.target.value) }))} /></label>
           <label className="block space-y-2"><span className="text-sm font-bold">Endereco comercial completo</span><Input value={accountForm.businessAddress ?? ''} onChange={(event) => setAccountForm((current) => ({ ...current, businessAddress: event.target.value }))} prefixIcon={<MapPin size={16} />} /></label>
           <BusinessCategoryField category={accountForm.businessCategory ?? ''} subcategories={accountForm.subcategories} onCategoryChange={(businessCategory) => setAccountForm((current) => ({ ...current, businessCategory }))} onSubcategoriesChange={(subcategories) => setAccountForm((current) => ({ ...current, subcategories }))} />
+          <div className="grid gap-4 sm:grid-cols-2"><label className="space-y-2"><span className="text-sm font-bold">País</span><Select value={accountForm.country} onChange={(event) => setAccountForm((current) => ({ ...current, country: event.target.value, timezone: getDefaultAdTimezone(event.target.value) }))}><option value="US">Estados Unidos</option><option value="BR">Brasil</option><option value="PT">Portugal</option><option value="CA">Canadá</option></Select></label><label className="space-y-2"><span className="text-sm font-bold">Timezone</span><Select value={accountForm.timezone} onChange={(event) => setAccountForm((current) => ({ ...current, timezone: event.target.value }))}>{AD_TIMEZONE_OPTIONS.map((timezone) => <option key={timezone.value} value={timezone.value}>{timezone.label}</option>)}</Select></label></div>
           <label className="flex items-start gap-3 rounded-2xl bg-slate-50 p-4 text-sm font-semibold text-[#243b53]"><input type="checkbox" className="mt-1" checked={accountForm.useWebsitePhotos} onChange={(event) => setAccountForm((current) => ({ ...current, useWebsitePhotos: event.target.checked }))} />Use photos from my website in my ads (recommended)</label>
         </div>
       </Modal>

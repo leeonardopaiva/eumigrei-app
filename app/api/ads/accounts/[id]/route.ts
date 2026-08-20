@@ -5,11 +5,15 @@ import { AD_BUSINESS_CATEGORY_VALUES } from '@/lib/ads/categories';
 import { getServerAuthSession } from '@/lib/auth';
 import { normalizeInternationalPhone } from '@/lib/phone';
 import { prisma } from '@/lib/prisma';
+import { normalizeHttpUrlInput } from '@/lib/url';
 
 type RouteContext = { params: Promise<{ id: string }> };
 const updateSchema = z.object({
   name: z.string().trim().min(2).max(120),
-  websiteUrl: z.preprocess((value) => (value === '' ? null : value), z.string().url().nullable()),
+  websiteUrl: z.preprocess(
+    (value) => typeof value === 'string' && value.trim() ? normalizeHttpUrlInput(value) : null,
+    z.string().url().nullable(),
+  ),
   phone: z.string().trim().min(8).max(30),
   businessAddress: z.string().trim().max(300).nullable(),
   businessCategory: z.enum(AD_BUSINESS_CATEGORY_VALUES as [string, ...string[]]),

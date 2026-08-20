@@ -19,7 +19,9 @@ type AdAccountContextValue = {
   account: AdAccountSummary | null;
   maxAccounts: number;
   canCreateAccount: boolean;
+  accountSwitchLocked: boolean;
   loading: boolean;
+  setAccountSwitchLocked: (locked: boolean) => void;
   refreshAccounts: () => Promise<void>;
   selectAccount: (accountId: string) => Promise<void>;
 };
@@ -32,6 +34,7 @@ export function AdAccountProvider({ children }: { children: React.ReactNode }) {
   const [accounts, setAccounts] = useState<AdAccountSummary[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [maxAccounts, setMaxAccounts] = useState(3);
+  const [accountSwitchLocked, setAccountSwitchLocked] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const refreshAccounts = useCallback(async () => {
@@ -59,6 +62,7 @@ export function AdAccountProvider({ children }: { children: React.ReactNode }) {
   }, [refreshAccounts]);
 
   const selectAccount = useCallback(async (accountId: string) => {
+    if (accountSwitchLocked) throw new Error('Aguarde a confirmacao do pagamento antes de trocar de conta.');
     const response = await fetch('/api/ads/accounts/select', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -67,17 +71,19 @@ export function AdAccountProvider({ children }: { children: React.ReactNode }) {
     if (!response.ok) throw new Error('Nao foi possivel trocar a conta comercial.');
     setSelectedAccountId(accountId);
     router.refresh();
-  }, [router]);
+  }, [accountSwitchLocked, router]);
 
   const value = useMemo<AdAccountContextValue>(() => ({
     accounts,
     account: accounts.find((item) => item.id === selectedAccountId) ?? accounts[0] ?? null,
     maxAccounts,
     canCreateAccount: accounts.length < maxAccounts,
+    accountSwitchLocked,
     loading,
+    setAccountSwitchLocked,
     refreshAccounts,
     selectAccount,
-  }), [accounts, loading, maxAccounts, refreshAccounts, selectAccount, selectedAccountId]);
+  }), [accountSwitchLocked, accounts, loading, maxAccounts, refreshAccounts, selectAccount, selectedAccountId]);
 
   return <AdAccountContext.Provider value={value}>{children}</AdAccountContext.Provider>;
 }
