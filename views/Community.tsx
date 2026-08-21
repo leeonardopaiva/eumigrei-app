@@ -17,6 +17,9 @@ import { trackAnalyticsEvent } from '@/lib/analytics';
 import type { BannerAd, PersonaMode, Post, ProfessionalProfileIdentity, ReferralSummary, User } from '@/types';
 import type { CommunityInitialData } from '@/lib/content-contracts';
 import { ViewableAdSlot } from '@/components/ads/ViewableAdSlot';
+import { ContentColumn } from '@/components/ui/ContentColumn';
+import { FeedCard } from '@/components/ui/FeedCard';
+import { DEFAULT_AVATAR_URL, handleAvatarError } from '@/lib/avatar';
 
 const getPostTimestamp = (post: Post) => new Date(post.createdAt).getTime() || 0;
 
@@ -761,7 +764,7 @@ const Community: React.FC<{
   };
 
   return (
-    <div className="animate-in space-y-4 fade-in duration-500">
+    <ContentColumn className="animate-in space-y-4 fade-in duration-500">
       <header className="mt-4 px-5">
         <h1 className="text-h2 font-bold text-foreground">Comunidade</h1>
       </header>
@@ -885,7 +888,7 @@ const Community: React.FC<{
         ) : null}
         {postsHasMore ? <div ref={sentinelRef} className="h-1" aria-hidden="true" /> : null}
       </div>
-    </div>
+    </ContentColumn>
   );
 };
 
@@ -895,42 +898,33 @@ const FeedBannerCard: React.FC<{
   onOpen: () => void;
   onRegister: () => void;
 }> = ({ banner, submitting, onOpen, onRegister }) => (
-  <ViewableAdSlot banner={banner} placement="FEED" className="relative overflow-hidden rounded-sheet bg-foreground shadow-sm">
-    <img src={banner.imageUrl} alt={banner.name} className="h-[220px] w-full object-cover opacity-90" />
-    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-    <div className="absolute left-5 right-5 top-5 flex items-center justify-between gap-3">
-      <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur">
-        Patrocinado
-      </span>
-      <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur">
-        {banner.regionLabel || 'Global'}
-      </span>
-    </div>
-    <div className="absolute bottom-5 left-5 right-5">
-      <h3 className="max-w-[85%] text-2xl font-bold leading-tight text-white drop-shadow">
-        {banner.name}
-      </h3>
-      {banner.type === 'REGISTRATION' ? (
-        <button
-          type="button"
-          onClick={onRegister}
-          disabled={submitting}
-          className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-500 px-5 text-sm font-bold text-white shadow-sm transition hover:brightness-105 disabled:opacity-70"
-        >
-          <UserPlus size={18} strokeWidth={2.8} />
-          {submitting ? 'Registrando...' : 'Tenho interesse'}
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={onOpen}
-          className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-500 px-5 text-sm font-bold text-white shadow-sm transition hover:brightness-105"
-        >
-          <ExternalLink size={18} strokeWidth={2.8} />
-          Abrir link
-        </button>
-      )}
-    </div>
+  <ViewableAdSlot banner={banner} placement="FEED">
+    <FeedCard.Root variant="sponsored">
+      <FeedCard.Header
+        avatarUrl={banner.advertiserLogoUrl || DEFAULT_AVATAR_URL}
+        avatarAlt={banner.advertiserName || banner.name}
+        title={banner.advertiserName || banner.name}
+        subtitle={banner.regionLabel || 'Toda a comunidade'}
+        badge={<FeedCard.SponsoredBadge />}
+        onAvatarError={handleAvatarError}
+      />
+      {banner.description ? <FeedCard.Content text={banner.description} /> : null}
+      <FeedCard.Media src={banner.imageUrl} alt={banner.headline || banner.name} />
+      <FeedCard.Headline>{banner.headline || banner.name}</FeedCard.Headline>
+      <div className="px-5 pb-4 pt-3">
+        {banner.type === 'REGISTRATION' ? (
+          <FeedCard.CTA onClick={onRegister} disabled={submitting}>
+            <UserPlus size={17} className="mr-2" />
+            {submitting ? 'Registrando...' : banner.ctaLabel || 'Tenho interesse'}
+          </FeedCard.CTA>
+        ) : (
+          <FeedCard.CTA onClick={onOpen}>
+            <ExternalLink size={17} className="mr-2" />
+            {banner.ctaLabel || (banner.goal === 'WHATSAPP' ? 'Falar no WhatsApp' : 'Saiba mais')}
+          </FeedCard.CTA>
+        )}
+      </div>
+    </FeedCard.Root>
   </ViewableAdSlot>
 );
 

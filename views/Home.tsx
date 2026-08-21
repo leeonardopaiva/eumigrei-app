@@ -28,6 +28,9 @@ import { STATIC_HOUSING, STATIC_JOBS } from '../lib/static-catalog';
 import { BannerAd, Business, EventItem, User } from '../types';
 import type { HomeInitialData } from '../lib/content-contracts';
 import { ViewableAdSlot } from '../components/ads/ViewableAdSlot';
+import { FeedCard } from '../components/ui/FeedCard';
+import { ContentColumn } from '../components/ui/ContentColumn';
+import { DEFAULT_AVATAR_URL, handleAvatarError } from '../lib/avatar';
 
 const animatedSearchTerms = ['restaurantes', 'bares', 'eventos', 'pessoas'];
 
@@ -204,7 +207,7 @@ const Home: React.FC<{ user: User; initialData?: HomeInitialData }> = ({ user, i
   };
 
   return (
-    <div className="animate-in space-y-5 px-5 pb-28 fade-in slide-in-from-bottom-4 duration-500 md:pb-0 lg:px-0">
+    <ContentColumn className="animate-in space-y-5 px-5 pb-28 fade-in slide-in-from-bottom-4 duration-500 md:pb-8">
       <div className="relative mt-3 inline-block">
         <button
           type="button"
@@ -309,42 +312,37 @@ const Home: React.FC<{ user: User; initialData?: HomeInitialData }> = ({ user, i
                   key={banner.id}
                   banner={banner}
                   placement="HOME"
-                  className="group relative h-[180px] w-full flex-none overflow-hidden rounded-2xl md:h-[200px]"
+                  className="w-full flex-none"
                 >
-                  <img
-                    src={banner.imageUrl}
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    alt={banner.name}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
-                  <div className="absolute left-5 right-5 top-5 md:left-6 md:right-6 md:top-6">
-                    <div className="inline-flex rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-white backdrop-blur-sm">
-                      Patrocinado · {banner.regionLabel || 'Toda a comunidade'}
+                  <FeedCard.Root variant="sponsored">
+                    <FeedCard.Header
+                      avatarUrl={banner.advertiserLogoUrl || DEFAULT_AVATAR_URL}
+                      avatarAlt={banner.advertiserName || banner.name}
+                      title={banner.advertiserName || banner.name}
+                      subtitle={banner.regionLabel || 'Toda a comunidade'}
+                      badge={<FeedCard.SponsoredBadge />}
+                      onAvatarError={handleAvatarError}
+                    />
+                    {banner.description ? <FeedCard.Content text={banner.description} /> : null}
+                    <FeedCard.Media src={banner.imageUrl} alt={banner.headline || banner.name} />
+                    <FeedCard.Headline>{banner.headline || banner.name}</FeedCard.Headline>
+                    <div className="px-5 pb-4 pt-3">
+                      {banner.type === 'REGISTRATION' ? (
+                        <FeedCard.CTA
+                          onClick={() => void handleBannerRegistration(banner)}
+                          disabled={submittingBannerId === banner.id}
+                        >
+                          <UserPlus size={17} className="mr-2" />
+                          {submittingBannerId === banner.id ? 'Registrando...' : banner.ctaLabel || 'Tenho interesse'}
+                        </FeedCard.CTA>
+                      ) : (
+                        <FeedCard.CTA onClick={() => handleBannerLinkClick(banner)}>
+                          <ExternalLink size={17} className="mr-2" />
+                          {banner.ctaLabel || (banner.goal === 'WHATSAPP' ? 'Falar no WhatsApp' : 'Saiba mais')}
+                        </FeedCard.CTA>
+                      )}
                     </div>
-                    <h3 className="mt-2 line-clamp-2 text-xl font-bold leading-tight text-white md:text-2xl">
-                      {banner.name}
-                    </h3>
-                  </div>
-                  {banner.type === 'REGISTRATION' ? (
-                    <button
-                      type="button"
-                      onClick={() => void handleBannerRegistration(banner)}
-                      disabled={submittingBannerId === banner.id}
-                      className="absolute bottom-5 left-5 inline-flex min-h-10 items-center gap-2 rounded-full bg-brand-500 px-4 text-body-sm font-bold text-white transition-colors hover:brightness-105 disabled:opacity-70 md:bottom-6 md:left-6"
-                    >
-                      <UserPlus size={20} strokeWidth={2.8} />
-                      {submittingBannerId === banner.id ? 'Registrando...' : 'Tenho interesse'}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleBannerLinkClick(banner)}
-                      className="absolute bottom-5 left-5 flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-white transition-colors hover:brightness-105 md:bottom-6 md:left-6"
-                      aria-label={`Abrir ${banner.name}`}
-                    >
-                      <ExternalLink size={22} strokeWidth={3} />
-                    </button>
-                  )}
+                  </FeedCard.Root>
                 </ViewableAdSlot>
               ))}
             </div>
@@ -412,7 +410,7 @@ const Home: React.FC<{ user: User; initialData?: HomeInitialData }> = ({ user, i
         </div>
       </Modal>
 
-    </div>
+    </ContentColumn>
   );
 };
 

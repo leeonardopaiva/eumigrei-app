@@ -20,6 +20,10 @@ import {
 } from '../lib/forms/validation';
 import { Business, PersonaMode, ProfessionalProfileIdentity } from '../types';
 import type { BusinessesInitialData } from '../lib/content-contracts';
+import { ContentColumn } from '../components/ui/ContentColumn';
+import { FeedCard } from '../components/ui/FeedCard';
+import { Badge } from '../components/ui/Badge';
+import { CharacterCounter } from '../components/ui/CharacterCounter';
 
 const SAMPLE_BUSINESSES: Business[] = [
   {
@@ -285,7 +289,7 @@ const BusinessList: React.FC<BusinessListProps> = ({
   };
 
   return (
-    <div className="px-5 space-y-6 animate-in fade-in duration-500">
+    <ContentColumn className="space-y-6 px-5 pb-20 animate-in fade-in duration-500">
       <div className="mt-4 space-y-4">
         <div>
           <div>
@@ -348,7 +352,8 @@ const BusinessList: React.FC<BusinessListProps> = ({
               <FieldErrorMessage message={fieldErrors.address} />
               <RegionSelector value={createForm.regionKey} onChange={(region) => { clearFieldError('regionKey'); setCreateForm((current) => ({ ...current, regionKey: region.key })); }} hint="Escolha uma regiao existente para padronizar a publicacao." />
               <FieldErrorMessage message={fieldErrors.regionKey} />
-              <textarea required rows={3} value={createForm.description} onChange={(event) => setCreateForm((current) => ({ ...current, description: event.target.value }))} onInput={() => clearFieldError('description')} aria-invalid={Boolean(fieldErrors.description)} placeholder="Descricao do negocio" className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none" />
+              <textarea required rows={3} maxLength={600} value={createForm.description} onChange={(event) => setCreateForm((current) => ({ ...current, description: event.target.value }))} onInput={() => clearFieldError('description')} aria-invalid={Boolean(fieldErrors.description)} placeholder="Descricao do negocio" className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none" />
+              <div className="flex justify-end"><CharacterCounter current={createForm.description.length} max={600} /></div>
               <FieldErrorMessage message={fieldErrors.description} />
               <div className="grid grid-cols-2 gap-3">
                 <input value={createForm.website} onChange={(event) => setCreateForm((current) => ({ ...current, website: event.target.value }))} onInput={() => clearFieldError('website')} aria-invalid={Boolean(fieldErrors.website)} placeholder="Website" className="theme-outline-ring w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none" />
@@ -396,65 +401,55 @@ const BusinessList: React.FC<BusinessListProps> = ({
           const isPendingReview = business.status === 'PENDING_REVIEW' || business.isPendingReview;
 
           return (
-          <div
+          <FeedCard.Root
             key={business.id}
-            className={`relative flex min-h-32 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:border-slate-200 ${
-              isPendingReview ? 'bg-slate-50 opacity-65 grayscale' : ''
-            }`}
+            variant="business"
+            className={isPendingReview ? 'bg-slate-50 opacity-65 grayscale' : ''}
           >
-            <Link
+            <FeedCard.Header
+              avatarUrl={business.imageUrl || `https://picsum.photos/seed/${business.id}/200`}
+              avatarAlt={business.name}
+              title={business.name}
+              subtitle={`${business.category} · ${business.locationLabel || business.address}`}
               href={`/negocios/${business.slug || business.id}`}
-              className="absolute inset-0 z-20"
-              aria-label={`Abrir ${business.name}`}
+              badge={isPendingReview ? <Badge tone="destaque">Em analise</Badge> : <Badge tone="primary">Negocio</Badge>}
+              action={!isPendingReview ? (
+                <button
+                  type="button"
+                  onClick={() => void handleFavoriteToggle(business)}
+                  className={`rounded-full p-2 transition ${business.isFavorite ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                  aria-label={business.isFavorite ? 'Remover dos favoritos' : 'Favoritar negocio'}
+                >
+                  <Heart size={16} fill={business.isFavorite ? 'currentColor' : 'none'} />
+                </button>
+              ) : undefined}
             />
-            <img
-              src={business.imageUrl || `https://picsum.photos/seed/${business.id}/200`}
-              className="w-28 shrink-0 self-stretch object-cover"
-              alt={business.name}
-            />
-            <div className="relative z-10 flex flex-1 flex-col justify-between p-4">
-              <div>
-                <div className="flex items-start justify-between gap-3">
-                  <h4 className="font-bold theme-text">{business.name}</h4>
-                  {!isPendingReview ? (
-                    <button
-                      type="button"
-                      onClick={() => void handleFavoriteToggle(business)}
-                      className={`relative z-30 rounded-full p-2 ${
-                        business.isFavorite ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'
-                      }`}
-                      aria-label={business.isFavorite ? 'Remover dos favoritos' : 'Favoritar negocio'}
-                    >
-                      <Heart size={14} fill={business.isFavorite ? 'currentColor' : 'none'} />
-                    </button>
-                  ) : null}
-                </div>
-                {isPendingReview ? (
-                  <span className="mt-2 inline-flex w-fit rounded-xl border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">
-                    Aguardando aprovacao
-                  </span>
-                ) : null}
-                <div className="mt-2">
-                  <StarRating
-                    average={business.ratingAverage ?? 0}
-                    count={business.ratingCount ?? 0}
-                    compact
-                  />
-                </div>
-                <p className="theme-text text-[10px] font-bold mt-0.5">{business.category}</p>
-                <div className="flex items-center gap-1 text-slate-500 text-[10px] mt-1">
-                  <MapPin size={10} /> {business.address}
-                </div>
+            {business.description ? <FeedCard.Content text={business.description} /> : null}
+            <Link href={`/negocios/${business.slug || business.id}`} aria-label={`Abrir ${business.name}`}>
+              <FeedCard.Media
+                src={business.imageUrl || `https://picsum.photos/seed/${business.id}/800/600`}
+                alt={business.name}
+              />
+            </Link>
+            <FeedCard.Footer className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <StarRating average={business.ratingAverage ?? 0} count={business.ratingCount ?? 0} compact />
+                <p className="mt-1 flex items-center gap-1 truncate text-[11px] text-muted-foreground">
+                  <MapPin size={12} /> {business.address}
+                </p>
               </div>
-              <span className="theme-bg self-end rounded-xl px-4 py-1.5 text-[10px] font-bold text-white shadow-sm">
-                {business.canEdit ? 'Editar perfil' : 'Ver perfil'}
-              </span>
-            </div>
-          </div>
+              <Link
+                href={`/negocios/${business.slug || business.id}`}
+                className="shrink-0 rounded-full bg-brand-500 px-4 py-2 text-xs font-bold text-white transition hover:brightness-105"
+              >
+                {business.canEdit ? 'Editar perfil' : 'Ver negocio'}
+              </Link>
+            </FeedCard.Footer>
+          </FeedCard.Root>
           );
         })}
       </div>
-    </div>
+    </ContentColumn>
   );
 };
 

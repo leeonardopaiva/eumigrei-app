@@ -18,6 +18,8 @@ import CloudinaryImageField from '../components/forms/CloudinaryImageField';
 import ImageGalleryField from '../components/forms/ImageGalleryField';
 import { normalizeUrlFieldValue } from '../lib/forms/validation';
 import { User } from '../types';
+import { ContentColumn } from '../components/ui/ContentColumn';
+import { CharacterCounter } from '../components/ui/CharacterCounter';
 
 interface BusinessDetailProps {
   businessId?: string;
@@ -370,19 +372,19 @@ const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => 
 
   if (loading) {
     return (
-      <div className="animate-in space-y-5 px-5 py-6 fade-in duration-500">
+      <ContentColumn className="animate-in space-y-5 px-5 py-6 fade-in duration-500">
         <div className="h-64 animate-pulse rounded-[28px] bg-slate-100" />
         <div className="space-y-3">
           <div className="h-8 w-2/3 animate-pulse rounded-full bg-slate-100" />
           <div className="h-4 w-1/2 animate-pulse rounded-full bg-slate-100" />
           <div className="h-24 animate-pulse rounded-3xl bg-slate-100" />
         </div>
-      </div>
+      </ContentColumn>
     );
   }
 
   return (
-    <div className="animate-in bg-white pb-24 fade-in duration-500">
+    <ContentColumn className="animate-in bg-white pb-24 fade-in duration-500 sm:my-4 sm:overflow-hidden sm:rounded-card sm:border sm:border-slate-200">
       <div className={`relative h-72 ${isPendingReview ? 'grayscale' : ''}`}>
         <img src={business.imageUrl} className="h-full w-full object-cover" alt={business.name} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
@@ -751,11 +753,13 @@ const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => 
                     </label>
                     <textarea
                       value={descriptionDraft}
+                      maxLength={600}
                       onChange={(event) => setDescriptionDraft(event.target.value)}
                       rows={5}
                       className="w-full resize-none rounded-md border border-input bg-surface px-4 py-3 text-sm font-medium text-foreground outline-none transition focus:border-brand-500"
                       placeholder="Descricao do negocio"
                     />
+                    <div className="flex justify-end"><CharacterCounter current={descriptionDraft.length} max={600} /></div>
                   </div>
                 </>
               ) : null}
@@ -854,7 +858,7 @@ const BusinessDetail: React.FC<BusinessDetailProps> = ({ businessId, user }) => 
           </div>
         </div>
       ) : null}
-    </div>
+    </ContentColumn>
   );
 };
 

@@ -301,6 +301,12 @@ export interface BannerAd {
   matchedBy?: string[];
   deliveryReasons?: string[];
   sponsored?: boolean;
+  headline?: string | null;
+  description?: string | null;
+  ctaLabel?: string | null;
+  goal?: 'WHATSAPP' | 'EXTERNAL_URL' | 'MARKETPLACE' | null;
+  advertiserName?: string | null;
+  advertiserLogoUrl?: string | null;
 }
 
 export interface ReferralSummary {

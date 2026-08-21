@@ -35,6 +35,9 @@ import { GringoouLogo } from '../../components/icons/GringoouLogo';
 import { TrendsCarousel } from '../../components/app/TrendsCarousel';
 import { SidebarMenu, SidebarMenuItem } from '../../components/navigation/SidebarMenu';
 import PostCard from '../../components/community/PostCard';
+import { ContentColumn } from '../../components/ui/ContentColumn';
+import { CharacterCounter } from '../../components/ui/CharacterCounter';
+import { FeedCard } from '../../components/ui/FeedCard';
 
 const Section: React.FC<{
   index: string;
@@ -589,6 +592,51 @@ import { Dropdown } from '@/components/ui/Dropdown';
               />
             </PostCard.Root>
           </div>
+        </div>
+      </Section>
+
+      <Section
+        index="11"
+        eyebrow="Conteudo social"
+        title="Feed cards & content columns"
+        code={`
+import { ContentColumn, FeedCard, CharacterCounter } from '@/components/ui';
+
+<ContentColumn size="feed">
+  <FeedCard.Root variant="sponsored">
+    <FeedCard.Header />
+    <FeedCard.Content text={description} />
+    <FeedCard.Media src={imageUrl} alt={headline} />
+    <FeedCard.Headline>{headline}</FeedCard.Headline>
+    <FeedCard.CTA>Saiba mais</FeedCard.CTA>
+  </FeedCard.Root>
+</ContentColumn>
+        `}
+      >
+        <div className="space-y-6 rounded-card bg-bg p-4">
+          <div className="flex flex-wrap gap-3 text-caption font-semibold text-slate-500">
+            <span>Feed: 600px</span>
+            <span>Leitura: 720px</span>
+            <span>Wide: 1120px</span>
+            <CharacterCounter current={428} max={600} className="ml-auto" />
+          </div>
+          <ContentColumn size="feed">
+            <FeedCard.Root variant="sponsored">
+              <FeedCard.Header
+                avatarUrl="/assets/logo26.png"
+                avatarAlt="Gringoou"
+                title="Mercado Brasileiro Central"
+                subtitle="Boston, MA"
+                badge={<FeedCard.SponsoredBadge />}
+              />
+              <FeedCard.Content text="Produtos brasileiros perto de voce, atendimento em portugues e entrega na regiao. Passe para conhecer as novidades desta semana." />
+              <FeedCard.Media src="https://picsum.photos/seed/gringoou-feed-card/900/675" alt="Produtos do mercado" />
+              <FeedCard.Headline>Sabores do Brasil perto da sua comunidade</FeedCard.Headline>
+              <div className="px-5 pb-4 pt-3">
+                <FeedCard.CTA>Saiba mais</FeedCard.CTA>
+              </div>
+            </FeedCard.Root>
+          </ContentColumn>
         </div>
       </Section>
 

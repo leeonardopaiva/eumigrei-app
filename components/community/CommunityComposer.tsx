@@ -6,6 +6,9 @@ import type { ComposerMode } from '@/components/community/utils';
 import { handleAvatarError } from '@/lib/avatar';
 import type { PersonaMode } from '@/types';
 import { Button } from '@/components/ui/Button';
+import { CharacterCounter } from '@/components/ui/CharacterCounter';
+
+export const COMMUNITY_POST_MAX_LENGTH = 600;
 
 type RootProps = {
   children: React.ReactNode;
@@ -63,13 +66,19 @@ const Editor: React.FC<EditorProps> = ({ avatar, avatarHref, value, onChange, pl
     ) : (
       <img src={avatar} className="h-10 w-10 rounded-full object-cover" alt="User" onError={handleAvatarError} />
     )}
-    <textarea
-      rows={3}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      placeholder={placeholder}
-      className="min-h-[96px] flex-1 rounded-md border-none bg-bg px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-brand-200"
-    />
+    <div className="min-w-0 flex-1">
+      <textarea
+        rows={3}
+        value={value}
+        maxLength={COMMUNITY_POST_MAX_LENGTH}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="min-h-[96px] w-full rounded-md border-none bg-bg px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-brand-200"
+      />
+      <div className="mt-1 flex justify-end px-1">
+        <CharacterCounter current={value.length} max={COMMUNITY_POST_MAX_LENGTH} />
+      </div>
+    </div>
   </div>
 );
 
