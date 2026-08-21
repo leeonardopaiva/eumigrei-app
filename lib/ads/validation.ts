@@ -11,7 +11,7 @@ export const adCreativeStepSchema = z
   .object({
     goal: z.enum(AD_GOALS),
     headline: z.string().trim().min(2, 'Informe um titulo.').max(70, 'Use no maximo 70 caracteres.'),
-    description: z.string().trim().min(10, 'Descreva melhor o anuncio.').max(1700, 'Use no maximo 1700 caracteres.'),
+    description: z.string().trim().min(10, 'Descreva melhor o anuncio.').max(600, 'Use no maximo 600 caracteres.'),
     imageUrl: z.string().url('Envie uma imagem valida.'),
     ctaLabel: z.string().trim().min(2, 'Selecione uma chamada para acao.').max(40),
     destination: destinationSchema,

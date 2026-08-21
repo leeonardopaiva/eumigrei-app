@@ -63,7 +63,8 @@ export async function GET(request: Request) {
       regionKey: true, targetInterests: true, targetKeywords: true, targetCategories: true,
       objective: true, plan: true, billingMode: true, bidCents: true, dailyBudgetCents: true,
       totalBudgetCents: true, spentCents: true, updatedAt: true, createdAt: true, startsAt: true,
-      endsAt: true, adAccountId: true,
+      endsAt: true, adAccountId: true, headline: true, description: true, ctaLabel: true, goal: true,
+      adAccount: { select: { name: true, logoUrl: true } },
       region: { select: { key: true, label: true } },
       impressions: {
         where: session?.user?.id
@@ -134,6 +135,12 @@ export async function GET(request: Request) {
       objective: banner.objective,
       matchedBy: delivery.reasons,
       sponsored: true,
+      headline: banner.headline?.slice(0, 70) ?? null,
+      description: banner.description?.slice(0, 600) ?? null,
+      ctaLabel: banner.ctaLabel?.slice(0, 40) ?? null,
+      goal: banner.goal,
+      advertiserName: banner.adAccount?.name ?? banner.name,
+      advertiserLogoUrl: banner.adAccount?.logoUrl ?? null,
     })),
   });
 }

@@ -337,7 +337,7 @@ export const adminUserSchema = z.object({
 });
 
 export const communityPostSchema = z.object({
-  content: z.string().trim().min(5).max(500),
+  content: z.string().trim().min(5).max(600, 'Use no maximo 600 caracteres'),
   imageUrl: optionalUrl,
   externalUrl: optionalUrl,
   personaMode: z.enum(['personal', 'professional']).default('personal'),

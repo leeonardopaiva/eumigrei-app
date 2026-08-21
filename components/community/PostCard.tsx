@@ -16,6 +16,10 @@ import {
 } from '@/components/community/utils';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { CharacterCounter } from '@/components/ui/CharacterCounter';
+import { FeedCard } from '@/components/ui/FeedCard';
+
+const POST_CONTENT_MAX_LENGTH = 600;
 
 type RootProps = {
   children: React.ReactNode;
@@ -86,9 +90,9 @@ type CommentComposerProps = {
 };
 
 const Root: React.FC<RootProps> = ({ children, className = '' }) => (
-  <article className={`space-y-4 rounded-card bg-surface p-5 ${className}`.trim()}>
+  <FeedCard.Root className={`space-y-4 p-5 ${className}`.trim()}>
     {children}
-  </article>
+  </FeedCard.Root>
 );
 
 const Header: React.FC<HeaderProps> = ({
@@ -167,7 +171,7 @@ const Body: React.FC<BodyProps> = ({ postId, content, imageUrl, externalUrl }) =
 
   return (
     <>
-      <p className="text-sm leading-relaxed text-slate-700">{content}</p>
+      <FeedCard.Content text={content} className="px-0 pb-0" />
 
       {youtubeEmbedUrl ? (
         <div className="overflow-hidden rounded-3xl border border-slate-100 bg-slate-950">
@@ -202,7 +206,7 @@ const Body: React.FC<BodyProps> = ({ postId, content, imageUrl, externalUrl }) =
       {imageUrl ? (
         <>
           <button type="button" onClick={() => setImageOpen(true)} className="block w-full overflow-hidden rounded-card bg-bg" aria-label="Ampliar imagem da publicação">
-            <img src={imageUrl} className="h-48 w-full object-cover sm:h-56" alt="Imagem da publicação" />
+            <FeedCard.Media src={imageUrl} alt="Imagem da publicação" className="aspect-[4/3]" />
           </button>
           <Modal open={imageOpen} onClose={() => setImageOpen(false)} title="Imagem da publicação" fullscreen>
             <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center">
@@ -230,9 +234,13 @@ const Editor: React.FC<EditorProps> = ({
     <textarea
       rows={4}
       value={content}
+      maxLength={POST_CONTENT_MAX_LENGTH}
       onChange={(event) => onContentChange(event.target.value)}
       className="w-full rounded-md border border-input px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-200"
     />
+    <div className="flex justify-end">
+      <CharacterCounter current={content.length} max={POST_CONTENT_MAX_LENGTH} />
+    </div>
     <CloudinaryImageField
       value={imageUrl}
       onChange={onImageChange}
